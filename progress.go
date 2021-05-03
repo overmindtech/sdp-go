@@ -66,6 +66,10 @@ type ResponseSender struct {
 // Start sends the first response on the given subject and connection to say
 // that the request is being worked on. It also starts a go routine to continue
 // sending responses until it is cancelled
+//
+// Note that the NATS connection must be an encoded connection that is able to
+// encode and decode SDP messages. This can be done using
+// `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
 func (rs *ResponseSender) Start(nc *nats.EncodedConn, subject string, ctx string) {
 	rs.monitorContext, rs.monitorCancel = context.WithCancel(context.Background())
 
