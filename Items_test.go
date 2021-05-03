@@ -22,12 +22,11 @@ var Bool1 CustomBool = false
 var NilPointerBool *bool
 
 type CustomStruct struct {
-	Foo           string        `json:",omitempty"`
-	Bar           string        `json:",omitempty"`
-	Baz           string        `json:",omitempty"`
-	Time          time.Time     `json:",omitempty"`
-	Duration      time.Duration `json:",omitempty"`
-	internalThing string
+	Foo      string        `json:",omitempty"`
+	Bar      string        `json:",omitempty"`
+	Baz      string        `json:",omitempty"`
+	Time     time.Time     `json:",omitempty"`
+	Duration time.Duration `json:",omitempty"`
 }
 
 var Struct CustomStruct = CustomStruct{

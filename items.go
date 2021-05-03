@@ -160,15 +160,13 @@ func (m *Metadata) Copy(dest *Metadata) {
 // a nested hash, nested values can be referenced using dot notation e.g.
 // location.country
 func (a *ItemAttributes) Get(name string) (interface{}, error) {
-	var m map[string]interface{}
+	m := a.GetAttrStruct().AsMap()
 
-	m = a.GetAttrStruct().AsMap()
-
-	if v, ok := m[name]; ok == true {
+	if v, ok := m[name]; ok {
 		return v, nil
 	}
 
-	return "", fmt.Errorf("Attribute %v not found", name)
+	return "", fmt.Errorf("attribute %v not found", name)
 }
 
 // Set sets an attribute. Values are converted to structpb versions and an
@@ -348,7 +346,7 @@ func sanitizeInterface(i interface{}) interface{} {
 			zeroValueInterface := reflect.Zero(v.MapIndex(mapKey).Type()).Interface()
 
 			// Only use the item if it isn't zero
-			if reflect.DeepEqual(mapValueInterface, zeroValueInterface) == false {
+			if !reflect.DeepEqual(mapValueInterface, zeroValueInterface) {
 				value := sanitizeInterface(v.MapIndex(mapKey).Interface())
 
 				returnMap[stringKey] = value
@@ -389,7 +387,7 @@ func sanitizeInterface(i interface{}) interface{} {
 
 				// Check if the field is it's nil value
 				// Check if there actually was a field with that name
-				if reflect.DeepEqual(fieldValue, zeroValue) == false {
+				if !reflect.DeepEqual(fieldValue, zeroValue) {
 					returnMap[field.Name] = fieldValue
 				}
 			}
