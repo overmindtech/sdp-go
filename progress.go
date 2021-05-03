@@ -60,13 +60,17 @@ type ResponseSender struct {
 	monitorCancel    context.CancelFunc
 	requestContext   string
 	subject          string
-	connection       *nats.Conn
+	connection       *nats.EncodedConn
 }
 
 // Start sends the first response on the given subject and connection to say
 // that the request is being worked on. It also starts a go routine to continue
 // sending responses until it is cancelled
-func (rs *ResponseSender) Start(nc *nats.Conn, subject string, ctx string) {
+//
+// Note that the NATS connection must be an encoded connection that is able to
+// encode and decode SDP messages. This can be done using
+// `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
+func (rs *ResponseSender) Start(nc *nats.EncodedConn, subject string, ctx string) {
 	rs.monitorContext, rs.monitorCancel = context.WithCancel(context.Background())
 
 	// Set the default if it's not set
@@ -91,13 +95,10 @@ func (rs *ResponseSender) Start(nc *nats.Conn, subject string, ctx string) {
 		NextUpdateIn: nextUpdateIn,
 	}
 
-	// Marshall to bytes
-	respBytes, _ := proto.Marshal(&resp)
-
 	// Send the initial response
 	rs.connection.Publish(
 		rs.subject,
-		respBytes,
+		&resp,
 	)
 
 	// Start a goroutine to send further responses
@@ -111,7 +112,7 @@ func (rs *ResponseSender) Start(nc *nats.Conn, subject string, ctx string) {
 			case <-time.After(rs.ResponseInterval):
 				nc.Publish(
 					subject,
-					respBytes,
+					&resp,
 				)
 			}
 		}
