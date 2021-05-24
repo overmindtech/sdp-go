@@ -94,7 +94,7 @@ var messages = []proto.Message{
 // raising any errors
 func TestEncode(t *testing.T) {
 	for _, message := range messages {
-		_, err := Encoder.Encode("testSubject", &message)
+		_, err := Encoder.Encode("testSubject", message)
 
 		if err != nil {
 			t.Error(err)
