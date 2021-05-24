@@ -32,8 +32,8 @@ type SDPEncoder struct{}
 func (e *SDPEncoder) Encode(subject string, v interface{}) ([]byte, error) {
 	// If the interface is a protocol buffer message then we are capable of
 	// marshalling it
-	if msg, ok := v.(*proto.Message); ok {
-		return proto.Marshal(*msg)
+	if msg, ok := v.(proto.Message); ok {
+		return proto.Marshal(msg)
 	}
 
 	return nil, fmt.Errorf("could not encode to protobuf: %v", v)

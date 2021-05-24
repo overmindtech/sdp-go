@@ -102,6 +102,14 @@ func TestEncode(t *testing.T) {
 	}
 }
 
+func TestResponse(t *testing.T) {
+	_, err := Encoder.Encode("testSubject", &response)
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 var decodeTests = []struct {
 	Message proto.Message
 	Target  interface{}
