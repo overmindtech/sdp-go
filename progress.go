@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nats-io/nats.go"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -29,6 +27,13 @@ const (
 // DEFAULTRESPONSEINTERVAL is the default period of time within which responses
 // are sent (5 seconds)
 const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
+
+// EncodedPublisher is an interface that allows messages to be published to it.
+// In production this would always be filled by a *nats.EncodedConn, however in
+// testing we will mock this with something that does nothing
+type EncodedPublisher interface {
+	Publish(subject string, v interface{}) error
+}
 
 // RequestProgress represents the status of a request
 type RequestProgress struct {
@@ -56,11 +61,11 @@ type ResponseSender struct {
 	// this value, allowing for one-and-a-bit missed responses before it is
 	// marked as stalled
 	ResponseInterval time.Duration
+	ResponseSubject  string
 	monitorContext   context.Context
 	monitorCancel    context.CancelFunc
 	requestContext   string
-	subject          string
-	connection       *nats.EncodedConn
+	connection       EncodedPublisher
 }
 
 // Start sends the first response on the given subject and connection to say
@@ -70,7 +75,7 @@ type ResponseSender struct {
 // Note that the NATS connection must be an encoded connection that is able to
 // encode and decode SDP messages. This can be done using
 // `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
-func (rs *ResponseSender) Start(nc *nats.EncodedConn, subject string, ctx string) {
+func (rs *ResponseSender) Start(natsConnection EncodedPublisher, requestContext string) {
 	rs.monitorContext, rs.monitorCancel = context.WithCancel(context.Background())
 
 	// Set the default if it's not set
@@ -83,9 +88,8 @@ func (rs *ResponseSender) Start(nc *nats.EncodedConn, subject string, ctx string
 	nextUpdateIn := durationpb.New(time.Duration((float64(rs.ResponseInterval) * 2.3)))
 
 	// Set struct values
-	rs.subject = subject
-	rs.requestContext = ctx
-	rs.connection = nc
+	rs.requestContext = requestContext
+	rs.connection = natsConnection
 
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
@@ -97,7 +101,7 @@ func (rs *ResponseSender) Start(nc *nats.EncodedConn, subject string, ctx string
 
 	// Send the initial response
 	rs.connection.Publish(
-		rs.subject,
+		rs.ResponseSubject,
 		&resp,
 	)
 
@@ -110,8 +114,8 @@ func (rs *ResponseSender) Start(nc *nats.EncodedConn, subject string, ctx string
 				// other than exit
 				return
 			case <-time.After(rs.ResponseInterval):
-				nc.Publish(
-					subject,
+				rs.connection.Publish(
+					rs.ResponseSubject,
 					&resp,
 				)
 			}
@@ -136,25 +140,10 @@ func (rs *ResponseSender) Done() {
 		State:   Response_COMPLETE,
 	}
 
-	// Marshall to bytes
-	respBytes, _ := proto.Marshal(&resp)
-
 	// Send the initial response
 	rs.connection.Publish(
-		rs.subject,
-		respBytes,
-	)
-}
-
-// Error ends this responsesender and sends a final error
-func (rs *ResponseSender) Error(e *ItemRequestError) {
-	rs.Kill()
-
-	errBytes, _ := proto.Marshal(e)
-
-	rs.connection.Publish(
-		rs.subject,
-		errBytes,
+		rs.ResponseSubject,
+		&resp,
 	)
 }
 
@@ -174,29 +163,6 @@ func NewRequestProgress() *RequestProgress {
 		// if we got into a done condition >1024 times but I would think this is
 		// extremely unlikely. Maybe famous last words?
 		doneChan: make(chan bool, 1024),
-	}
-}
-
-// StatusServer is able to receive both Response and ItemRequestError messages
-// and use them to maintain the RequestProgress database
-//
-// TODO: Review this. I don't think the unmarshal will fail nicely here so I
-// think weill will have to either separate message types or change the protocol
-// to make them incompatible
-func (rp *RequestProgress) StatusServer(m *nats.Msg) {
-	response := &Response{}
-	itemRequestError := &ItemRequestError{}
-
-	// Read the data and determine whether it is a response or an error
-	if e1 := proto.Unmarshal(m.Data, response); e1 == nil {
-		rp.ProcessResponse(response)
-	} else {
-		// See if we can parse it as an error
-		if e2 := proto.Unmarshal(m.Data, itemRequestError); e2 == nil {
-			rp.ProcessError(itemRequestError)
-		}
-
-		// Discard if we don't know what it is
 	}
 }
 
