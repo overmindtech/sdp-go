@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nats-io/nats.go"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -165,29 +163,6 @@ func NewRequestProgress() *RequestProgress {
 		// if we got into a done condition >1024 times but I would think this is
 		// extremely unlikely. Maybe famous last words?
 		doneChan: make(chan bool, 1024),
-	}
-}
-
-// StatusServer is able to receive both Response and ItemRequestError messages
-// and use them to maintain the RequestProgress database
-//
-// TODO: Redo this. We now know that we can't send errors and responses on the
-// same subject as it's too hard to untangle them, so this will need to be
-// updated to understand the two subjects
-func (rp *RequestProgress) StatusServer(m *nats.Msg) {
-	response := &Response{}
-	itemRequestError := &ItemRequestError{}
-
-	// Read the data and determine whether it is a response or an error
-	if e1 := proto.Unmarshal(m.Data, response); e1 == nil {
-		rp.ProcessResponse(response)
-	} else {
-		// See if we can parse it as an error
-		if e2 := proto.Unmarshal(m.Data, itemRequestError); e2 == nil {
-			rp.ProcessError(itemRequestError)
-		}
-
-		// Discard if we don't know what it is
 	}
 }
 
