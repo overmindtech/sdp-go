@@ -1,8 +1,8 @@
-module github.com/dylanratcliffe/sdp.go
+module github.com/dylanratcliffe/sdp-go
 
-go 1.16
+go 1.17
 
 require (
 	github.com/golang/protobuf v1.5.2
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/protobuf v1.27.1
 )

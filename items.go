@@ -136,17 +136,25 @@ func (r *Reference) Copy(dest *Reference) {
 
 // Copy copies all information from one Metadata pointer to another
 func (m *Metadata) Copy(dest *Metadata) {
+	if m == nil {
+		// Protect from copy being called on a nil pointer
+		return
+	}
+
 	dest.BackendName = m.BackendName
-	dest.SourceRequest = &ItemRequest{
-		Type:              m.SourceRequest.Type,
-		Method:            m.SourceRequest.Method,
-		Query:             m.SourceRequest.Query,
-		LinkDepth:         m.SourceRequest.LinkDepth,
-		Context:           m.SourceRequest.Context,
-		ItemSubject:       m.SourceRequest.ItemSubject,
-		LinkedItemSubject: m.SourceRequest.LinkedItemSubject,
-		ResponseSubject:   m.SourceRequest.ResponseSubject,
-		ErrorSubject:      m.SourceRequest.ErrorSubject,
+
+	if m.SourceRequest != nil {
+		dest.SourceRequest = &ItemRequest{
+			Type:              m.SourceRequest.Type,
+			Method:            m.SourceRequest.Method,
+			Query:             m.SourceRequest.Query,
+			LinkDepth:         m.SourceRequest.LinkDepth,
+			Context:           m.SourceRequest.Context,
+			ItemSubject:       m.SourceRequest.ItemSubject,
+			LinkedItemSubject: m.SourceRequest.LinkedItemSubject,
+			ResponseSubject:   m.SourceRequest.ResponseSubject,
+			ErrorSubject:      m.SourceRequest.ErrorSubject,
+		}
 	}
 
 	dest.BackendPackage = m.BackendPackage

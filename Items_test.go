@@ -5,6 +5,9 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type ToAttributesTest struct {
@@ -201,5 +204,202 @@ func TestToAttributes(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestCopy(t *testing.T) {
+	exampleAttributes, err := ToAttributes(map[string]interface{}{
+		"name":   "Dylan",
+		"friend": "Mike",
+		"age":    27,
+	})
+
+	if err != nil {
+		t.Fatalf("Could not convert to attributes: %v", err)
+	}
+
+	t.Run("With a complete item", func(t *testing.T) {
+		itemA := Item{
+			Type:            "user",
+			UniqueAttribute: "name",
+			Context:         "test",
+			Attributes:      exampleAttributes,
+			LinkedItemRequests: []*ItemRequest{
+				{
+					Type:   "user",
+					Method: RequestMethod_GET,
+					Query:  "Mike",
+				},
+			},
+			LinkedItems: []*Reference{},
+			Metadata: &Metadata{
+				BackendName: "test",
+				SourceRequest: &ItemRequest{
+					Type:    "user",
+					Method:  RequestMethod_GET,
+					Query:   "Dylan",
+					Context: "testContext",
+				},
+				Timestamp:              timestamppb.Now(),
+				BackendDuration:        durationpb.New(100 * time.Millisecond),
+				BackendDurationPerItem: durationpb.New(10 * time.Millisecond),
+				BackendPackage:         "test",
+			},
+		}
+
+		itemB := Item{}
+
+		t.Run("Copying an item", func(t *testing.T) {
+			itemA.Copy(&itemB)
+
+			CompareItems(&itemA, &itemB, t)
+		})
+	})
+
+	t.Run("With a party-filled item", func(t *testing.T) {
+		itemA := Item{
+			Type:            "user",
+			UniqueAttribute: "name",
+			Context:         "test",
+			Attributes:      exampleAttributes,
+			LinkedItemRequests: []*ItemRequest{
+				{
+					Type:   "user",
+					Method: RequestMethod_GET,
+					Query:  "Mike",
+				},
+			},
+			LinkedItems: []*Reference{},
+			Metadata: &Metadata{
+				BackendName:            "test",
+				Timestamp:              timestamppb.Now(),
+				BackendDuration:        durationpb.New(100 * time.Millisecond),
+				BackendDurationPerItem: durationpb.New(10 * time.Millisecond),
+				BackendPackage:         "test",
+			},
+		}
+
+		itemB := Item{}
+
+		t.Run("Copying an item", func(t *testing.T) {
+			itemA.Copy(&itemB)
+
+			CompareItems(&itemA, &itemB, t)
+		})
+	})
+
+	t.Run("With a minimal item", func(t *testing.T) {
+		itemA := Item{
+			Type:               "user",
+			UniqueAttribute:    "name",
+			Context:            "test",
+			Attributes:         exampleAttributes,
+			LinkedItemRequests: []*ItemRequest{},
+			LinkedItems:        []*Reference{},
+		}
+
+		itemB := Item{}
+
+		t.Run("Copying an item", func(t *testing.T) {
+			itemA.Copy(&itemB)
+
+			CompareItems(&itemA, &itemB, t)
+		})
+	})
+
+}
+
+func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
+	if itemA.Context != itemB.Context {
+		t.Error("Context did not match")
+	}
+
+	if itemA.Type != itemB.Type {
+		t.Error("Type did not match")
+	}
+
+	if itemA.UniqueAttribute != itemB.UniqueAttribute {
+		t.Error("UniqueAttribute did not match")
+	}
+
+	var nameA interface{}
+	var nameB interface{}
+	var err error
+
+	nameA, err = itemA.Attributes.Get("name")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	nameB, err = itemB.Attributes.Get("name")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if nameA != nameB {
+		t.Error("Attributes.nam did not match")
+
+	}
+
+	if len(itemA.LinkedItemRequests) != len(itemB.LinkedItemRequests) {
+		t.Error("LinkedItemRequests length did not match")
+	}
+
+	if len(itemA.LinkedItemRequests) > 0 {
+		if itemA.LinkedItemRequests[0].Type != itemB.LinkedItemRequests[0].Type {
+			t.Error("LinkedItemRequests[0].Type did not match")
+		}
+	}
+
+	if len(itemA.LinkedItems) != len(itemB.LinkedItems) {
+		t.Error("LinkedItems length did not match")
+	}
+
+	if len(itemA.LinkedItems) > 0 {
+		if itemA.LinkedItems[0].Type != itemB.LinkedItems[0].Type {
+			t.Error("LinkedItemRequests[0].Type did not match")
+		}
+	}
+
+	if itemA.Metadata != nil {
+		if itemA.Metadata.BackendDuration.String() != itemB.Metadata.BackendDuration.String() {
+			t.Error("BackendDuration did not match")
+		}
+
+		if itemA.Metadata.BackendDurationPerItem.String() != itemB.Metadata.BackendDurationPerItem.String() {
+			t.Error("BackendDurationPerItem did not match")
+		}
+
+		if itemA.Metadata.BackendName != itemB.Metadata.BackendName {
+			t.Error("BackendName did not match")
+		}
+
+		if itemA.Metadata.BackendPackage != itemB.Metadata.BackendPackage {
+			t.Error("BackendPackage did not match")
+		}
+
+		if itemA.Metadata.Timestamp.String() != itemB.Metadata.Timestamp.String() {
+			t.Error("Timestamp did not match")
+		}
+
+		if itemA.Metadata.SourceRequest != nil {
+			if itemA.Metadata.SourceRequest.Context != itemB.Metadata.SourceRequest.Context {
+				t.Error("Metadata.SourceRequest.Context does not match")
+			}
+
+			if itemA.Metadata.SourceRequest.Method != itemB.Metadata.SourceRequest.Method {
+				t.Error("Metadata.SourceRequest.Method does not match")
+			}
+
+			if itemA.Metadata.SourceRequest.Query != itemB.Metadata.SourceRequest.Query {
+				t.Error("Metadata.SourceRequest.Query does not match")
+			}
+
+			if itemA.Metadata.SourceRequest.Type != itemB.Metadata.SourceRequest.Type {
+				t.Error("Metadata.SourceRequest.Type does not match")
+			}
+		}
 	}
 }
