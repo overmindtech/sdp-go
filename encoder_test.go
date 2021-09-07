@@ -31,9 +31,19 @@ var itemAttributes = ItemAttributes{
 }
 
 var metadata = Metadata{
-	BackendName:   "users",
-	RequestMethod: RequestMethod_FIND,
-	Timestamp:     timestamppb.Now(),
+	BackendName: "users",
+	SourceRequest: &ItemRequest{
+		Type:              "user",
+		Method:            RequestMethod_FIND,
+		Query:             "*",
+		LinkDepth:         12,
+		Context:           "testContext",
+		ItemSubject:       "items",
+		LinkedItemSubject: "linkedItems",
+		ResponseSubject:   "responses",
+		ErrorSubject:      "errors",
+	},
+	Timestamp: timestamppb.Now(),
 	BackendDuration: &durationpb.Duration{
 		Seconds: 1,
 		Nanos:   1,
