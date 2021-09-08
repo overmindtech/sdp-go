@@ -26,13 +26,15 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
-// ResponseState represents the state of the responder, is it still working on
-// its response or is it done?
+// ResponseState represents the state of the responder, note that both
+// COMPLETE and ERROR are completion states i.e. do not expect any more items
+// to be returned from the request
 type Response_ResponseState int32
 
 const (
 	Response_WORKING  Response_ResponseState = 0
 	Response_COMPLETE Response_ResponseState = 1
+	Response_ERROR    Response_ResponseState = 2
 )
 
 // Enum value maps for Response_ResponseState.
@@ -40,10 +42,12 @@ var (
 	Response_ResponseState_name = map[int32]string{
 		0: "WORKING",
 		1: "COMPLETE",
+		2: "ERROR",
 	}
 	Response_ResponseState_value = map[string]int32{
 		"WORKING":  0,
 		"COMPLETE": 1,
+		"ERROR":    2,
 	}
 )
 
@@ -74,6 +78,65 @@ func (Response_ResponseState) EnumDescriptor() ([]byte, []int) {
 	return file_responses_proto_rawDescGZIP(), []int{0, 0}
 }
 
+// The error type. Any types in here will be gracefully handled unless the
+// type os "OTHER"
+type ItemRequestError_ErrorType int32
+
+const (
+	// This should be used of all other failure modes
+	ItemRequestError_OTHER ItemRequestError_ErrorType = 0
+	// NOTFOUND means that the item was not found. This is only returned as the
+	// result of a GET request since all other requests would return an empty
+	// list instead
+	ItemRequestError_NOTFOUND ItemRequestError_ErrorType = 1
+	// NOCONTEXT means that the item was not found because we don't have
+	// access to the requested context. This should not be interpreted as "The
+	// item doesn't exist" (as with a NOTFOUND error) but rather as "We can't
+	// tell you whether or not the item exists"
+	ItemRequestError_NOCONTEXT ItemRequestError_ErrorType = 2
+)
+
+// Enum value maps for ItemRequestError_ErrorType.
+var (
+	ItemRequestError_ErrorType_name = map[int32]string{
+		0: "OTHER",
+		1: "NOTFOUND",
+		2: "NOCONTEXT",
+	}
+	ItemRequestError_ErrorType_value = map[string]int32{
+		"OTHER":     0,
+		"NOTFOUND":  1,
+		"NOCONTEXT": 2,
+	}
+)
+
+func (x ItemRequestError_ErrorType) Enum() *ItemRequestError_ErrorType {
+	p := new(ItemRequestError_ErrorType)
+	*p = x
+	return p
+}
+
+func (x ItemRequestError_ErrorType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ItemRequestError_ErrorType) Descriptor() protoreflect.EnumDescriptor {
+	return file_responses_proto_enumTypes[1].Descriptor()
+}
+
+func (ItemRequestError_ErrorType) Type() protoreflect.EnumType {
+	return &file_responses_proto_enumTypes[1]
+}
+
+func (x ItemRequestError_ErrorType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ItemRequestError_ErrorType.Descriptor instead.
+func (ItemRequestError_ErrorType) EnumDescriptor() ([]byte, []int) {
+	return file_responses_proto_rawDescGZIP(), []int{1, 0}
+}
+
 // Response is returned when a query is made
 type Response struct {
 	state         protoimpl.MessageState
@@ -82,12 +145,15 @@ type Response struct {
 
 	// The context that is working on a response
 	Context string `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
-	// The state of the responder, either WORKING or COMPLETE
+	// The state of the responder
 	State Response_ResponseState `protobuf:"varint,2,opt,name=state,proto3,enum=Response_ResponseState" json:"state,omitempty"`
 	// The timespan within which to expect the next update. (e.g. 10s) If no
 	// further interim responses are received within this time the connection
 	// can be considered stale and the requester may give up
 	NextUpdateIn *durationpb.Duration `protobuf:"bytes,3,opt,name=nextUpdateIn,proto3" json:"nextUpdateIn,omitempty"`
+	// The error that was returned during the request. This should only be
+	// populated if the state is ERROR
+	Error *ItemRequestError `protobuf:"bytes,16,opt,name=error,proto3" json:"error,omitempty"`
 }
 
 func (x *Response) Reset() {
@@ -143,13 +209,86 @@ func (x *Response) GetNextUpdateIn() *durationpb.Duration {
 	return nil
 }
 
+func (x *Response) GetError() *ItemRequestError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+// ItemRequestError is sent back when an item request fails
+type ItemRequestError struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ErrorType ItemRequestError_ErrorType `protobuf:"varint,2,opt,name=errorType,proto3,enum=ItemRequestError_ErrorType" json:"errorType,omitempty"`
+	// The string contents of the error
+	ErrorString string `protobuf:"bytes,3,opt,name=errorString,proto3" json:"errorString,omitempty"`
+	// The context from which the error was raised
+	Context string `protobuf:"bytes,4,opt,name=context,proto3" json:"context,omitempty"`
+}
+
+func (x *ItemRequestError) Reset() {
+	*x = ItemRequestError{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_responses_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ItemRequestError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ItemRequestError) ProtoMessage() {}
+
+func (x *ItemRequestError) ProtoReflect() protoreflect.Message {
+	mi := &file_responses_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ItemRequestError.ProtoReflect.Descriptor instead.
+func (*ItemRequestError) Descriptor() ([]byte, []int) {
+	return file_responses_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ItemRequestError) GetErrorType() ItemRequestError_ErrorType {
+	if x != nil {
+		return x.ErrorType
+	}
+	return ItemRequestError_OTHER
+}
+
+func (x *ItemRequestError) GetErrorString() string {
+	if x != nil {
+		return x.ErrorString
+	}
+	return ""
+}
+
+func (x *ItemRequestError) GetContext() string {
+	if x != nil {
+		return x.Context
+	}
+	return ""
+}
+
 var File_responses_proto protoreflect.FileDescriptor
 
 var file_responses_proto_rawDesc = []byte{
 	0x0a, 0x0f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x1a, 0x1e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x2f, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xbe, 0x01, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18,
+	0x6f, 0x22, 0xf2, 0x01, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18,
 	0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x2d, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74,
 	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x17, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
@@ -158,13 +297,28 @@ var file_responses_proto_rawDesc = []byte{
 	0x70, 0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
 	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
 	0x44, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x6e, 0x65, 0x78, 0x74, 0x55, 0x70,
-	0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x22, 0x2a, 0x0a, 0x0d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x57, 0x4f, 0x52, 0x4b, 0x49,
-	0x4e, 0x47, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x43, 0x4f, 0x4d, 0x50, 0x4c, 0x45, 0x54, 0x45,
-	0x10, 0x01, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x64, 0x79, 0x6c, 0x61, 0x6e, 0x72, 0x61, 0x74, 0x63, 0x6c, 0x69, 0x66, 0x66, 0x65, 0x2f,
-	0x73, 0x64, 0x70, 0x2f, 0x67, 0x6f, 0x2f, 0x73, 0x64, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x64, 0x61, 0x74, 0x65, 0x49, 0x6e, 0x12, 0x27, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
+	0x10, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22,
+	0x35, 0x0a, 0x0d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65,
+	0x12, 0x0b, 0x0a, 0x07, 0x57, 0x4f, 0x52, 0x4b, 0x49, 0x4e, 0x47, 0x10, 0x00, 0x12, 0x0c, 0x0a,
+	0x08, 0x43, 0x4f, 0x4d, 0x50, 0x4c, 0x45, 0x54, 0x45, 0x10, 0x01, 0x12, 0x09, 0x0a, 0x05, 0x45,
+	0x52, 0x52, 0x4f, 0x52, 0x10, 0x02, 0x22, 0xbe, 0x01, 0x0a, 0x10, 0x49, 0x74, 0x65, 0x6d, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x39, 0x0a, 0x09, 0x65,
+	0x72, 0x72, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b,
+	0x2e, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x72, 0x72, 0x6f,
+	0x72, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x52, 0x09, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74,
+	0x65, 0x78, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65,
+	0x78, 0x74, 0x22, 0x33, 0x0a, 0x09, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12,
+	0x09, 0x0a, 0x05, 0x4f, 0x54, 0x48, 0x45, 0x52, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x4e, 0x4f,
+	0x54, 0x46, 0x4f, 0x55, 0x4e, 0x44, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x4e, 0x4f, 0x43, 0x4f,
+	0x4e, 0x54, 0x45, 0x58, 0x54, 0x10, 0x02, 0x42, 0x26, 0x5a, 0x24, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x64, 0x79, 0x6c, 0x61, 0x6e, 0x72, 0x61, 0x74, 0x63, 0x6c,
+	0x69, 0x66, 0x66, 0x65, 0x2f, 0x73, 0x64, 0x70, 0x2f, 0x67, 0x6f, 0x2f, 0x73, 0x64, 0x70, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -179,21 +333,25 @@ func file_responses_proto_rawDescGZIP() []byte {
 	return file_responses_proto_rawDescData
 }
 
-var file_responses_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_responses_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_responses_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_responses_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_responses_proto_goTypes = []interface{}{
-	(Response_ResponseState)(0), // 0: Response.ResponseState
-	(*Response)(nil),            // 1: Response
-	(*durationpb.Duration)(nil), // 2: google.protobuf.Duration
+	(Response_ResponseState)(0),     // 0: Response.ResponseState
+	(ItemRequestError_ErrorType)(0), // 1: ItemRequestError.ErrorType
+	(*Response)(nil),                // 2: Response
+	(*ItemRequestError)(nil),        // 3: ItemRequestError
+	(*durationpb.Duration)(nil),     // 4: google.protobuf.Duration
 }
 var file_responses_proto_depIdxs = []int32{
 	0, // 0: Response.state:type_name -> Response.ResponseState
-	2, // 1: Response.nextUpdateIn:type_name -> google.protobuf.Duration
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 1: Response.nextUpdateIn:type_name -> google.protobuf.Duration
+	3, // 2: Response.error:type_name -> ItemRequestError
+	1, // 3: ItemRequestError.errorType:type_name -> ItemRequestError.ErrorType
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_responses_proto_init() }
@@ -214,14 +372,26 @@ func file_responses_proto_init() {
 				return nil
 			}
 		}
+		file_responses_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ItemRequestError); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_responses_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   1,
+			NumEnums:      2,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
