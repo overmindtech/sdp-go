@@ -144,17 +144,8 @@ func (m *Metadata) Copy(dest *Metadata) {
 	dest.BackendName = m.BackendName
 
 	if m.SourceRequest != nil {
-		dest.SourceRequest = &ItemRequest{
-			Type:              m.SourceRequest.Type,
-			Method:            m.SourceRequest.Method,
-			Query:             m.SourceRequest.Query,
-			LinkDepth:         m.SourceRequest.LinkDepth,
-			Context:           m.SourceRequest.Context,
-			ItemSubject:       m.SourceRequest.ItemSubject,
-			LinkedItemSubject: m.SourceRequest.LinkedItemSubject,
-			ResponseSubject:   m.SourceRequest.ResponseSubject,
-			ErrorSubject:      m.SourceRequest.ErrorSubject,
-		}
+		dest.SourceRequest = &ItemRequest{}
+		m.SourceRequest.Copy(dest.SourceRequest)
 	}
 
 	dest.BackendPackage = m.BackendPackage
@@ -226,9 +217,7 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 	dest.LinkDepth = r.LinkDepth
 	dest.Context = r.Context
 	dest.ItemSubject = r.ItemSubject
-	dest.LinkedItemSubject = r.LinkedItemSubject
 	dest.ResponseSubject = r.ResponseSubject
-	dest.ErrorSubject = r.ErrorSubject
 }
 
 // ToAttributes Convers a map[string]interface{} to an ItemAttributes object
