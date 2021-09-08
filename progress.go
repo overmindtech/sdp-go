@@ -147,6 +147,25 @@ func (rs *ResponseSender) Done() {
 	)
 }
 
+// Error marks the request and completed with error, and send the final error
+func (rs *ResponseSender) Error(err *ItemRequestError) {
+	rs.Kill()
+
+	// Create the response before starting the goroutine since it only needs to
+	// be done once
+	resp := Response{
+		Context: rs.requestContext,
+		State:   Response_ERROR,
+		Error:   err,
+	}
+
+	// Send the initial response
+	rs.connection.Publish(
+		rs.ResponseSubject,
+		&resp,
+	)
+}
+
 // SetStatus updates the status and last status time of the responder
 func (re *Responder) SetStatus(s ResponderStatus) {
 	re.LastStatus = s
@@ -177,6 +196,8 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		status = WORKING
 	case Response_COMPLETE:
 		status = COMPLETE
+	case Response_ERROR:
+		status = FAILED
 	}
 
 	// Update the stored data
@@ -198,6 +219,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 			SDPContext:     response.GetContext(),
 			LastStatus:     status,
 			LastStatusTime: time.Now(),
+			Error:          response.Error,
 		}
 	}
 
@@ -221,35 +243,6 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 
 		// Create a goroutine to watch for a stalled connection
 		go StallMonitor(montorContext, timeout, responder, rp)
-	}
-
-	// Finally check to see if this was the final request and if so update the
-	// chan
-	rp.checkDoneChan()
-}
-
-// ProcessError processes SDP ItemRequestErrors and updates the RequestProgress
-// to reflect failed responders
-func (rp *RequestProgress) ProcessError(err *ItemRequestError) {
-	rp.respondersMutex.RLock()
-	defer rp.respondersMutex.RUnlock()
-
-	responder, found := rp.Responders[err.GetContext()]
-
-	if found {
-		if responder.MonitorCancel != nil {
-			// Cancel the previous stall monitor
-			responder.MonitorCancel()
-		}
-
-		responder.SetStatus(FAILED)
-	} else {
-		// If the responder is new, add it to the list
-		rp.Responders[err.GetContext()] = &Responder{
-			SDPContext:     err.GetContext(),
-			LastStatus:     FAILED,
-			LastStatusTime: time.Now(),
-		}
 	}
 
 	// Finally check to see if this was the final request and if so update the
