@@ -45,7 +45,7 @@ type RequestProgress struct {
 
 // Responder represents the status of a responder
 type Responder struct {
-	SDPContext     string
+	Name           string
 	MonitorContext context.Context
 	MonitorCancel  context.CancelFunc
 	LastStatus     ResponderStatus
@@ -64,7 +64,7 @@ type ResponseSender struct {
 	ResponseSubject  string
 	monitorContext   context.Context
 	monitorCancel    context.CancelFunc
-	requestContext   string
+	responderName    string
 	connection       EncodedPublisher
 }
 
@@ -75,7 +75,7 @@ type ResponseSender struct {
 // Note that the NATS connection must be an encoded connection that is able to
 // encode and decode SDP messages. This can be done using
 // `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
-func (rs *ResponseSender) Start(natsConnection EncodedPublisher, requestContext string) {
+func (rs *ResponseSender) Start(natsConnection EncodedPublisher, responderName string) {
 	rs.monitorContext, rs.monitorCancel = context.WithCancel(context.Background())
 
 	// Set the default if it's not set
@@ -88,13 +88,13 @@ func (rs *ResponseSender) Start(natsConnection EncodedPublisher, requestContext 
 	nextUpdateIn := durationpb.New(time.Duration((float64(rs.ResponseInterval) * 2.3)))
 
 	// Set struct values
-	rs.requestContext = requestContext
+	rs.responderName = responderName
 	rs.connection = natsConnection
 
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
 	resp := Response{
-		Context:      rs.requestContext,
+		Responder:    rs.responderName,
 		State:        Response_WORKING,
 		NextUpdateIn: nextUpdateIn,
 	}
@@ -136,8 +136,8 @@ func (rs *ResponseSender) Done() {
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
 	resp := Response{
-		Context: rs.requestContext,
-		State:   Response_COMPLETE,
+		Responder: rs.responderName,
+		State:     Response_COMPLETE,
 	}
 
 	// Send the initial response
@@ -154,9 +154,9 @@ func (rs *ResponseSender) Error(err *ItemRequestError) {
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
 	resp := Response{
-		Context: rs.requestContext,
-		State:   Response_ERROR,
-		Error:   err,
+		Responder: rs.responderName,
+		State:     Response_ERROR,
+		Error:     err,
 	}
 
 	// Send the initial response
@@ -203,7 +203,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	// Update the stored data
 	rp.respondersMutex.Lock()
 
-	responder, exists := rp.Responders[response.Context]
+	responder, exists := rp.Responders[response.Responder]
 
 	if exists {
 		if responder.MonitorCancel != nil {
@@ -215,8 +215,8 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		responder.SetStatus(status)
 	} else {
 		// If the responder is new, add it to the list
-		rp.Responders[response.Context] = &Responder{
-			SDPContext:     response.GetContext(),
+		rp.Responders[response.Responder] = &Responder{
+			Name:           response.GetResponder(),
 			LastStatus:     status,
 			LastStatusTime: time.Now(),
 			Error:          response.Error,
@@ -235,7 +235,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		montorContext, monitorCancel := context.WithCancel(context.Background())
 
 		rp.respondersMutex.RLock()
-		responder = rp.Responders[response.Context]
+		responder = rp.Responders[response.Responder]
 		rp.respondersMutex.RUnlock()
 
 		responder.MonitorContext = montorContext

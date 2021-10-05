@@ -177,7 +177,7 @@ func TestRequestProgressNormal(t *testing.T) {
 	t.Run("Processing initial response", func(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
-			Context:      "test1",
+			Responder:    "test1",
 			State:        Response_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -198,7 +198,7 @@ func TestRequestProgressNormal(t *testing.T) {
 	t.Run("Processing another context also responding", func(t *testing.T) {
 		// Then another context starts working
 		rp.ProcessResponse(&Response{
-			Context:      "test2",
+			Responder:    "test2",
 			State:        Response_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -221,14 +221,14 @@ func TestRequestProgressNormal(t *testing.T) {
 
 		// test 1 still working
 		rp.ProcessResponse(&Response{
-			Context:      "test1",
+			Responder:    "test1",
 			State:        Response_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 2 finishes
 		rp.ProcessResponse(&Response{
-			Context:      "test2",
+			Responder:    "test2",
 			State:        Response_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -251,7 +251,7 @@ func TestRequestProgressNormal(t *testing.T) {
 
 		// Test 1 finishes
 		rp.ProcessResponse(&Response{
-			Context:      "test1",
+			Responder:    "test1",
 			State:        Response_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -283,7 +283,7 @@ func TestRequestProgressStalled(t *testing.T) {
 	t.Run("Processing the initial response", func(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
-			Context:      "test1",
+			Responder:    "test1",
 			State:        Response_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -325,7 +325,7 @@ func TestRequestProgressStalled(t *testing.T) {
 	t.Run("After a responder recovers from a stall", func(t *testing.T) {
 		// See if it will un-stall itself
 		rp.ProcessResponse(&Response{
-			Context:      "test1",
+			Responder:    "test1",
 			State:        Response_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -357,7 +357,7 @@ func TestRequestProgressError(t *testing.T) {
 	t.Run("Processing the initial response", func(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
-			Context:      "test1",
+			Responder:    "test1",
 			State:        Response_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
@@ -377,8 +377,8 @@ func TestRequestProgressError(t *testing.T) {
 
 	t.Run("After a responder has failed", func(t *testing.T) {
 		rp.ProcessResponse(&Response{
-			Context: "test1",
-			State:   Response_ERROR,
+			Responder: "test1",
+			State:     Response_ERROR,
 			Error: &ItemRequestError{
 				ErrorType:   ItemRequestError_NOCONTEXT,
 				ErrorString: "Context X not found",
