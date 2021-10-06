@@ -141,28 +141,26 @@ func (m *Metadata) Copy(dest *Metadata) {
 		return
 	}
 
-	dest.BackendName = m.BackendName
+	dest.SourceName = m.SourceName
 
 	if m.SourceRequest != nil {
 		dest.SourceRequest = &ItemRequest{}
 		m.SourceRequest.Copy(dest.SourceRequest)
 	}
 
-	dest.BackendPackage = m.BackendPackage
-
 	dest.Timestamp = &timestamppb.Timestamp{
 		Seconds: m.Timestamp.GetSeconds(),
 		Nanos:   m.Timestamp.GetNanos(),
 	}
 
-	dest.BackendDuration = &durationpb.Duration{
-		Seconds: m.BackendDuration.GetSeconds(),
-		Nanos:   m.BackendDuration.GetNanos(),
+	dest.SourceDuration = &durationpb.Duration{
+		Seconds: m.SourceDuration.GetSeconds(),
+		Nanos:   m.SourceDuration.GetNanos(),
 	}
 
-	dest.BackendDurationPerItem = &durationpb.Duration{
-		Seconds: m.BackendDurationPerItem.GetSeconds(),
-		Nanos:   m.BackendDurationPerItem.GetNanos(),
+	dest.SourceDurationPerItem = &durationpb.Duration{
+		Seconds: m.SourceDurationPerItem.GetSeconds(),
+		Nanos:   m.SourceDurationPerItem.GetNanos(),
 	}
 }
 

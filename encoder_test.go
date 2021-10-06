@@ -31,7 +31,7 @@ var itemAttributes = ItemAttributes{
 }
 
 var metadata = Metadata{
-	BackendName: "users",
+	SourceName: "users",
 	SourceRequest: &ItemRequest{
 		Type:            "user",
 		Method:          RequestMethod_FIND,
@@ -42,15 +42,14 @@ var metadata = Metadata{
 		ResponseSubject: "responses",
 	},
 	Timestamp: timestamppb.Now(),
-	BackendDuration: &durationpb.Duration{
+	SourceDuration: &durationpb.Duration{
 		Seconds: 1,
 		Nanos:   1,
 	},
-	BackendDurationPerItem: &durationpb.Duration{
+	SourceDurationPerItem: &durationpb.Duration{
 		Seconds: 0,
 		Nanos:   500,
 	},
-	BackendPackage: "test",
 }
 
 var item = Item{

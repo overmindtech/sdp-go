@@ -233,17 +233,16 @@ func TestCopy(t *testing.T) {
 			},
 			LinkedItems: []*Reference{},
 			Metadata: &Metadata{
-				BackendName: "test",
+				SourceName: "test",
 				SourceRequest: &ItemRequest{
 					Type:    "user",
 					Method:  RequestMethod_GET,
 					Query:   "Dylan",
 					Context: "testContext",
 				},
-				Timestamp:              timestamppb.Now(),
-				BackendDuration:        durationpb.New(100 * time.Millisecond),
-				BackendDurationPerItem: durationpb.New(10 * time.Millisecond),
-				BackendPackage:         "test",
+				Timestamp:             timestamppb.Now(),
+				SourceDuration:        durationpb.New(100 * time.Millisecond),
+				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
 			},
 		}
 
@@ -271,11 +270,10 @@ func TestCopy(t *testing.T) {
 			},
 			LinkedItems: []*Reference{},
 			Metadata: &Metadata{
-				BackendName:            "test",
-				Timestamp:              timestamppb.Now(),
-				BackendDuration:        durationpb.New(100 * time.Millisecond),
-				BackendDurationPerItem: durationpb.New(10 * time.Millisecond),
-				BackendPackage:         "test",
+				SourceName:            "test",
+				Timestamp:             timestamppb.Now(),
+				SourceDuration:        durationpb.New(100 * time.Millisecond),
+				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
 			},
 		}
 
@@ -364,20 +362,16 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 	}
 
 	if itemA.Metadata != nil {
-		if itemA.Metadata.BackendDuration.String() != itemB.Metadata.BackendDuration.String() {
-			t.Error("BackendDuration did not match")
+		if itemA.Metadata.SourceDuration.String() != itemB.Metadata.SourceDuration.String() {
+			t.Error("SourceDuration did not match")
 		}
 
-		if itemA.Metadata.BackendDurationPerItem.String() != itemB.Metadata.BackendDurationPerItem.String() {
-			t.Error("BackendDurationPerItem did not match")
+		if itemA.Metadata.SourceDurationPerItem.String() != itemB.Metadata.SourceDurationPerItem.String() {
+			t.Error("SourceDurationPerItem did not match")
 		}
 
-		if itemA.Metadata.BackendName != itemB.Metadata.BackendName {
-			t.Error("BackendName did not match")
-		}
-
-		if itemA.Metadata.BackendPackage != itemB.Metadata.BackendPackage {
-			t.Error("BackendPackage did not match")
+		if itemA.Metadata.SourceName != itemB.Metadata.SourceName {
+			t.Error("SourceName did not match")
 		}
 
 		if itemA.Metadata.Timestamp.String() != itemB.Metadata.Timestamp.String() {
