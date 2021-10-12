@@ -35,6 +35,22 @@ func (t *TestPublisher) Publish(subject string, v interface{}) error {
 	return nil
 }
 
+func TestResponseNilPublisher(t *testing.T) {
+	rs := ResponseSender{
+		ResponseInterval: (10 * time.Millisecond),
+		ResponseSubject:  "responses",
+	}
+
+	// Start sending responses with a nil connection, should not panic
+	rs.Start(nil, "test")
+
+	// Give it enough time for ~10 responses
+	time.Sleep(100 * time.Millisecond)
+
+	// Stop
+	rs.Done()
+}
+
 func TestResponseSenderDone(t *testing.T) {
 	rs := ResponseSender{
 		ResponseInterval: (10 * time.Millisecond),
@@ -59,7 +75,7 @@ func TestResponseSenderDone(t *testing.T) {
 		t.Errorf("Expected <= 10 responses to be sent, found %v", len(tp.Messages))
 	}
 
-	// Make sure that the final message was a complation one
+	// Make sure that the final message was a completion one
 	finalMessage := tp.Messages[len(tp.Messages)-1]
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {

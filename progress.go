@@ -99,11 +99,13 @@ func (rs *ResponseSender) Start(natsConnection EncodedPublisher, responderName s
 		NextUpdateIn: nextUpdateIn,
 	}
 
-	// Send the initial response
-	rs.connection.Publish(
-		rs.ResponseSubject,
-		&resp,
-	)
+	if rs.connection != nil {
+		// Send the initial response
+		rs.connection.Publish(
+			rs.ResponseSubject,
+			&resp,
+		)
+	}
 
 	// Start a goroutine to send further responses
 	go func() {
@@ -114,10 +116,12 @@ func (rs *ResponseSender) Start(natsConnection EncodedPublisher, responderName s
 				// other than exit
 				return
 			case <-time.After(rs.ResponseInterval):
-				rs.connection.Publish(
-					rs.ResponseSubject,
-					&resp,
-				)
+				if rs.connection != nil {
+					rs.connection.Publish(
+						rs.ResponseSubject,
+						&resp,
+					)
+				}
 			}
 		}
 	}()
@@ -140,11 +144,13 @@ func (rs *ResponseSender) Done() {
 		State:     Response_COMPLETE,
 	}
 
-	// Send the initial response
-	rs.connection.Publish(
-		rs.ResponseSubject,
-		&resp,
-	)
+	if rs.connection != nil {
+		// Send the initial response
+		rs.connection.Publish(
+			rs.ResponseSubject,
+			&resp,
+		)
+	}
 }
 
 // Error marks the request and completed with error, and send the final error
@@ -159,11 +165,13 @@ func (rs *ResponseSender) Error(err *ItemRequestError) {
 		Error:     err,
 	}
 
-	// Send the initial response
-	rs.connection.Publish(
-		rs.ResponseSubject,
-		&resp,
-	)
+	if rs.connection != nil {
+		// Send the initial response
+		rs.connection.Publish(
+			rs.ResponseSubject,
+			&resp,
+		)
+	}
 }
 
 // SetStatus updates the status and last status time of the responder
