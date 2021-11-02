@@ -1,4 +1,4 @@
-module github.com/dylanratcliffe/sdp-go
+module github.com/overmindtech/sdp-go
 
 go 1.17
 
