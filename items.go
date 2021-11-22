@@ -14,6 +14,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const WILDCARD = "*"
+
 // UniqueAttributeValue returns the value of whatever the Unique Attribute is
 // for this item. This will then be converted to a string and returned
 func (i *Item) UniqueAttributeValue() string {
