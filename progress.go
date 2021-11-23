@@ -22,6 +22,8 @@ const (
 	COMPLETE = 2
 	// FAILED means that the responder encountered an error
 	FAILED = 3
+	// CANCELLED Means that the request was cancelled externally
+	CANCELLED = 4
 )
 
 // DEFAULTRESPONSEINTERVAL is the default period of time within which responses
@@ -133,7 +135,7 @@ func (rs *ResponseSender) Kill() {
 	rs.monitorCancel()
 }
 
-// Done kills the responder but sends a final complation message
+// Done kills the responder but sends a final completion message
 func (rs *ResponseSender) Done() {
 	rs.Kill()
 
@@ -174,6 +176,23 @@ func (rs *ResponseSender) Error(err *ItemRequestError) {
 	}
 }
 
+// Cancel Marks the request as CANCELLED and sends the final response
+func (rs *ResponseSender) Cancel() {
+	rs.Kill()
+
+	resp := Response{
+		Responder: rs.responderName,
+		State:     Response_CANCELLED,
+	}
+
+	if rs.connection != nil {
+		rs.connection.Publish(
+			rs.ResponseSubject,
+			&resp,
+		)
+	}
+}
+
 // SetStatus updates the status and last status time of the responder
 func (re *Responder) SetStatus(s ResponderStatus) {
 	re.LastStatus = s
@@ -206,6 +225,8 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		status = COMPLETE
 	case Response_ERROR:
 		status = FAILED
+	case Response_CANCELLED:
+		status = CANCELLED
 	}
 
 	// Update the stored data
@@ -342,6 +363,22 @@ func (rp *RequestProgress) NumFailed() int {
 	return numFailed
 }
 
+// NumCancelled returns the number of responders that are in the CANCELLED state
+func (rp *RequestProgress) NumCancelled() int {
+	rp.respondersMutex.RLock()
+	defer rp.respondersMutex.RUnlock()
+
+	var numCancelled int
+
+	for _, responder := range rp.Responders {
+		if responder.LastStatus == CANCELLED {
+			numCancelled++
+		}
+	}
+
+	return numCancelled
+}
+
 // NumResponders returns the total number of unique responders
 func (rp *RequestProgress) NumResponders() int {
 	rp.respondersMutex.RLock()
@@ -387,6 +424,8 @@ func (rs ResponderStatus) String() string {
 		return "complete"
 	case FAILED:
 		return "failed"
+	case CANCELLED:
+		return "cancelled"
 	default:
 		return "unknown"
 	}

@@ -223,7 +223,7 @@ func (x *ItemRequest) GetResponseSubject() string {
 // be cancelled. Work should stop immediately, and a final response should be
 // sent with a state of CANCELLED to acknowledge that the request has ended due
 // to a cancellation
-type ItemRequestCancel struct {
+type CancelItemRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -233,8 +233,8 @@ type ItemRequestCancel struct {
 	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
 }
 
-func (x *ItemRequestCancel) Reset() {
-	*x = ItemRequestCancel{}
+func (x *CancelItemRequest) Reset() {
+	*x = CancelItemRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_items_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -242,13 +242,13 @@ func (x *ItemRequestCancel) Reset() {
 	}
 }
 
-func (x *ItemRequestCancel) String() string {
+func (x *CancelItemRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ItemRequestCancel) ProtoMessage() {}
+func (*CancelItemRequest) ProtoMessage() {}
 
-func (x *ItemRequestCancel) ProtoReflect() protoreflect.Message {
+func (x *CancelItemRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_items_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -260,12 +260,12 @@ func (x *ItemRequestCancel) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ItemRequestCancel.ProtoReflect.Descriptor instead.
-func (*ItemRequestCancel) Descriptor() ([]byte, []int) {
+// Deprecated: Use CancelItemRequest.ProtoReflect.Descriptor instead.
+func (*CancelItemRequest) Descriptor() ([]byte, []int) {
 	return file_items_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ItemRequestCancel) GetUUID() []byte {
+func (x *CancelItemRequest) GetUUID() []byte {
 	if x != nil {
 		return x.UUID
 	}
@@ -678,8 +678,8 @@ var file_items_proto_rawDesc = []byte{
 	0x09, 0x52, 0x0b, 0x69, 0x74, 0x65, 0x6d, 0x53, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x28,
 	0x0a, 0x0f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x53, 0x75, 0x62, 0x6a, 0x65, 0x63,
 	0x74, 0x18, 0x11, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x53, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x22, 0x27, 0x0a, 0x11, 0x49, 0x74, 0x65, 0x6d,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x12, 0x12, 0x0a,
+	0x65, 0x53, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x22, 0x27, 0x0a, 0x11, 0x43, 0x61, 0x6e, 0x63,
+	0x65, 0x6c, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a,
 	0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49,
 	0x44, 0x22, 0x49, 0x0a, 0x0e, 0x49, 0x74, 0x65, 0x6d, 0x41, 0x74, 0x74, 0x72, 0x69, 0x62, 0x75,
 	0x74, 0x65, 0x73, 0x12, 0x37, 0x0a, 0x0a, 0x61, 0x74, 0x74, 0x72, 0x53, 0x74, 0x72, 0x75, 0x63,
@@ -759,7 +759,7 @@ var file_items_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_items_proto_goTypes = []interface{}{
 	(RequestMethod)(0),            // 0: RequestMethod
 	(*ItemRequest)(nil),           // 1: ItemRequest
-	(*ItemRequestCancel)(nil),     // 2: ItemRequestCancel
+	(*CancelItemRequest)(nil),     // 2: CancelItemRequest
 	(*ItemAttributes)(nil),        // 3: ItemAttributes
 	(*Item)(nil),                  // 4: Item
 	(*Items)(nil),                 // 5: Items
@@ -807,7 +807,7 @@ func file_items_proto_init() {
 			}
 		}
 		file_items_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ItemRequestCancel); i {
+			switch v := v.(*CancelItemRequest); i {
 			case 0:
 				return &v.state
 			case 1:

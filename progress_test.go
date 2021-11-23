@@ -131,6 +131,42 @@ func TestResponseSenderError(t *testing.T) {
 	}
 }
 
+func TestResponseSenderCancel(t *testing.T) {
+	rs := ResponseSender{
+		ResponseInterval: (10 * time.Millisecond),
+		ResponseSubject:  "responses",
+	}
+
+	tp := TestPublisher{
+		Messages: make([]ResponseMessage, 0),
+	}
+
+	// Start sending responses
+	rs.Start(&tp, "test")
+
+	// Give it enough time for >10 responses
+	time.Sleep(120 * time.Millisecond)
+
+	// Stop
+	rs.Cancel()
+
+	// Inspect what was sent
+	if len(tp.Messages) <= 10 {
+		t.Errorf("Expected <= 10 responses to be sent, found %v", len(tp.Messages))
+	}
+
+	// Make sure that the final message was a complation one
+	finalMessage := tp.Messages[len(tp.Messages)-1]
+
+	if finalResponse, ok := finalMessage.V.(*Response); ok {
+		if finalResponse.State != Response_CANCELLED {
+			t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.State)
+		}
+	} else {
+		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
+	}
+}
+
 func TestDefaultResponseInterval(t *testing.T) {
 	rs := ResponseSender{}
 
@@ -146,6 +182,7 @@ func TestDefaultResponseInterval(t *testing.T) {
 type ExpectedMetrics struct {
 	Working    int
 	Stalled    int
+	Cancelled  int
 	Complete   int
 	Failed     int
 	Responders int
@@ -167,6 +204,9 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 	}
 	if x := rp.NumResponders(); x != em.Responders {
 		return fmt.Errorf("Expected NumResponders to be %v, got %v", em.Responders, x)
+	}
+	if x := rp.NumCancelled(); x != em.Cancelled {
+		return fmt.Errorf("Expected NumCancelled to be %v, got %v", em.Cancelled, x)
 	}
 
 	return nil
@@ -211,7 +251,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		}
 	})
 
-	t.Run("Processing another context also responding", func(t *testing.T) {
+	t.Run("Processing come other contexts also responding", func(t *testing.T) {
 		// Then another context starts working
 		rp.ProcessResponse(&Response{
 			Responder:    "test2",
@@ -219,12 +259,18 @@ func TestRequestProgressNormal(t *testing.T) {
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
+		rp.ProcessResponse(&Response{
+			Responder:    "test3",
+			State:        Response_WORKING,
+			NextUpdateIn: durationpb.New(10 * time.Millisecond),
+		})
+
 		expected = ExpectedMetrics{
-			Working:    2,
+			Working:    3,
 			Stalled:    0,
 			Complete:   0,
 			Failed:     0,
-			Responders: 2,
+			Responders: 3,
 		}
 
 		if err := expected.Validate(rp); err != nil {
@@ -244,9 +290,44 @@ func TestRequestProgressNormal(t *testing.T) {
 
 		// Test 2 finishes
 		rp.ProcessResponse(&Response{
-			Responder:    "test2",
-			State:        Response_COMPLETE,
+			Responder: "test2",
+			State:     Response_COMPLETE,
+		})
+
+		// Test 3 still working
+		rp.ProcessResponse(&Response{
+			Responder:    "test3",
+			State:        Response_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
+		})
+
+		expected = ExpectedMetrics{
+			Working:    2,
+			Stalled:    0,
+			Complete:   1,
+			Failed:     0,
+			Responders: 3,
+		}
+
+		if err := expected.Validate(rp); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("When one is cancelled", func(t *testing.T) {
+		time.Sleep(5 * time.Millisecond)
+
+		// test 1 still working
+		rp.ProcessResponse(&Response{
+			Responder:    "test1",
+			State:        Response_WORKING,
+			NextUpdateIn: durationpb.New(10 * time.Millisecond),
+		})
+
+		// Test 3 cancelled
+		rp.ProcessResponse(&Response{
+			Responder: "test3",
+			State:     Response_CANCELLED,
 		})
 
 		expected = ExpectedMetrics{
@@ -254,7 +335,8 @@ func TestRequestProgressNormal(t *testing.T) {
 			Stalled:    0,
 			Complete:   1,
 			Failed:     0,
-			Responders: 2,
+			Cancelled:  1,
+			Responders: 3,
 		}
 
 		if err := expected.Validate(rp); err != nil {
@@ -277,7 +359,8 @@ func TestRequestProgressNormal(t *testing.T) {
 			Stalled:    0,
 			Complete:   2,
 			Failed:     0,
-			Responders: 2,
+			Cancelled:  1,
+			Responders: 3,
 		}
 
 		if err := expected.Validate(rp); err != nil {
