@@ -166,6 +166,15 @@ func (m *Metadata) Copy(dest *Metadata) {
 	}
 }
 
+// Copy copies all information from one CancelItemRequest pointer to another
+func (c *CancelItemRequest) Copy(dest *CancelItemRequest) {
+	if c == nil {
+		return
+	}
+
+	dest.UUID = c.UUID
+}
+
 // Get Returns the value of a given attribute by name. If the attribute is
 // a nested hash, nested values can be referenced using dot notation e.g.
 // location.country
@@ -218,6 +227,12 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 	dest.Context = r.Context
 	dest.ItemSubject = r.ItemSubject
 	dest.ResponseSubject = r.ResponseSubject
+	dest.IgnoreCache = r.IgnoreCache
+	dest.UUID = r.UUID
+	dest.Timeout = &durationpb.Duration{
+		Seconds: r.Timeout.Seconds,
+		Nanos:   r.Timeout.Nanos,
+	}
 }
 
 // ToAttributes Convers a map[string]interface{} to an ItemAttributes object
