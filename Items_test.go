@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -219,6 +220,8 @@ func TestCopy(t *testing.T) {
 	}
 
 	t.Run("With a complete item", func(t *testing.T) {
+		u := uuid.New()
+
 		itemA := Item{
 			Type:            "user",
 			UniqueAttribute: "name",
@@ -239,6 +242,7 @@ func TestCopy(t *testing.T) {
 					Method:  RequestMethod_GET,
 					Query:   "Dylan",
 					Context: "testContext",
+					UUID:    u[:],
 				},
 				Timestamp:             timestamppb.Now(),
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
@@ -393,6 +397,13 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 
 			if itemA.Metadata.SourceRequest.Type != itemB.Metadata.SourceRequest.Type {
 				t.Error("Metadata.SourceRequest.Type does not match")
+			}
+
+			uuidA, _ := uuid.FromBytes(itemA.Metadata.SourceRequest.UUID)
+			uuidB, _ := uuid.FromBytes(itemB.Metadata.SourceRequest.UUID)
+
+			if uuidA.String() != uuidB.String() {
+				t.Error("Metadata.SourceRequest.UUID does not match")
 			}
 		}
 	}

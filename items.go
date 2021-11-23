@@ -229,10 +229,14 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 	dest.ResponseSubject = r.ResponseSubject
 	dest.IgnoreCache = r.IgnoreCache
 	dest.UUID = r.UUID
-	dest.Timeout = &durationpb.Duration{
-		Seconds: r.Timeout.Seconds,
-		Nanos:   r.Timeout.Nanos,
+
+	if r.Timeout != nil {
+		dest.Timeout = &durationpb.Duration{
+			Seconds: r.Timeout.Seconds,
+			Nanos:   r.Timeout.Nanos,
+		}
 	}
+
 }
 
 // ToAttributes Convers a map[string]interface{} to an ItemAttributes object

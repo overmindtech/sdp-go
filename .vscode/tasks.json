@@ -7,7 +7,10 @@
             "label": "Go Test",
             "type": "shell",
             "command": "go test -v ./... ",
-            "group": "test"
+            "group": {
+                "isDefault": true,
+                "kind": "test"
+            }
         }
     ]
 }
