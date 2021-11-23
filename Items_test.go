@@ -408,3 +408,24 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 		}
 	}
 }
+
+func TestTimeoutContext(t *testing.T) {
+	r := ItemRequest{
+		Type:        "person",
+		Method:      RequestMethod_GET,
+		Query:       "foo",
+		LinkDepth:   2,
+		IgnoreCache: false,
+		Timeout:     durationpb.New(10 * time.Millisecond),
+	}
+
+	ctx, cancel := r.TimeoutContext()
+	defer cancel()
+
+	select {
+	case <-time.After(20 * time.Millisecond):
+		t.Error("Context did not time out after 10ms")
+	case <-ctx.Done():
+		// This is good
+	}
+}

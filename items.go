@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/base32"
 	"errors"
@@ -236,7 +237,20 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 			Nanos:   r.Timeout.Nanos,
 		}
 	}
+}
 
+// Context returns a context and cancel function representing the timeout for this request
+func (r *ItemRequest) TimeoutContext() (context.Context, context.CancelFunc) {
+	if r == nil || r.Timeout == nil {
+		return context.WithCancel(context.Background())
+	}
+
+	// If the timeout is 0, treat that as infinite
+	if r.Timeout.Nanos == 0 && r.Timeout.Seconds == 0 {
+		return context.WithCancel(context.Background())
+	}
+
+	return context.WithTimeout(context.Background(), r.Timeout.AsDuration())
 }
 
 // ToAttributes Convers a map[string]interface{} to an ItemAttributes object
