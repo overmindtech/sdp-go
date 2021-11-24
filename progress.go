@@ -2,6 +2,7 @@ package sdp
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -390,6 +391,18 @@ func (rp *RequestProgress) NumResponders() int {
 // are complete. It is designed to be used similarly to time.After()
 func (rp *RequestProgress) Done() chan bool {
 	return rp.doneChan
+}
+
+func (rp *RequestProgress) String() string {
+	return fmt.Sprintf(
+		"Working: %v\nStalled: %v\nComplete: %v\nFailed: %v\nCancelled: %v\nResponders: %v\n",
+		rp.NumWorking(),
+		rp.NumStalled(),
+		rp.NumComplete(),
+		rp.NumFailed(),
+		rp.NumCancelled(),
+		rp.NumResponders(),
+	)
 }
 
 // checkDoneChan checks everything is complete and if so pushes to the chan
