@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/base32"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -287,6 +288,27 @@ func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
 			Fields: s,
 		},
 	}, err
+}
+
+// ToAttributesViaJson Converts any struct to a set of attributes by marshalling
+// to JSON and then back again. This is less performant than ToAttributes() but
+// does save work when copying large structs to attributes in their entirety
+func ToAttributesViaJson(v interface{}) (*ItemAttributes, error) {
+	b, err := json.Marshal(v)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]interface{}
+
+	err = json.Unmarshal(b, &m)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ToAttributes(m)
 }
 
 // sanitizeInterface Ensures that en interface is ina format that can be

@@ -429,3 +429,41 @@ func TestTimeoutContext(t *testing.T) {
 		// This is good
 	}
 }
+
+func TestToAttributesViaJson(t *testing.T) {
+	// Create a random struct
+	test1 := struct {
+		Foo  string
+		Bar  bool
+		Blip []string
+		Baz  struct {
+			Zap string
+			Bam int
+		}
+	}{
+		Foo: "foo",
+		Bar: false,
+		Blip: []string{
+			"yes",
+			"I",
+			"blip",
+		},
+		Baz: struct {
+			Zap string
+			Bam int
+		}{
+			Zap: "negative",
+			Bam: 42,
+		},
+	}
+
+	attributes, err := ToAttributesViaJson(test1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if foo, err := attributes.Get("Foo"); err != nil || foo != "foo" {
+		t.Errorf("Expected Foo to be 'foo', got %v, err: %v", foo, err)
+	}
+}
