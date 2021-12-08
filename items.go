@@ -181,17 +181,36 @@ func (c *CancelItemRequest) Copy(dest *CancelItemRequest) {
 // a nested hash, nested values can be referenced using dot notation e.g.
 // location.country
 func (a *ItemAttributes) Get(name string) (interface{}, error) {
-	m := a.GetAttrStruct().AsMap()
+	var result interface{}
 
-	if v, ok := m[name]; ok {
-		return v, nil
+	// Start at the beginning of the map, we will then traverse down as required
+	result = a.GetAttrStruct().AsMap()
+
+	for _, section := range strings.Split(name, ".") {
+		// Check that the data we're using is in the supported format
+		var m map[string]interface{}
+
+		m, isMap := result.(map[string]interface{})
+
+		if !isMap {
+			return nil, fmt.Errorf("attribute %v not found", name)
+		}
+
+		v, keyExists := m[section]
+
+		if keyExists {
+			result = v
+		} else {
+			return nil, fmt.Errorf("attribute %v not found", name)
+		}
 	}
 
-	return "", fmt.Errorf("attribute %v not found", name)
+	return result, nil
 }
 
-// Set sets an attribute. Values are converted to structpb versions and an
-// errort will be return if this fails
+// Set sets an attribute. Values are converted to structpb versions and an error
+// will be returned if this fails. Note that this does *not* yet support
+// dot notation e.g. location.country
 func (a *ItemAttributes) Set(name string, value interface{}) error {
 	// Check to make sure that the pointer is not nil
 	if a == nil {

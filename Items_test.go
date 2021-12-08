@@ -467,3 +467,55 @@ func TestToAttributesViaJson(t *testing.T) {
 		t.Errorf("Expected Foo to be 'foo', got %v, err: %v", foo, err)
 	}
 }
+
+func TestAttributesGet(t *testing.T) {
+	mapData := map[string]interface{}{
+		"foo": "bar",
+		"nest": map[string]interface{}{
+			"nest2": map[string]string{
+				"nest3": "nestValue",
+			},
+		},
+	}
+
+	attr, err := ToAttributes(mapData)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if v, err := attr.Get("foo"); err != nil || v != "bar" {
+		t.Errorf("expected Get(\"foo\") to be bar, got %v", v)
+	}
+
+	if v, err := attr.Get("nest.nest2.nest3"); err != nil || v != "nestValue" {
+		t.Errorf("expected Get(\"nest.nest2.nest3\") to be nestValue, got %v", v)
+	}
+}
+
+func TestAttributesSet(t *testing.T) {
+	mapData := map[string]interface{}{
+		"foo": "bar",
+		"nest": map[string]interface{}{
+			"nest2": map[string]string{
+				"nest3": "nestValue",
+			},
+		},
+	}
+
+	attr, err := ToAttributes(mapData)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = attr.Set("foo", "baz")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if v, err := attr.Get("foo"); err != nil || v != "baz" {
+		t.Errorf("expected Get(\"foo\") to be baz, got %v", v)
+	}
+}
