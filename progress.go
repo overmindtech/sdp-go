@@ -2,10 +2,13 @@ package sdp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -31,19 +34,12 @@ const (
 // are sent (5 seconds)
 const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
 
-// EncodedPublisher is an interface that allows messages to be published to it.
+// EncodedConnection is an interface that allows messages to be published to it.
 // In production this would always be filled by a *nats.EncodedConn, however in
 // testing we will mock this with something that does nothing
-type EncodedPublisher interface {
+type EncodedConnection interface {
 	Publish(subject string, v interface{}) error
-}
-
-// RequestProgress represents the status of a request
-type RequestProgress struct {
-	Responders      map[string]*Responder
-	Request         ItemRequest
-	respondersMutex sync.RWMutex
-	doneChan        chan bool
+	Subscribe(subject string, handlerFunc func(x interface{})) (*nats.Subscription, error)
 }
 
 // Responder represents the status of a responder
@@ -68,7 +64,7 @@ type ResponseSender struct {
 	monitorContext   context.Context
 	monitorCancel    context.CancelFunc
 	responderName    string
-	connection       EncodedPublisher
+	connection       EncodedConnection
 }
 
 // Start sends the first response on the given subject and connection to say
@@ -78,7 +74,7 @@ type ResponseSender struct {
 // Note that the NATS connection must be an encoded connection that is able to
 // encode and decode SDP messages. This can be done using
 // `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
-func (rs *ResponseSender) Start(natsConnection EncodedPublisher, responderName string) {
+func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName string) {
 	rs.monitorContext, rs.monitorCancel = context.WithCancel(context.Background())
 
 	// Set the default if it's not set
@@ -200,10 +196,19 @@ func (re *Responder) SetStatus(s ResponderStatus) {
 	re.LastStatusTime = time.Now()
 }
 
+// RequestProgress represents the status of a request
+type RequestProgress struct {
+	Responders      map[string]*Responder
+	Request         *ItemRequest
+	respondersMutex sync.RWMutex
+	doneChan        chan bool
+}
+
 // NewRequestProgress returns a pointer to a RequestProgress object with the
 // responders map initialised
-func NewRequestProgress() *RequestProgress {
+func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
+		Request:    request,
 		Responders: make(map[string]*Responder),
 		// Buffered chan allows for handling function to finish even if nobody
 		// is listening on the channel. It is possible that this could overflow
@@ -211,6 +216,54 @@ func NewRequestProgress() *RequestProgress {
 		// extremely unlikely. Maybe famous last words?
 		doneChan: make(chan bool, 1024),
 	}
+}
+
+// Start Starts a given request, sending items to the supplied itemChannel. It
+// is up to the user to watch for completion
+func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan *Item) error {
+	// Populate inboxes if they aren't already
+	if rp.Request.ItemSubject == "" {
+		rp.Request.ItemSubject = fmt.Sprintf("return.item.%v", nats.NewInbox())
+	}
+
+	if rp.Request.ResponseSubject == "" {
+		rp.Request.ResponseSubject = fmt.Sprintf("return.response.%v", nats.NewInbox())
+	}
+
+	if len(rp.Request.UUID) == 0 {
+		u := uuid.New()
+		rp.Request.UUID = u[:]
+	}
+
+	var requestSubject string
+
+	if rp.Request.Context != "" {
+		requestSubject = fmt.Sprintf("request.context.%v", rp.Request.Context)
+	} else {
+		return errors.New("cannot execute request with blank context")
+	}
+
+	natsConnection.Subscribe(rp.Request.ItemSubject, func(x interface{}) {
+		// TODO: Should I be handling instances when the message is bad? Maybe
+		// just ignore it?
+		if item, ok := x.(*Item); ok {
+			itemChannel <- item
+		}
+	})
+
+	natsConnection.Subscribe(rp.Request.ResponseSubject, func(x interface{}) {
+		if response, ok := x.(*Response); ok {
+			rp.ProcessResponse(response)
+		}
+	})
+
+	err := natsConnection.Publish(requestSubject, &rp.Request)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ProcessResponse processes an SDP Response and updates the database

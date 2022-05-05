@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -14,14 +15,15 @@ type ResponseMessage struct {
 	V       interface{}
 }
 
-// TestPublisher Used to mock a NATS connection for testing
-type TestPublisher struct {
+// TestConnection Used to mock a NATS connection for testing
+type TestConnection struct {
 	Messages      []ResponseMessage
+	Subscriptions map[string][]func(x interface{})
 	messagesMutex *sync.Mutex
 }
 
 // Publish Test publish method, notes down the subject and the message
-func (t *TestPublisher) Publish(subject string, v interface{}) error {
+func (t *TestConnection) Publish(subject string, v interface{}) error {
 	if t.messagesMutex == nil {
 		t.messagesMutex = &sync.Mutex{}
 	}
@@ -33,6 +35,29 @@ func (t *TestPublisher) Publish(subject string, v interface{}) error {
 	})
 	t.messagesMutex.Unlock()
 	return nil
+}
+
+func (t *TestConnection) Subscribe(subject string, handlerFunc func(x interface{})) (*nats.Subscription, error) {
+	if t.Subscriptions == nil {
+		t.Subscriptions = make(map[string][]func(x interface{}))
+	}
+
+	t.Subscriptions[subject] = append(t.Subscriptions[subject], handlerFunc)
+
+	return nil, nil
+}
+
+// SendMessage Emulates a message being sent on a particular subject. The object
+// passed should be the decoded content of the message i.e. the Item not the
+// binary representation
+func (t *TestConnection) SendMessage(subject string, object interface{}) {
+	handlers, ok := t.Subscriptions[subject]
+
+	if ok {
+		for _, handler := range handlers {
+			go handler(object)
+		}
+	}
 }
 
 func TestResponseNilPublisher(t *testing.T) {
@@ -57,7 +82,7 @@ func TestResponseSenderDone(t *testing.T) {
 		ResponseSubject:  "responses",
 	}
 
-	tp := TestPublisher{
+	tp := TestConnection{
 		Messages: make([]ResponseMessage, 0),
 	}
 
@@ -93,7 +118,7 @@ func TestResponseSenderError(t *testing.T) {
 		ResponseSubject:  "responses",
 	}
 
-	tp := TestPublisher{
+	tp := TestConnection{
 		Messages: make([]ResponseMessage, 0),
 	}
 
@@ -137,7 +162,7 @@ func TestResponseSenderCancel(t *testing.T) {
 		ResponseSubject:  "responses",
 	}
 
-	tp := TestPublisher{
+	tp := TestConnection{
 		Messages: make([]ResponseMessage, 0),
 	}
 
@@ -170,7 +195,7 @@ func TestResponseSenderCancel(t *testing.T) {
 func TestDefaultResponseInterval(t *testing.T) {
 	rs := ResponseSender{}
 
-	rs.Start(&TestPublisher{}, "")
+	rs.Start(&TestConnection{}, "")
 	rs.Kill()
 
 	if rs.ResponseInterval != DEFAULTRESPONSEINTERVAL {
@@ -213,7 +238,7 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 }
 
 func TestRequestProgressNormal(t *testing.T) {
-	rp := NewRequestProgress()
+	rp := NewRequestProgress(&itemRequest)
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -374,7 +399,7 @@ func TestRequestProgressNormal(t *testing.T) {
 }
 
 func TestRequestProgressStalled(t *testing.T) {
-	rp := NewRequestProgress()
+	rp := NewRequestProgress(&itemRequest)
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -448,7 +473,7 @@ func TestRequestProgressStalled(t *testing.T) {
 }
 
 func TestRequestProgressError(t *testing.T) {
-	rp := NewRequestProgress()
+	rp := NewRequestProgress(&itemRequest)
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -516,5 +541,39 @@ func TestRequestProgressError(t *testing.T) {
 
 	if rp.allDone() == false {
 		t.Error("expected allDone() to be true")
+	}
+}
+
+func TestStart(t *testing.T) {
+	rp := NewRequestProgress(&itemRequest)
+
+	conn := TestConnection{}
+	items := make(chan *Item)
+
+	err := rp.Start(&conn, items)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, ok := conn.Subscriptions[itemRequest.ItemSubject]; !ok {
+		t.Errorf("subscription %v not created", itemRequest.ItemSubject)
+	}
+
+	if _, ok := conn.Subscriptions[itemRequest.ResponseSubject]; !ok {
+		t.Errorf("subscription %v not created", itemRequest.ResponseSubject)
+	}
+
+	if len(conn.Messages) != 1 {
+		t.Errorf("expected 1 message to be sent, got %v", len(conn.Messages))
+	}
+
+	// Test that the handlers work
+	conn.SendMessage(itemRequest.ItemSubject, &item)
+
+	receivedItem := <-items
+
+	if receivedItem.Hash() != item.Hash() {
+		t.Error("item hash mismatch")
 	}
 }
