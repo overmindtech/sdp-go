@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
@@ -575,5 +576,26 @@ func TestStart(t *testing.T) {
 
 	if receivedItem.Hash() != item.Hash() {
 		t.Error("item hash mismatch")
+	}
+}
+
+func TestCancel(t *testing.T) {
+	u := uuid.New()
+	conn := TestConnection{}
+
+	rp := NewRequestProgress(&ItemRequest{
+		UUID: u[:],
+	})
+
+	err := rp.Cancel(&conn)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	if len(conn.Messages) != 1 {
+		t.Fatal("did not receive cancellation message")
 	}
 }

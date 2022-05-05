@@ -266,6 +266,17 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 	return nil
 }
 
+// Cancel Sends a cancellation requestfor a given request
+func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
+	cancelRequest := CancelItemRequest{
+		UUID: rp.Request.UUID,
+	}
+
+	cancelSubject := fmt.Sprintf("cancel.context.%v", rp.Request.Context)
+
+	return natsConnection.Publish(cancelSubject, &cancelRequest)
+}
+
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (rp *RequestProgress) ProcessResponse(response *Response) {
