@@ -298,7 +298,7 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 	rp.subscriptions = append(rp.subscriptions, responseSub)
 
-	err = natsConnection.Publish(requestSubject, &rp.Request)
+	err = natsConnection.Publish(requestSubject, rp.Request)
 
 	rp.MarkStarted()
 
