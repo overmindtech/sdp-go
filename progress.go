@@ -39,7 +39,7 @@ const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
 // testing we will mock this with something that does nothing
 type EncodedConnection interface {
 	Publish(subject string, v interface{}) error
-	Subscribe(subject string, handlerFunc func(x interface{})) (*nats.Subscription, error)
+	Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error)
 }
 
 // Responder represents the status of a responder
@@ -260,18 +260,14 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return errors.New("cannot execute request with blank context")
 	}
 
-	natsConnection.Subscribe(rp.Request.ItemSubject, func(x interface{}) {
+	natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
 		// TODO: Should I be handling instances when the message is bad? Maybe
 		// just ignore it?
-		if item, ok := x.(*Item); ok {
-			itemChannel <- item
-		}
+		itemChannel <- item
 	})
 
-	natsConnection.Subscribe(rp.Request.ResponseSubject, func(x interface{}) {
-		if response, ok := x.(*Response); ok {
-			rp.ProcessResponse(response)
-		}
+	natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
+		rp.ProcessResponse(response)
 	})
 
 	err := natsConnection.Publish(requestSubject, &rp.Request)
