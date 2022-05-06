@@ -599,3 +599,98 @@ func TestCancel(t *testing.T) {
 		t.Fatal("did not receive cancellation message")
 	}
 }
+
+func TestExecute(t *testing.T) {
+	conn := TestConnection{}
+	u := uuid.New()
+
+	t.Run("with no responders", func(t *testing.T) {
+		req := ItemRequest{
+			Type:            "user",
+			Method:          RequestMethod_GET,
+			Query:           "Dylan",
+			LinkDepth:       0,
+			Context:         "global",
+			IgnoreCache:     false,
+			UUID:            u[:],
+			Timeout:         durationpb.New(10 * time.Second),
+			ItemSubject:     "items",
+			ResponseSubject: "responses",
+		}
+
+		rp := NewRequestProgress(&req)
+		rp.StartTimeout = 100 * time.Millisecond
+
+		_, err := rp.Execute(&conn)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("with a full response set", func(t *testing.T) {
+		req := ItemRequest{
+			Type:            "user",
+			Method:          RequestMethod_GET,
+			Query:           "Dylan",
+			LinkDepth:       0,
+			Context:         "global",
+			IgnoreCache:     false,
+			UUID:            u[:],
+			Timeout:         durationpb.New(10 * time.Second),
+			ItemSubject:     "items1",
+			ResponseSubject: "responses1",
+		}
+
+		rp := NewRequestProgress(&req)
+
+		go func() {
+			delay := 100 * time.Millisecond
+
+			time.Sleep(delay)
+
+			conn.SendMessage(req.ResponseSubject, &Response{
+				Responder:       "test",
+				State:           Response_WORKING,
+				ItemRequestUUID: req.UUID,
+				NextUpdateIn: &durationpb.Duration{
+					Seconds: 10,
+					Nanos:   0,
+				},
+			})
+
+			time.Sleep(delay)
+
+			conn.SendMessage(req.ItemSubject, &item)
+
+			time.Sleep(delay)
+
+			conn.SendMessage(req.ItemSubject, &item)
+
+			time.Sleep(delay)
+
+			conn.SendMessage(req.ResponseSubject, &Response{
+				Responder:       "test",
+				State:           Response_COMPLETE,
+				ItemRequestUUID: req.UUID,
+			})
+		}()
+
+		// TODO: Get these final tests working
+
+		items, err := rp.Execute(&conn)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if rp.NumComplete() != 1 {
+			t.Errorf("expected num complete to be 1, got %v", rp.NumComplete())
+		}
+
+		if len(items) != 2 {
+			t.Errorf("expected 2 items got %v", len(items))
+		}
+	})
+
+}

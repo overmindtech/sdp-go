@@ -2,7 +2,9 @@ package sdp
 
 import (
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -11,11 +13,15 @@ import (
 
 var Encoder = SDPEncoder{}
 
+var _u = uuid.New()
+
 var itemRequest = ItemRequest{
 	Type:      "user",
 	Method:    RequestMethod_FIND,
 	LinkDepth: 10,
 	Context:   "test",
+	UUID:      _u[:],
+	Timeout:   durationpb.New(10 * time.Second),
 }
 
 var itemAttributes = ItemAttributes{

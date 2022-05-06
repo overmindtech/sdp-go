@@ -198,6 +198,10 @@ func (re *Responder) SetStatus(s ResponderStatus) {
 
 // RequestProgress represents the status of a request
 type RequestProgress struct {
+	// How long to wait after `MarkStarted()` has been called to get at least
+	// one responder, if there are no responders in this time, the request will
+	// be marked as completed
+	StartTimeout    time.Duration
 	Responders      map[string]*Responder
 	Request         *ItemRequest
 	respondersMutex sync.RWMutex
@@ -218,9 +222,22 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	}
 }
 
+// MarkStarted Marks the request as started and will cause it to be marked as
+// done if there are no responders after StartTimeout duration
+func (rp *RequestProgress) MarkStarted() {
+	if rp.StartTimeout != 0 {
+		go func() {
+			time.Sleep(rp.StartTimeout)
+			if rp.NumResponders() == 0 {
+				rp.doneChan <- true
+			}
+		}()
+	}
+}
+
 // Start Starts a given request, sending items to the supplied itemChannel. It
 // is up to the user to watch for completion
-func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan *Item) error {
+func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item) error {
 	// Populate inboxes if they aren't already
 	if rp.Request.ItemSubject == "" {
 		rp.Request.ItemSubject = fmt.Sprintf("return.item.%v", nats.NewInbox())
@@ -259,6 +276,8 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 	err := natsConnection.Publish(requestSubject, &rp.Request)
 
+	rp.MarkStarted()
+
 	if err != nil {
 		return err
 	}
@@ -275,6 +294,30 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 	cancelSubject := fmt.Sprintf("cancel.context.%v", rp.Request.Context)
 
 	return natsConnection.Publish(cancelSubject, &cancelRequest)
+}
+
+// Execute Executes a given request and waits for it to finish, returns the
+// items that were found. An error will only be returned only if there is a
+// problem making the request. Details of which responders have failed etc.
+// should be determined using thew typical methods like `NumFailed()`.
+func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, error) {
+	items := make([]*Item, 0)
+	i := make(chan *Item)
+
+	err := rp.Start(natsConnection, i)
+
+	if err != nil {
+		return items, err
+	}
+
+	for {
+		select {
+		case item := <-i:
+			items = append(items, item)
+		case <-rp.Done():
+			return items, nil
+		}
+	}
 }
 
 // ProcessResponse processes an SDP Response and updates the database
@@ -474,7 +517,7 @@ func (rp *RequestProgress) checkDoneChan() {
 	if rp.allDone() {
 		// If everything is done then send `true` to the chan so that whatever
 		// is waiting on it can continue
-		rp.Done() <- true
+		rp.doneChan <- true
 	}
 }
 
