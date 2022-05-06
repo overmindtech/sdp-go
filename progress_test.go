@@ -19,7 +19,7 @@ type ResponseMessage struct {
 // TestConnection Used to mock a NATS connection for testing
 type TestConnection struct {
 	Messages      []ResponseMessage
-	Subscriptions map[string][]func(x interface{})
+	Subscriptions map[string][]nats.Handler
 	messagesMutex *sync.Mutex
 }
 
@@ -38,12 +38,12 @@ func (t *TestConnection) Publish(subject string, v interface{}) error {
 	return nil
 }
 
-func (t *TestConnection) Subscribe(subject string, handlerFunc func(x interface{})) (*nats.Subscription, error) {
+func (t *TestConnection) Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error) {
 	if t.Subscriptions == nil {
-		t.Subscriptions = make(map[string][]func(x interface{}))
+		t.Subscriptions = make(map[string][]nats.Handler)
 	}
 
-	t.Subscriptions[subject] = append(t.Subscriptions[subject], handlerFunc)
+	t.Subscriptions[subject] = append(t.Subscriptions[subject], cb)
 
 	return nil, nil
 }
@@ -56,7 +56,16 @@ func (t *TestConnection) SendMessage(subject string, object interface{}) {
 
 	if ok {
 		for _, handler := range handlers {
-			go handler(object)
+			switch v := handler.(type) {
+			case func(*Item):
+				i := object.(*Item)
+				go v(i)
+			case func(*Response):
+				r := object.(*Response)
+				go v(r)
+			default:
+				panic("unknown handler type")
+			}
 		}
 	}
 }
