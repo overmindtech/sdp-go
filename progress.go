@@ -206,6 +206,8 @@ type RequestProgress struct {
 	Request         *ItemRequest
 	respondersMutex sync.RWMutex
 	doneChan        chan bool
+	itemChan        chan<- *Item
+	subscriptions   []*nats.Subscription
 }
 
 // NewRequestProgress returns a pointer to a RequestProgress object with the
@@ -214,11 +216,6 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:    request,
 		Responders: make(map[string]*Responder),
-		// Buffered chan allows for handling function to finish even if nobody
-		// is listening on the channel. It is possible that this could overflow
-		// if we got into a done condition >1024 times but I would think this is
-		// extremely unlikely. Maybe famous last words?
-		doneChan: make(chan bool, 1024),
 	}
 }
 
@@ -229,14 +226,27 @@ func (rp *RequestProgress) MarkStarted() {
 		go func() {
 			time.Sleep(rp.StartTimeout)
 			if rp.NumResponders() == 0 {
-				rp.doneChan <- true
+				rp.Drain()
 			}
 		}()
 	}
 }
 
 // Start Starts a given request, sending items to the supplied itemChannel. It
-// is up to the user to watch for completion
+// is up to the user to watch for completion. When the request does complete,
+// the NATS subscriptions will automatically drain and the itemChannel will be
+// closed.
+//
+// The fact that the items chan is closed when all items have been received
+// means that the only thing a user needs to do in order to process all items
+// and then continue is range over the channel e.g.
+//
+// 	for item := range itemChannel {
+// 		// Do something with the item
+// 		fmt.Println(item)
+//
+// 		// This loop  will exit once the request is finished
+// 	}
 func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item) error {
 	// Populate inboxes if they aren't already
 	if rp.Request.ItemSubject == "" {
@@ -260,22 +270,61 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return errors.New("cannot execute request with blank context")
 	}
 
-	natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
+	var itemSub *nats.Subscription
+	var responseSub *nats.Subscription
+	var err error
+	rp.itemChan = itemChannel
+
+	itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
 		// TODO: Should I be handling instances when the message is bad? Maybe
 		// just ignore it?
-		itemChannel <- item
+		rp.itemChan <- item
 	})
 
-	natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
+	if err != nil {
+		return err
+	}
+
+	rp.subscriptions = append(rp.subscriptions, itemSub)
+
+	responseSub, err = natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
 		rp.ProcessResponse(response)
 	})
 
-	err := natsConnection.Publish(requestSubject, &rp.Request)
+	if err != nil {
+		itemSub.Unsubscribe()
+		return err
+	}
+
+	rp.subscriptions = append(rp.subscriptions, responseSub)
+
+	err = natsConnection.Publish(requestSubject, &rp.Request)
 
 	rp.MarkStarted()
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// Drain Drains all subscriptions and closes the item channel
+func (ip *RequestProgress) Drain() error {
+	for _, sub := range ip.subscriptions {
+		if sub == nil {
+			continue
+		}
+
+		err := sub.Drain()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if ip.itemChan != nil {
+		close(ip.itemChan)
 	}
 
 	return nil
@@ -306,14 +355,11 @@ func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, e
 		return items, err
 	}
 
-	for {
-		select {
-		case item := <-i:
-			items = append(items, item)
-		case <-rp.Done():
-			return items, nil
-		}
+	for item := range i {
+		items = append(items, item)
 	}
+
+	return items, nil
 }
 
 // ProcessResponse processes an SDP Response and updates the database
@@ -380,7 +426,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 
 	// Finally check to see if this was the final request and if so update the
 	// chan
-	rp.checkDoneChan()
+	rp.checkDone()
 }
 
 // StallMonitor watches for stalled connections. It should be passed the
@@ -398,7 +444,7 @@ func StallMonitor(context context.Context, timeout time.Duration, responder *Res
 		// means that we haven't received a response in the expected
 		// time, we now need to mark that responder as STALLED
 		responder.SetStatus(STALLED)
-		rp.checkDoneChan()
+		rp.checkDone()
 		return
 	}
 }
@@ -490,12 +536,6 @@ func (rp *RequestProgress) NumResponders() int {
 	return len(rp.Responders)
 }
 
-// Done returns a channel which will have a value pushed to it of all requests
-// are complete. It is designed to be used similarly to time.After()
-func (rp *RequestProgress) Done() chan bool {
-	return rp.doneChan
-}
-
 func (rp *RequestProgress) String() string {
 	return fmt.Sprintf(
 		"Working: %v\nStalled: %v\nComplete: %v\nFailed: %v\nCancelled: %v\nResponders: %v\n",
@@ -508,12 +548,11 @@ func (rp *RequestProgress) String() string {
 	)
 }
 
-// checkDoneChan checks everything is complete and if so pushes to the chan
-func (rp *RequestProgress) checkDoneChan() {
+// checkDone checks everything is complete and if so runs `Drain()`
+func (rp *RequestProgress) checkDone() {
 	if rp.allDone() {
-		// If everything is done then send `true` to the chan so that whatever
-		// is waiting on it can continue
-		rp.doneChan <- true
+		// Automatically drain connections
+		rp.Drain()
 	}
 }
 
