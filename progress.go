@@ -358,8 +358,10 @@ func (rp *RequestProgress) Drain() error {
 	rp.subMutex.Lock()
 	defer rp.subMutex.Unlock()
 
-	// Cancel the no responders watcher to release the resources
-	rp.noRespondersCancel()
+	if rp.noRespondersCancel != nil {
+		// Cancel the no responders watcher to release the resources
+		rp.noRespondersCancel()
+	}
 
 	if rp.itemSub != nil {
 		// Drain NATS connections
