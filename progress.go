@@ -42,16 +42,6 @@ type EncodedConnection interface {
 	Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error)
 }
 
-// Responder represents the status of a responder
-type Responder struct {
-	Name           string
-	MonitorContext context.Context
-	MonitorCancel  context.CancelFunc
-	LastStatus     ResponderStatus
-	LastStatusTime time.Time
-	Error          error
-}
-
 // ResponseSender is a struct responsible for sending responses out on behalf of
 // agents that are wortking on that request. Think of it as the agent side
 // component of Responder
@@ -190,10 +180,40 @@ func (rs *ResponseSender) Cancel() {
 	}
 }
 
+// Responder represents the status of a responder
+type Responder struct {
+	Name           string
+	MonitorContext context.Context
+	MonitorCancel  context.CancelFunc
+	lastStatus     ResponderStatus
+	lastStatusTime time.Time
+	Error          error
+	mutex          sync.RWMutex
+}
+
 // SetStatus updates the status and last status time of the responder
 func (re *Responder) SetStatus(s ResponderStatus) {
-	re.LastStatus = s
-	re.LastStatusTime = time.Now()
+	re.mutex.Lock()
+	defer re.mutex.Unlock()
+
+	re.lastStatus = s
+	re.lastStatusTime = time.Now()
+}
+
+// LastStatus Returns the last status response for a given responder
+func (re *Responder) LastStatus() ResponderStatus {
+	re.mutex.RLock()
+	defer re.mutex.RUnlock()
+
+	return re.lastStatus
+}
+
+// LastStatusTime Returns the last status response for a given responder
+func (re *Responder) LastStatusTime() time.Time {
+	re.mutex.RLock()
+	defer re.mutex.RUnlock()
+
+	return re.lastStatusTime
 }
 
 // RequestProgress represents the status of a request
@@ -205,9 +225,12 @@ type RequestProgress struct {
 	Responders      map[string]*Responder
 	Request         *ItemRequest
 	respondersMutex sync.RWMutex
-	doneChan        chan bool
 	itemChan        chan<- *Item
-	subscriptions   []*nats.Subscription
+	itemChanMutex   sync.RWMutex
+	started         bool
+	subMutex        sync.Mutex
+	itemSub         *nats.Subscription
+	responseSub     *nats.Subscription
 }
 
 // NewRequestProgress returns a pointer to a RequestProgress object with the
@@ -222,6 +245,8 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 // MarkStarted Marks the request as started and will cause it to be marked as
 // done if there are no responders after StartTimeout duration
 func (rp *RequestProgress) MarkStarted() {
+	rp.started = true
+
 	if rp.StartTimeout != 0 {
 		go func() {
 			time.Sleep(rp.StartTimeout)
@@ -248,6 +273,10 @@ func (rp *RequestProgress) MarkStarted() {
 // 		// This loop  will exit once the request is finished
 // 	}
 func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item) error {
+	if rp.started {
+		return errors.New("already started")
+	}
+
 	// Populate inboxes if they aren't already
 	if rp.Request.ItemSubject == "" {
 		rp.Request.ItemSubject = fmt.Sprintf("return.item.%v", nats.NewInbox())
@@ -270,33 +299,37 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return errors.New("cannot execute request with blank context")
 	}
 
-	var itemSub *nats.Subscription
-	var responseSub *nats.Subscription
-	var err error
+	// Create the item channel
+	rp.itemChanMutex.Lock()
+	defer rp.itemChanMutex.Unlock()
 	rp.itemChan = itemChannel
 
-	itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
-		// TODO: Should I be handling instances when the message is bad? Maybe
-		// just ignore it?
-		rp.itemChan <- item
+	rp.subMutex.Lock()
+	defer rp.subMutex.Unlock()
+
+	var err error
+
+	rp.itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
+		if item != nil {
+			rp.itemChanMutex.RLock()
+			defer rp.itemChanMutex.RUnlock()
+
+			rp.itemChan <- item
+		}
 	})
 
 	if err != nil {
 		return err
 	}
 
-	rp.subscriptions = append(rp.subscriptions, itemSub)
-
-	responseSub, err = natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
+	rp.responseSub, err = natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
 		rp.ProcessResponse(response)
 	})
 
 	if err != nil {
-		itemSub.Unsubscribe()
+		rp.itemSub.Unsubscribe()
 		return err
 	}
-
-	rp.subscriptions = append(rp.subscriptions, responseSub)
 
 	err = natsConnection.Publish(requestSubject, rp.Request)
 
@@ -309,22 +342,53 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 	return nil
 }
 
-// Drain Drains all subscriptions and closes the item channel
-func (ip *RequestProgress) Drain() error {
-	for _, sub := range ip.subscriptions {
-		if sub == nil {
-			continue
+// Drain Tries to drain connections gracefully
+func (rp *RequestProgress) Drain() error {
+	rp.subMutex.Lock()
+	defer rp.subMutex.Unlock()
+
+	if rp.itemSub != nil {
+		// Drain NATS connections
+		err := rp.itemSub.Drain()
+
+		if err != nil {
+			// If that fails, fall back to an unsubscribe
+			err = rp.itemSub.Unsubscribe()
+
+			if err != nil {
+				return err
+			}
 		}
 
-		err := sub.Drain()
+		// Wait for all items to finish processing, including all callbacks
+		for {
+			messages, _, _ := rp.itemSub.Pending()
+
+			if messages > 0 {
+				time.Sleep(50 * time.Millisecond)
+			} else {
+				break
+			}
+		}
+	}
+
+	if rp.responseSub != nil {
+		// Drain the response connection to, but don't wait for callbacks to finish.
+		// this is because this code here is likely called as part of a callback and
+		// therefore would cause deadlock as it essentially waits for itself to
+		// finish
+		err := rp.responseSub.Unsubscribe()
 
 		if err != nil {
 			return err
 		}
 	}
 
-	if ip.itemChan != nil {
-		close(ip.itemChan)
+	rp.itemChanMutex.Lock()
+	defer rp.itemChanMutex.Unlock()
+
+	if rp.itemChan != nil {
+		close(rp.itemChan)
 	}
 
 	return nil
@@ -395,11 +459,11 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	} else {
 		// If the responder is new, add it to the list
 		rp.Responders[response.Responder] = &Responder{
-			Name:           response.GetResponder(),
-			LastStatus:     status,
-			LastStatusTime: time.Now(),
-			Error:          response.Error,
+			Name:  response.GetResponder(),
+			Error: response.Error,
 		}
+
+		rp.Responders[response.Responder].SetStatus(status)
 	}
 
 	rp.respondersMutex.Unlock()
@@ -457,7 +521,7 @@ func (rp *RequestProgress) NumWorking() int {
 	var numWorking int
 
 	for _, responder := range rp.Responders {
-		if responder.LastStatus == WORKING {
+		if responder.LastStatus() == WORKING {
 			numWorking++
 		}
 	}
@@ -473,7 +537,7 @@ func (rp *RequestProgress) NumStalled() int {
 	var numStalled int
 
 	for _, responder := range rp.Responders {
-		if responder.LastStatus == STALLED {
+		if responder.LastStatus() == STALLED {
 			numStalled++
 		}
 	}
@@ -489,7 +553,7 @@ func (rp *RequestProgress) NumComplete() int {
 	var numComplete int
 
 	for _, responder := range rp.Responders {
-		if responder.LastStatus == COMPLETE {
+		if responder.LastStatus() == COMPLETE {
 			numComplete++
 		}
 	}
@@ -505,7 +569,7 @@ func (rp *RequestProgress) NumFailed() int {
 	var numFailed int
 
 	for _, responder := range rp.Responders {
-		if responder.LastStatus == FAILED {
+		if responder.LastStatus() == FAILED {
 			numFailed++
 		}
 	}
@@ -521,7 +585,7 @@ func (rp *RequestProgress) NumCancelled() int {
 	var numCancelled int
 
 	for _, responder := range rp.Responders {
-		if responder.LastStatus == CANCELLED {
+		if responder.LastStatus() == CANCELLED {
 			numCancelled++
 		}
 	}
@@ -549,11 +613,13 @@ func (rp *RequestProgress) String() string {
 }
 
 // checkDone checks everything is complete and if so runs `Drain()`
-func (rp *RequestProgress) checkDone() {
+func (rp *RequestProgress) checkDone() error {
 	if rp.allDone() {
 		// Automatically drain connections
-		rp.Drain()
+		return rp.Drain()
 	}
+
+	return nil
 }
 
 // Complete will return true if there are no remaining responders working
