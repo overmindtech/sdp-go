@@ -18,17 +18,14 @@ type ResponseMessage struct {
 
 // TestConnection Used to mock a NATS connection for testing
 type TestConnection struct {
-	Messages      []ResponseMessage
-	Subscriptions map[string][]nats.Handler
-	messagesMutex *sync.Mutex
+	Messages           []ResponseMessage
+	Subscriptions      map[string][]nats.Handler
+	messagesMutex      sync.Mutex
+	subscriptionsMutex sync.Mutex
 }
 
 // Publish Test publish method, notes down the subject and the message
 func (t *TestConnection) Publish(subject string, v interface{}) error {
-	if t.messagesMutex == nil {
-		t.messagesMutex = &sync.Mutex{}
-	}
-
 	t.messagesMutex.Lock()
 	t.Messages = append(t.Messages, ResponseMessage{
 		Subject: subject,
@@ -39,6 +36,9 @@ func (t *TestConnection) Publish(subject string, v interface{}) error {
 }
 
 func (t *TestConnection) Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error) {
+	t.subscriptionsMutex.Lock()
+	defer t.subscriptionsMutex.Unlock()
+
 	if t.Subscriptions == nil {
 		t.Subscriptions = make(map[string][]nats.Handler)
 	}
@@ -52,6 +52,9 @@ func (t *TestConnection) Subscribe(subject string, cb nats.Handler) (*nats.Subsc
 // passed should be the decoded content of the message i.e. the Item not the
 // binary representation
 func (t *TestConnection) SendMessage(subject string, object interface{}) {
+	t.subscriptionsMutex.Lock()
+	defer t.subscriptionsMutex.Unlock()
+
 	handlers, ok := t.Subscriptions[subject]
 
 	if ok {
