@@ -293,10 +293,14 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 	var requestSubject string
 
-	if rp.Request.Context != "" {
-		requestSubject = fmt.Sprintf("request.context.%v", rp.Request.Context)
-	} else {
+	if rp.Request.Context == "" {
 		return errors.New("cannot execute request with blank context")
+	}
+
+	if rp.Request.Context == WILDCARD {
+		requestSubject = "request.all"
+	} else {
+		requestSubject = fmt.Sprintf("request.context.%v", rp.Request.Context)
 	}
 
 	// Create the item channel
@@ -400,7 +404,13 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 		UUID: rp.Request.UUID,
 	}
 
-	cancelSubject := fmt.Sprintf("cancel.context.%v", rp.Request.Context)
+	var cancelSubject string
+
+	if rp.Request.Context == WILDCARD {
+		cancelSubject = "cancel.all"
+	} else {
+		cancelSubject = fmt.Sprintf("cancel.context.%v", rp.Request.Context)
+	}
 
 	return natsConnection.Publish(cancelSubject, &cancelRequest)
 }
