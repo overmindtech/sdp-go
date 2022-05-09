@@ -226,6 +226,7 @@ type RequestProgress struct {
 	Request         *ItemRequest
 	respondersMutex sync.RWMutex
 	itemChan        chan<- *Item
+	itemChanMutex   sync.RWMutex
 	started         bool
 	subMutex        sync.Mutex
 	itemSub         *nats.Subscription
@@ -298,15 +299,23 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return errors.New("cannot execute request with blank context")
 	}
 
-	var err error
+	// Create the item channel
+	rp.itemChanMutex.Lock()
+	defer rp.itemChanMutex.Unlock()
 	rp.itemChan = itemChannel
+
 	rp.subMutex.Lock()
 	defer rp.subMutex.Unlock()
 
+	var err error
+
 	rp.itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
-		// TODO: Should I be handling instances when the message is bad? Maybe
-		// just ignore it?
-		rp.itemChan <- item
+		if item != nil {
+			rp.itemChanMutex.RLock()
+			defer rp.itemChanMutex.RUnlock()
+
+			rp.itemChan <- item
+		}
 	})
 
 	if err != nil {
@@ -374,6 +383,9 @@ func (rp *RequestProgress) Drain() error {
 			return err
 		}
 	}
+
+	rp.itemChanMutex.Lock()
+	defer rp.itemChanMutex.Unlock()
 
 	if rp.itemChan != nil {
 		close(rp.itemChan)
