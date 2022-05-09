@@ -221,16 +221,18 @@ type RequestProgress struct {
 	// How long to wait after `MarkStarted()` has been called to get at least
 	// one responder, if there are no responders in this time, the request will
 	// be marked as completed
-	StartTimeout    time.Duration
-	Responders      map[string]*Responder
-	Request         *ItemRequest
-	respondersMutex sync.RWMutex
-	itemChan        chan<- *Item
-	itemChanMutex   sync.RWMutex
-	started         bool
-	subMutex        sync.Mutex
-	itemSub         *nats.Subscription
-	responseSub     *nats.Subscription
+	StartTimeout       time.Duration
+	Responders         map[string]*Responder
+	Request            *ItemRequest
+	respondersMutex    sync.RWMutex
+	itemChan           chan<- *Item
+	itemChanMutex      sync.RWMutex
+	started            bool
+	subMutex           sync.Mutex
+	itemSub            *nats.Subscription
+	responseSub        *nats.Subscription
+	noResponderContext context.Context
+	noRespondersCancel context.CancelFunc
 }
 
 // NewRequestProgress returns a pointer to a RequestProgress object with the
@@ -246,14 +248,19 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 // done if there are no responders after StartTimeout duration
 func (rp *RequestProgress) MarkStarted() {
 	rp.started = true
+	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
 
 	if rp.StartTimeout != 0 {
-		go func() {
-			time.Sleep(rp.StartTimeout)
-			if rp.NumResponders() == 0 {
-				rp.Drain()
+		go func(ctx context.Context) {
+			select {
+			case <-time.After(rp.StartTimeout):
+				if rp.NumResponders() == 0 {
+					rp.Drain()
+				}
+			case <-ctx.Done():
+				// Do nothing
 			}
-		}()
+		}(rp.noResponderContext)
 	}
 }
 
@@ -350,6 +357,9 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 func (rp *RequestProgress) Drain() error {
 	rp.subMutex.Lock()
 	defer rp.subMutex.Unlock()
+
+	// Cancel the no responders watcher to release the resources
+	rp.noRespondersCancel()
 
 	if rp.itemSub != nil {
 		// Drain NATS connections
