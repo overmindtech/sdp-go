@@ -205,9 +205,10 @@ type RequestProgress struct {
 	Responders      map[string]*Responder
 	Request         *ItemRequest
 	respondersMutex sync.RWMutex
-	doneChan        chan bool
 	itemChan        chan<- *Item
-	subscriptions   []*nats.Subscription
+	started         bool
+	itemSub         *nats.Subscription
+	responseSub     *nats.Subscription
 }
 
 // NewRequestProgress returns a pointer to a RequestProgress object with the
@@ -222,6 +223,8 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 // MarkStarted Marks the request as started and will cause it to be marked as
 // done if there are no responders after StartTimeout duration
 func (rp *RequestProgress) MarkStarted() {
+	rp.started = true
+
 	if rp.StartTimeout != 0 {
 		go func() {
 			time.Sleep(rp.StartTimeout)
@@ -248,6 +251,10 @@ func (rp *RequestProgress) MarkStarted() {
 // 		// This loop  will exit once the request is finished
 // 	}
 func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item) error {
+	if rp.started {
+		return errors.New("already started")
+	}
+
 	// Populate inboxes if they aren't already
 	if rp.Request.ItemSubject == "" {
 		rp.Request.ItemSubject = fmt.Sprintf("return.item.%v", nats.NewInbox())
@@ -270,12 +277,10 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return errors.New("cannot execute request with blank context")
 	}
 
-	var itemSub *nats.Subscription
-	var responseSub *nats.Subscription
 	var err error
 	rp.itemChan = itemChannel
 
-	itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
+	rp.itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
 		// TODO: Should I be handling instances when the message is bad? Maybe
 		// just ignore it?
 		rp.itemChan <- item
@@ -285,18 +290,14 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return err
 	}
 
-	rp.subscriptions = append(rp.subscriptions, itemSub)
-
-	responseSub, err = natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
+	rp.responseSub, err = natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
 		rp.ProcessResponse(response)
 	})
 
 	if err != nil {
-		itemSub.Unsubscribe()
+		rp.itemSub.Unsubscribe()
 		return err
 	}
-
-	rp.subscriptions = append(rp.subscriptions, responseSub)
 
 	err = natsConnection.Publish(requestSubject, rp.Request)
 
@@ -310,21 +311,37 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 }
 
 // Drain Drains all subscriptions and closes the item channel
-func (ip *RequestProgress) Drain() error {
-	for _, sub := range ip.subscriptions {
-		if sub == nil {
-			continue
-		}
+func (rp *RequestProgress) Drain() error {
+	// Drain NATS connections
+	err := rp.itemSub.Drain()
 
-		err := sub.Drain()
+	if err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
+	// Wait for all items to finish processing, including all callbacks
+	for {
+		messages, _, _ := rp.itemSub.Pending()
+
+		if messages > 0 {
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			break
 		}
 	}
 
-	if ip.itemChan != nil {
-		close(ip.itemChan)
+	// Drain the response connection to, but don't wait for callbacks to finish.
+	// this is because this code here is likely called as part of a callback and
+	// therefore would cause deadlock as it essentially waits for itself to
+	// finish
+	err = rp.responseSub.Unsubscribe()
+
+	if err != nil {
+		return err
+	}
+
+	if rp.itemChan != nil {
+		close(rp.itemChan)
 	}
 
 	return nil
@@ -549,11 +566,13 @@ func (rp *RequestProgress) String() string {
 }
 
 // checkDone checks everything is complete and if so runs `Drain()`
-func (rp *RequestProgress) checkDone() {
+func (rp *RequestProgress) checkDone() error {
 	if rp.allDone() {
 		// Automatically drain connections
-		rp.Drain()
+		return rp.Drain()
 	}
+
+	return nil
 }
 
 // Complete will return true if there are no remaining responders working

@@ -701,5 +701,75 @@ func TestExecute(t *testing.T) {
 			t.Errorf("expected 2 items got %v", len(items))
 		}
 	})
+}
 
+func TestRealNats(t *testing.T) {
+	nc, err := nats.Connect("nats://localhost,nats://nats")
+
+	if err != nil {
+		t.Skip("No NATS connection")
+	}
+
+	nats.RegisterEncoder("sdp", &ENCODER)
+	enc, _ := nats.NewEncodedConn(nc, "sdp")
+
+	u := uuid.New()
+
+	req := ItemRequest{
+		Type:    "person",
+		Method:  RequestMethod_GET,
+		Query:   "dylan",
+		Context: "global",
+		UUID:    u[:],
+	}
+
+	rp := NewRequestProgress(&req)
+	ready := make(chan bool)
+
+	go func() {
+		enc.Subscribe("request.context.global", func(r *ItemRequest) {
+			delay := 100 * time.Millisecond
+
+			time.Sleep(delay)
+
+			enc.Publish(req.ResponseSubject, &Response{
+				Responder:       "test",
+				State:           Response_WORKING,
+				ItemRequestUUID: req.UUID,
+				NextUpdateIn: &durationpb.Duration{
+					Seconds: 10,
+					Nanos:   0,
+				},
+			})
+
+			time.Sleep(delay)
+
+			enc.Publish(req.ItemSubject, &item)
+
+			enc.Publish(req.ItemSubject, &item)
+
+			enc.Publish(req.ResponseSubject, &Response{
+				Responder:       "test",
+				State:           Response_COMPLETE,
+				ItemRequestUUID: req.UUID,
+			})
+		})
+		ready <- true
+	}()
+
+	slowChan := make(chan *Item)
+
+	<-ready
+
+	err = rp.Start(enc, slowChan)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range slowChan {
+		time.Sleep(100 * time.Millisecond)
+
+		t.Log(i)
+	}
 }

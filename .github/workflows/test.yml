@@ -9,6 +9,11 @@ jobs:
           - ubuntu-latest
           # - macos-latest
           # - windows-latest
+    services:
+      nats:
+        image: nats
+        ports:
+          - 4222:4222
     runs-on: ${{ matrix.os }}
     steps:
     - name: Install Go
