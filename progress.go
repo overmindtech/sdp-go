@@ -97,23 +97,26 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 	}
 
 	// Start a goroutine to send further responses
-	go func() {
+	go func(ctx context.Context, respInterval time.Duration, conn EncodedConnection, r *Response) {
+		tick := time.NewTicker(respInterval)
+
 		for {
 			select {
-			case <-rs.monitorContext.Done():
+			case <-ctx.Done():
 				// If the context is cancelled then we don't want to do anything
 				// other than exit
+				tick.Stop()
 				return
-			case <-time.After(rs.ResponseInterval):
-				if rs.connection != nil {
-					rs.connection.Publish(
+			case <-tick.C:
+				if conn != nil {
+					conn.Publish(
 						rs.ResponseSubject,
-						&resp,
+						r,
 					)
 				}
 			}
 		}
-	}()
+	}(rs.monitorContext, rs.ResponseInterval, rs.connection, &resp)
 }
 
 // Kill Kills the response sender immediately. This should be used if something
