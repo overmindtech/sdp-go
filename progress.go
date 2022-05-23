@@ -287,6 +287,14 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		return errors.New("already started")
 	}
 
+	if natsConnection == nil {
+		return errors.New("nil NATS connection")
+	}
+
+	if itemChannel == nil {
+		return errors.New("nil item channel")
+	}
+
 	// Populate inboxes if they aren't already
 	if rp.Request.ItemSubject == "" {
 		rp.Request.ItemSubject = fmt.Sprintf("return.item.%v", nats.NewInbox())
@@ -415,6 +423,10 @@ func (rp *RequestProgress) Drain() error {
 
 // Cancel Sends a cancellation requestfor a given request
 func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
+	if natsConnection == nil {
+		return errors.New("nil NATS connection")
+	}
+
 	cancelRequest := CancelItemRequest{
 		UUID: rp.Request.UUID,
 	}
@@ -437,6 +449,10 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, error) {
 	items := make([]*Item, 0)
 	i := make(chan *Item)
+
+	if natsConnection == nil {
+		return items, errors.New("nil NATS connection")
+	}
 
 	err := rp.Start(natsConnection, i)
 
