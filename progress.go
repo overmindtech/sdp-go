@@ -186,12 +186,32 @@ func (rs *ResponseSender) Cancel() {
 // Responder represents the status of a responder
 type Responder struct {
 	Name           string
-	MonitorContext context.Context
-	MonitorCancel  context.CancelFunc
+	monitorContext context.Context
+	monitorCancel  context.CancelFunc
 	lastStatus     ResponderStatus
 	lastStatusTime time.Time
 	Error          error
 	mutex          sync.RWMutex
+}
+
+// CancelMonitor Cancels the running stall monitor goroutine if there is one
+func (re *Responder) CancelMonitor() {
+	re.mutex.Lock()
+	defer re.mutex.Unlock()
+
+	if re.monitorCancel != nil {
+		re.monitorCancel()
+	}
+}
+
+// SetMonitorContext Saves the context details for the monitor goroutine so that
+// it can be cancelled later, freeing up resources
+func (re *Responder) SetMonitorContext(ctx context.Context, cancel context.CancelFunc) {
+	re.mutex.Lock()
+	defer re.mutex.Unlock()
+
+	re.monitorContext = ctx
+	re.monitorCancel = cancel
 }
 
 // SetStatus updates the status and last status time of the responder
@@ -490,10 +510,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	responder, exists := rp.Responders[response.Responder]
 
 	if exists {
-		if responder.MonitorCancel != nil {
-			// Cancel the previous stall monitor
-			responder.MonitorCancel()
-		}
+		responder.CancelMonitor()
 
 		// Update the status of the responder
 		responder.SetStatus(status)
@@ -522,8 +539,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		responder = rp.Responders[response.Responder]
 		rp.respondersMutex.RUnlock()
 
-		responder.MonitorContext = montorContext
-		responder.MonitorCancel = monitorCancel
+		responder.SetMonitorContext(montorContext, monitorCancel)
 
 		// Create a goroutine to watch for a stalled connection
 		go StallMonitor(montorContext, timeout, responder, rp)

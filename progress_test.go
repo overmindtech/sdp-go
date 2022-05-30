@@ -417,6 +417,50 @@ func TestRequestProgressNormal(t *testing.T) {
 	}
 }
 
+func TestRequestProgressParallel(t *testing.T) {
+	rp := NewRequestProgress(&itemRequest)
+
+	// Make sure that the details are correct initially
+	var expected ExpectedMetrics
+
+	expected = ExpectedMetrics{
+		Working:    0,
+		Stalled:    0,
+		Complete:   0,
+		Failed:     0,
+		Responders: 0,
+	}
+
+	if err := expected.Validate(rp); err != nil {
+		t.Error(err)
+	}
+
+	t.Run("Processing many bunched responses", func(t *testing.T) {
+		for i := 0; i != 10; i++ {
+			go func() {
+				// Test the initial response
+				rp.ProcessResponse(&Response{
+					Responder:    "test1",
+					State:        Response_WORKING,
+					NextUpdateIn: durationpb.New(10 * time.Millisecond),
+				})
+			}()
+		}
+
+		expected = ExpectedMetrics{
+			Working:    1,
+			Stalled:    0,
+			Complete:   0,
+			Failed:     0,
+			Responders: 1,
+		}
+
+		if err := expected.Validate(rp); err != nil {
+			t.Error(err)
+		}
+	})
+}
+
 func TestRequestProgressStalled(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
 
