@@ -109,12 +109,14 @@ func TestResponseSenderDone(t *testing.T) {
 	rs.Done()
 
 	// Inspect what was sent
+	tp.messagesMutex.Lock()
 	if len(tp.Messages) <= 10 {
 		t.Errorf("Expected <= 10 responses to be sent, found %v", len(tp.Messages))
 	}
 
 	// Make sure that the final message was a completion one
 	finalMessage := tp.Messages[len(tp.Messages)-1]
+	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
 		if finalResponse.State != Response_COMPLETE {
@@ -149,12 +151,14 @@ func TestResponseSenderError(t *testing.T) {
 	})
 
 	// Inspect what was sent
+	tp.messagesMutex.Lock()
 	if len(tp.Messages) <= 10 {
 		t.Errorf("Expected <= 10 responses to be sent, found %v", len(tp.Messages))
 	}
 
 	// Make sure that the final message was a complation one
 	finalMessage := tp.Messages[len(tp.Messages)-1]
+	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
 		if finalResponse.State != Response_ERROR {
@@ -189,12 +193,14 @@ func TestResponseSenderCancel(t *testing.T) {
 	rs.Cancel()
 
 	// Inspect what was sent
+	tp.messagesMutex.Lock()
 	if len(tp.Messages) <= 10 {
 		t.Errorf("Expected <= 10 responses to be sent, found %v", len(tp.Messages))
 	}
 
-	// Make sure that the final message was a complation one
+	// Make sure that the final message was a completion one
 	finalMessage := tp.Messages[len(tp.Messages)-1]
+	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
 		if finalResponse.State != Response_CANCELLED {
