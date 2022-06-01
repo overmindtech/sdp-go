@@ -43,7 +43,7 @@ type EncodedConnection interface {
 }
 
 // ResponseSender is a struct responsible for sending responses out on behalf of
-// agents that are wortking on that request. Think of it as the agent side
+// agents that are working on that request. Think of it as the agent side
 // component of Responder
 type ResponseSender struct {
 	// How often to send responses. The expected next update will be 230% of
@@ -120,7 +120,7 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 }
 
 // Kill Kills the response sender immediately. This should be used if something
-// has failed and you don't want to send a completed respnose
+// has failed and you don't want to send a completed response
 func (rs *ResponseSender) Kill() {
 	rs.monitorCancel()
 }

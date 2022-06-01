@@ -579,24 +579,53 @@ func TestStart(t *testing.T) {
 }
 
 func TestCancel(t *testing.T) {
-	u := uuid.New()
-	conn := TestConnection{}
+	t.Run("With no responders", func(t *testing.T) {
+		conn := TestConnection{}
 
-	rp := NewRequestProgress(&ItemRequest{
-		UUID: u[:],
+		rp := NewRequestProgress(&itemRequest)
+
+		itemChan := make(chan *Item)
+
+		err := rp.Start(&conn, itemChan)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = rp.Cancel(&conn)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("ensuring the cancel is sent", func(t *testing.T) {
+			time.Sleep(100 * time.Millisecond)
+
+			if len(conn.Messages) != 1 {
+				t.Fatal("did not receive cancellation message")
+			}
+		})
+
+		t.Run("ensure it is marked as done", func(t *testing.T) {
+			expected := ExpectedMetrics{
+				Working:    0,
+				Stalled:    0,
+				Complete:   0,
+				Failed:     0,
+				Responders: 0,
+			}
+
+			if err := expected.Validate(rp); err != nil {
+				t.Error(err)
+			}
+		})
+
+		t.Run("making sure channels closed", func(t *testing.T) {
+			// If the chan is still open this will block forever
+			<-itemChan
+		})
 	})
 
-	err := rp.Cancel(&conn)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	time.Sleep(100 * time.Millisecond)
-
-	if len(conn.Messages) != 1 {
-		t.Fatal("did not receive cancellation message")
-	}
 }
 
 func TestExecute(t *testing.T) {
