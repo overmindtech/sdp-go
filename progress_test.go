@@ -601,7 +601,7 @@ func TestCancel(t *testing.T) {
 		t.Run("ensuring the cancel is sent", func(t *testing.T) {
 			time.Sleep(100 * time.Millisecond)
 
-			if len(conn.Messages) != 1 {
+			if len(conn.Messages) != 2 {
 				t.Fatal("did not receive cancellation message")
 			}
 		})
