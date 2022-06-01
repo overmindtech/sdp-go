@@ -43,7 +43,7 @@ type EncodedConnection interface {
 }
 
 // ResponseSender is a struct responsible for sending responses out on behalf of
-// agents that are wortking on that request. Think of it as the agent side
+// agents that are working on that request. Think of it as the agent side
 // component of Responder
 type ResponseSender struct {
 	// How often to send responses. The expected next update will be 230% of
@@ -120,7 +120,7 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 }
 
 // Kill Kills the response sender immediately. This should be used if something
-// has failed and you don't want to send a completed respnose
+// has failed and you don't want to send a completed response
 func (rs *ResponseSender) Kill() {
 	rs.monitorCancel()
 }
@@ -251,6 +251,7 @@ type RequestProgress struct {
 	itemChan           chan<- *Item
 	itemChanMutex      sync.RWMutex
 	started            bool
+	cancelled          bool
 	subMutex           sync.Mutex
 	itemSub            *nats.Subscription
 	responseSub        *nats.Subscription
@@ -441,7 +442,7 @@ func (rp *RequestProgress) Drain() error {
 	return nil
 }
 
-// Cancel Sends a cancellation requestfor a given request
+// Cancel Sends a cancellation request for a given request
 func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 	if natsConnection == nil {
 		return errors.New("nil NATS connection")
@@ -459,7 +460,17 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 		cancelSubject = fmt.Sprintf("cancel.context.%v", rp.Request.Context)
 	}
 
-	return natsConnection.Publish(cancelSubject, &cancelRequest)
+	rp.cancelled = true
+
+	err := natsConnection.Publish(cancelSubject, &cancelRequest)
+
+	if err != nil {
+		return err
+	}
+
+	err = rp.checkDone()
+
+	return err
 }
 
 // Execute Executes a given request and waits for it to finish, returns the
@@ -681,9 +692,9 @@ func (rp *RequestProgress) checkDone() error {
 
 // Complete will return true if there are no remaining responders working
 func (rp *RequestProgress) allDone() bool {
-	if rp.NumResponders() > 0 {
+	if rp.NumResponders() > 0 || rp.cancelled {
 		// If we have had at least one response, and there aren't any waiting
-		// then we are going to assume that everything is done. It is of  course
+		// then we are going to assume that everything is done. It is of course
 		// possible that there has just been a very fast responder and so a
 		// minimum execution time might be a good idea
 		return (rp.NumWorking() == 0)
