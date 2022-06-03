@@ -576,7 +576,7 @@ func TestStart(t *testing.T) {
 	}
 
 	// Test that the handlers work
-	conn.SendMessage(itemRequest.ItemSubject, &item)
+	conn.Publish(itemRequest.ItemSubject, &item)
 
 	receivedItem := <-items
 
@@ -684,7 +684,7 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.SendMessage(req.ResponseSubject, &Response{
+			conn.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
 				State:           Response_WORKING,
 				ItemRequestUUID: req.UUID,
@@ -696,15 +696,15 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.SendMessage(req.ItemSubject, &item)
+			conn.Publish(req.ItemSubject, &item)
 
 			time.Sleep(delay)
 
-			conn.SendMessage(req.ItemSubject, &item)
+			conn.Publish(req.ItemSubject, &item)
 
 			time.Sleep(delay)
 
-			conn.SendMessage(req.ResponseSubject, &Response{
+			conn.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
 				State:           Response_COMPLETE,
 				ItemRequestUUID: req.UUID,

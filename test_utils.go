@@ -27,6 +27,9 @@ func (t *TestConnection) Publish(subject string, v interface{}) error {
 		V:       v,
 	})
 	t.messagesMutex.Unlock()
+
+	t.runHandlers(subject, v)
+
 	return nil
 }
 
@@ -43,10 +46,8 @@ func (t *TestConnection) Subscribe(subject string, cb nats.Handler) (*nats.Subsc
 	return nil, nil
 }
 
-// SendMessage Emulates a message being sent on a particular subject. The object
-// passed should be the decoded content of the message i.e. the Item not the
-// binary representation
-func (t *TestConnection) SendMessage(subject string, object interface{}) {
+// runHandlers Runs the handlers for a given subject
+func (t *TestConnection) runHandlers(subject string, object interface{}) {
 	t.subscriptionsMutex.Lock()
 	defer t.subscriptionsMutex.Unlock()
 
