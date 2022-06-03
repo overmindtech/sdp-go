@@ -61,6 +61,9 @@ func (t *TestConnection) SendMessage(subject string, object interface{}) {
 			case func(*Response):
 				r := object.(*Response)
 				go v(r)
+			case func(*ItemRequest):
+				r := object.(*ItemRequest)
+				go v(r)
 			default:
 				panic("unknown handler type")
 			}
