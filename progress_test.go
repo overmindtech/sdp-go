@@ -2,6 +2,7 @@ package sdp
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -373,8 +374,12 @@ func TestRequestProgressParallel(t *testing.T) {
 	}
 
 	t.Run("Processing many bunched responses", func(t *testing.T) {
+		var wg sync.WaitGroup
+
 		for i := 0; i != 10; i++ {
+			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				// Test the initial response
 				rp.ProcessResponse(&Response{
 					Responder:    "test1",
@@ -383,6 +388,8 @@ func TestRequestProgressParallel(t *testing.T) {
 				})
 			}()
 		}
+
+		wg.Wait()
 
 		expected = ExpectedMetrics{
 			Working:    1,
