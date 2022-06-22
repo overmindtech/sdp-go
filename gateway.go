@@ -52,7 +52,7 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 		if x.Summary.Complete != y.Summary.Complete {
 			return false
 		}
-		if x.Summary.Failed != y.Summary.Failed {
+		if x.Summary.Error != y.Summary.Error {
 			return false
 		}
 		if x.Summary.Cancelled != y.Summary.Cancelled {
