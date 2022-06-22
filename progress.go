@@ -84,7 +84,7 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 	// be done once
 	resp := Response{
 		Responder:    rs.responderName,
-		State:        Response_WORKING,
+		State:        ResponderState_WORKING,
 		NextUpdateIn: nextUpdateIn,
 	}
 
@@ -133,7 +133,7 @@ func (rs *ResponseSender) Done() {
 	// be done once
 	resp := Response{
 		Responder: rs.responderName,
-		State:     Response_COMPLETE,
+		State:     ResponderState_COMPLETE,
 	}
 
 	if rs.connection != nil {
@@ -153,7 +153,7 @@ func (rs *ResponseSender) Error(err *ItemRequestError) {
 	// be done once
 	resp := Response{
 		Responder: rs.responderName,
-		State:     Response_ERROR,
+		State:     ResponderState_ERROR,
 		Error:     err,
 	}
 
@@ -172,7 +172,7 @@ func (rs *ResponseSender) Cancel() {
 
 	resp := Response{
 		Responder: rs.responderName,
-		State:     Response_CANCELLED,
+		State:     ResponderState_CANCELLED,
 	}
 
 	if rs.connection != nil {
@@ -505,13 +505,13 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	var status ResponderStatus
 
 	switch s := response.GetState(); s {
-	case Response_WORKING:
+	case ResponderState_WORKING:
 		status = WORKING
-	case Response_COMPLETE:
+	case ResponderState_COMPLETE:
 		status = COMPLETE
-	case Response_ERROR:
+	case ResponderState_ERROR:
 		status = FAILED
-	case Response_CANCELLED:
+	case ResponderState_CANCELLED:
 		status = CANCELLED
 	}
 

@@ -85,7 +85,7 @@ var itemRequestError = ItemRequestError{
 
 var response = Response{
 	Responder: "test",
-	State:     Response_WORKING,
+	State:     ResponderState_WORKING,
 	NextUpdateIn: &durationpb.Duration{
 		Seconds: 10,
 		Nanos:   0,

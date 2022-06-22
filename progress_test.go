@@ -57,7 +57,7 @@ func TestResponseSenderDone(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != Response_COMPLETE {
+		if finalResponse.State != ResponderState_COMPLETE {
 			t.Errorf("Expected final message state to be COMPLETE (1), found: %v", finalResponse.State)
 		}
 	} else {
@@ -99,7 +99,7 @@ func TestResponseSenderError(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != Response_ERROR {
+		if finalResponse.State != ResponderState_ERROR {
 			t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.State)
 		}
 
@@ -141,7 +141,7 @@ func TestResponseSenderCancel(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != Response_CANCELLED {
+		if finalResponse.State != ResponderState_CANCELLED {
 			t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.State)
 		}
 	} else {
@@ -216,7 +216,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -237,13 +237,13 @@ func TestRequestProgressNormal(t *testing.T) {
 		// Then another context starts working
 		rp.ProcessResponse(&Response{
 			Responder:    "test2",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		rp.ProcessResponse(&Response{
 			Responder:    "test3",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -266,20 +266,20 @@ func TestRequestProgressNormal(t *testing.T) {
 		// test 1 still working
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 2 finishes
 		rp.ProcessResponse(&Response{
 			Responder: "test2",
-			State:     Response_COMPLETE,
+			State:     ResponderState_COMPLETE,
 		})
 
 		// Test 3 still working
 		rp.ProcessResponse(&Response{
 			Responder:    "test3",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -302,14 +302,14 @@ func TestRequestProgressNormal(t *testing.T) {
 		// test 1 still working
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 3 cancelled
 		rp.ProcessResponse(&Response{
 			Responder: "test3",
-			State:     Response_CANCELLED,
+			State:     ResponderState_CANCELLED,
 		})
 
 		expected = ExpectedMetrics{
@@ -332,7 +332,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		// Test 1 finishes
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_COMPLETE,
+			State:        ResponderState_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -383,7 +383,7 @@ func TestRequestProgressParallel(t *testing.T) {
 				// Test the initial response
 				rp.ProcessResponse(&Response{
 					Responder:    "test1",
-					State:        Response_WORKING,
+					State:        ResponderState_WORKING,
 					NextUpdateIn: durationpb.New(10 * time.Millisecond),
 				})
 			}()
@@ -415,7 +415,7 @@ func TestRequestProgressStalled(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -457,7 +457,7 @@ func TestRequestProgressStalled(t *testing.T) {
 		// See if it will un-stall itself
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_COMPLETE,
+			State:        ResponderState_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -489,7 +489,7 @@ func TestRequestProgressError(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -509,7 +509,7 @@ func TestRequestProgressError(t *testing.T) {
 	t.Run("After a responder has failed", func(t *testing.T) {
 		rp.ProcessResponse(&Response{
 			Responder: "test1",
-			State:     Response_ERROR,
+			State:     ResponderState_ERROR,
 			Error: &ItemRequestError{
 				ErrorType:   ItemRequestError_NOCONTEXT,
 				ErrorString: "Context X not found",
@@ -686,7 +686,7 @@ func TestExecute(t *testing.T) {
 
 			conn.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_WORKING,
+				State:           ResponderState_WORKING,
 				ItemRequestUUID: req.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
@@ -706,7 +706,7 @@ func TestExecute(t *testing.T) {
 
 			conn.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_COMPLETE,
+				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
 		}()
@@ -760,7 +760,7 @@ func TestRealNats(t *testing.T) {
 
 			enc.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_WORKING,
+				State:           ResponderState_WORKING,
 				ItemRequestUUID: req.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
@@ -776,7 +776,7 @@ func TestRealNats(t *testing.T) {
 
 			enc.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_COMPLETE,
+				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
 		})
