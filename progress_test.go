@@ -191,6 +191,17 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 		return fmt.Errorf("Expected NumCancelled to be %v, got %v", em.Cancelled, x)
 	}
 
+	rStatus := rp.ResponderStatuses()
+	rErrors := rp.ResponderErrors()
+
+	if len(rStatus) != em.Responders {
+		return fmt.Errorf("Expected ResponderStatuses to have %v responders, got %v", em.Responders, len(rStatus))
+	}
+
+	if len(rErrors) != em.Failed {
+		return fmt.Errorf("Expected ResponderErrors to have %v responders with errors, got %v", em.Failed, len(rErrors))
+	}
+
 	return nil
 }
 
@@ -448,7 +459,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			t.Error(err)
 		}
 
-		if _, ok := rp.Responders["test1"]; !ok {
+		if _, ok := rp.responders["test1"]; !ok {
 			t.Error("Could not get responder for context test1")
 		}
 	})

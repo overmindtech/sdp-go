@@ -245,8 +245,8 @@ type RequestProgress struct {
 	// one responder, if there are no responders in this time, the request will
 	// be marked as completed
 	StartTimeout       time.Duration
-	Responders         map[string]*Responder
 	Request            *ItemRequest
+	responders         map[string]*Responder
 	respondersMutex    sync.RWMutex
 	itemChan           chan<- *Item
 	itemChanMutex      sync.RWMutex
@@ -264,7 +264,7 @@ type RequestProgress struct {
 func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:    request,
-		Responders: make(map[string]*Responder),
+		responders: make(map[string]*Responder),
 	}
 }
 
@@ -518,7 +518,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	// Update the stored data
 	rp.respondersMutex.Lock()
 
-	responder, exists := rp.Responders[response.Responder]
+	responder, exists := rp.responders[response.Responder]
 
 	if exists {
 		responder.CancelMonitor()
@@ -527,12 +527,15 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		responder.SetStatus(status)
 	} else {
 		// If the responder is new, add it to the list
-		rp.Responders[response.Responder] = &Responder{
-			Name:  response.GetResponder(),
-			Error: response.Error,
+		rp.responders[response.Responder] = &Responder{
+			Name: response.GetResponder(),
 		}
 
-		rp.Responders[response.Responder].SetStatus(status)
+		if response.GetError() != nil {
+			rp.responders[response.Responder].Error = response.GetError()
+		}
+
+		rp.responders[response.Responder].SetStatus(status)
 	}
 
 	rp.respondersMutex.Unlock()
@@ -547,7 +550,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		montorContext, monitorCancel := context.WithCancel(context.Background())
 
 		rp.respondersMutex.RLock()
-		responder = rp.Responders[response.Responder]
+		responder = rp.responders[response.Responder]
 		rp.respondersMutex.RUnlock()
 
 		responder.SetMonitorContext(montorContext, monitorCancel)
@@ -588,7 +591,7 @@ func (rp *RequestProgress) NumWorking() int {
 
 	var numWorking int
 
-	for _, responder := range rp.Responders {
+	for _, responder := range rp.responders {
 		if responder.LastStatus() == WORKING {
 			numWorking++
 		}
@@ -604,7 +607,7 @@ func (rp *RequestProgress) NumStalled() int {
 
 	var numStalled int
 
-	for _, responder := range rp.Responders {
+	for _, responder := range rp.responders {
 		if responder.LastStatus() == STALLED {
 			numStalled++
 		}
@@ -620,7 +623,7 @@ func (rp *RequestProgress) NumComplete() int {
 
 	var numComplete int
 
-	for _, responder := range rp.Responders {
+	for _, responder := range rp.responders {
 		if responder.LastStatus() == COMPLETE {
 			numComplete++
 		}
@@ -636,7 +639,7 @@ func (rp *RequestProgress) NumFailed() int {
 
 	var numFailed int
 
-	for _, responder := range rp.Responders {
+	for _, responder := range rp.responders {
 		if responder.LastStatus() == FAILED {
 			numFailed++
 		}
@@ -652,7 +655,7 @@ func (rp *RequestProgress) NumCancelled() int {
 
 	var numCancelled int
 
-	for _, responder := range rp.Responders {
+	for _, responder := range rp.responders {
 		if responder.LastStatus() == CANCELLED {
 			numCancelled++
 		}
@@ -665,7 +668,36 @@ func (rp *RequestProgress) NumCancelled() int {
 func (rp *RequestProgress) NumResponders() int {
 	rp.respondersMutex.RLock()
 	defer rp.respondersMutex.RUnlock()
-	return len(rp.Responders)
+	return len(rp.responders)
+}
+
+// ResponderStatuses Returns the status details for all responders as a map.
+// Where the key is the name of the responder and the value is its status
+func (rp *RequestProgress) ResponderStatuses() map[string]ResponderStatus {
+	statuses := make(map[string]ResponderStatus)
+	rp.respondersMutex.RLock()
+	defer rp.respondersMutex.RUnlock()
+	for _, responder := range rp.responders {
+		statuses[responder.Name] = responder.LastStatus()
+	}
+
+	return statuses
+}
+
+// ResponderErrors Returns the error details for all responders which have
+// returned errors as a map. Where the key is the name of the responder and the
+// value is its error
+func (rp *RequestProgress) ResponderErrors() map[string]error {
+	errors := make(map[string]error)
+	rp.respondersMutex.RLock()
+	defer rp.respondersMutex.RUnlock()
+	for _, responder := range rp.responders {
+		if responder.Error != nil {
+			errors[responder.Name] = responder.Error
+		}
+	}
+
+	return errors
 }
 
 func (rp *RequestProgress) String() string {
