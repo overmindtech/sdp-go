@@ -522,20 +522,17 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 
 	if exists {
 		responder.CancelMonitor()
-
-		// Update the status of the responder
-		responder.SetStatus(status)
 	} else {
 		// If the responder is new, add it to the list
-		rp.responders[response.Responder] = &Responder{
+		responder = &Responder{
 			Name: response.GetResponder(),
 		}
+		rp.responders[response.Responder] = responder
+	}
 
-		if response.GetError() != nil {
-			rp.responders[response.Responder].Error = response.GetError()
-		}
-
-		rp.responders[response.Responder].SetStatus(status)
+	responder.SetStatus(status)
+	if status == FAILED {
+		responder.Error = response.GetError()
 	}
 
 	rp.respondersMutex.Unlock()
