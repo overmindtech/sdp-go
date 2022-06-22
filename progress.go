@@ -172,7 +172,7 @@ type Responder struct {
 	monitorCancel  context.CancelFunc
 	lastState      ResponderState
 	lastStateTime  time.Time
-	Error          error
+	Error          *ItemRequestError
 	mutex          sync.RWMutex
 }
 
@@ -652,8 +652,8 @@ func (rp *RequestProgress) ResponderStates() map[string]ResponderState {
 // ResponderErrors Returns the error details for all responders which have
 // returned errors as a map. Where the key is the name of the responder and the
 // value is its error
-func (rp *RequestProgress) ResponderErrors() map[string]error {
-	errors := make(map[string]error)
+func (rp *RequestProgress) ResponderErrors() map[string]*ItemRequestError {
+	errors := make(map[string]*ItemRequestError)
 	rp.respondersMutex.RLock()
 	defer rp.respondersMutex.RUnlock()
 	for _, responder := range rp.responders {
