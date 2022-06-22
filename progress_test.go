@@ -166,7 +166,7 @@ type ExpectedMetrics struct {
 	Stalled    int
 	Cancelled  int
 	Complete   int
-	Failed     int
+	Error      int
 	Responders int
 }
 
@@ -181,8 +181,8 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 	if x := rp.NumComplete(); x != em.Complete {
 		return fmt.Errorf("Expected NumComplete to be %v, got %v", em.Complete, x)
 	}
-	if x := rp.NumFailed(); x != em.Failed {
-		return fmt.Errorf("Expected NumFailed to be %v, got %v", em.Failed, x)
+	if x := rp.NumError(); x != em.Error {
+		return fmt.Errorf("Expected NumError to be %v, got %v", em.Error, x)
 	}
 	if x := rp.NumResponders(); x != em.Responders {
 		return fmt.Errorf("Expected NumResponders to be %v, got %v", em.Responders, x)
@@ -191,15 +191,15 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 		return fmt.Errorf("Expected NumCancelled to be %v, got %v", em.Cancelled, x)
 	}
 
-	rStatus := rp.ResponderStatuses()
+	rStatus := rp.ResponderStates()
 	rErrors := rp.ResponderErrors()
 
 	if len(rStatus) != em.Responders {
 		return fmt.Errorf("Expected ResponderStatuses to have %v responders, got %v", em.Responders, len(rStatus))
 	}
 
-	if len(rErrors) != em.Failed {
-		return fmt.Errorf("Expected ResponderErrors to have %v responders with errors, got %v", em.Failed, len(rErrors))
+	if len(rErrors) != em.Error {
+		return fmt.Errorf("Expected ResponderErrors to have %v responders with errors, got %v", em.Error, len(rErrors))
 	}
 
 	return nil
@@ -215,7 +215,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		Working:    0,
 		Stalled:    0,
 		Complete:   0,
-		Failed:     0,
+		Error:      0,
 		Responders: 0,
 	}
 
@@ -235,7 +235,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -262,7 +262,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    3,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 3,
 		}
 
@@ -298,7 +298,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    2,
 			Stalled:    0,
 			Complete:   1,
-			Failed:     0,
+			Error:      0,
 			Responders: 3,
 		}
 
@@ -327,7 +327,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   1,
-			Failed:     0,
+			Error:      0,
 			Cancelled:  1,
 			Responders: 3,
 		}
@@ -351,7 +351,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   2,
-			Failed:     0,
+			Error:      0,
 			Cancelled:  1,
 			Responders: 3,
 		}
@@ -376,7 +376,7 @@ func TestRequestProgressParallel(t *testing.T) {
 		Working:    0,
 		Stalled:    0,
 		Complete:   0,
-		Failed:     0,
+		Error:      0,
 		Responders: 0,
 	}
 
@@ -406,7 +406,7 @@ func TestRequestProgressParallel(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -434,7 +434,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -451,7 +451,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			Working:    0,
 			Stalled:    1,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -476,7 +476,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   1,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -508,7 +508,7 @@ func TestRequestProgressError(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -532,7 +532,7 @@ func TestRequestProgressError(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     1,
+			Error:      1,
 			Responders: 1,
 		}
 
@@ -548,7 +548,7 @@ func TestRequestProgressError(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     1,
+			Error:      1,
 			Responders: 1,
 		}
 
@@ -629,7 +629,7 @@ func TestCancel(t *testing.T) {
 				Working:    0,
 				Stalled:    0,
 				Complete:   0,
-				Failed:     0,
+				Error:      0,
 				Responders: 0,
 			}
 

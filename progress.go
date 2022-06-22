@@ -12,24 +12,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-// ResponderStatus represents the state of the responder using the WORKING,
-// STALLED, COMPLETE and FAILED constants
-type ResponderStatus int
-
-const (
-	// WORKING means that the responder is still actively working on the request
-	WORKING = 0
-	// STALLED means that we have not received an update within the expected
-	// time
-	STALLED = 1
-	// COMPLETE means that the responder has completed the query
-	COMPLETE = 2
-	// FAILED means that the responder encountered an error
-	FAILED = 3
-	// CANCELLED Means that the request was cancelled externally
-	CANCELLED = 4
-)
-
 // DEFAULTRESPONSEINTERVAL is the default period of time within which responses
 // are sent (5 seconds)
 const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
@@ -188,8 +170,8 @@ type Responder struct {
 	Name           string
 	monitorContext context.Context
 	monitorCancel  context.CancelFunc
-	lastStatus     ResponderStatus
-	lastStatusTime time.Time
+	lastState      ResponderState
+	lastStateTime  time.Time
 	Error          error
 	mutex          sync.RWMutex
 }
@@ -214,29 +196,29 @@ func (re *Responder) SetMonitorContext(ctx context.Context, cancel context.Cance
 	re.monitorCancel = cancel
 }
 
-// SetStatus updates the status and last status time of the responder
-func (re *Responder) SetStatus(s ResponderStatus) {
+// SetState updates the state and last state time of the responder
+func (re *Responder) SetState(s ResponderState) {
 	re.mutex.Lock()
 	defer re.mutex.Unlock()
 
-	re.lastStatus = s
-	re.lastStatusTime = time.Now()
+	re.lastState = s
+	re.lastStateTime = time.Now()
 }
 
-// LastStatus Returns the last status response for a given responder
-func (re *Responder) LastStatus() ResponderStatus {
+// LastState Returns the last state response for a given responder
+func (re *Responder) LastState() ResponderState {
 	re.mutex.RLock()
 	defer re.mutex.RUnlock()
 
-	return re.lastStatus
+	return re.lastState
 }
 
-// LastStatusTime Returns the last status response for a given responder
-func (re *Responder) LastStatusTime() time.Time {
+// LastStateTime Returns the last state response for a given responder
+func (re *Responder) LastStateTime() time.Time {
 	re.mutex.RLock()
 	defer re.mutex.RUnlock()
 
-	return re.lastStatusTime
+	return re.lastStateTime
 }
 
 // RequestProgress represents the status of a request
@@ -476,7 +458,7 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 // Execute Executes a given request and waits for it to finish, returns the
 // items that were found. An error will only be returned only if there is a
 // problem making the request. Details of which responders have failed etc.
-// should be determined using thew typical methods like `NumFailed()`.
+// should be determined using thew typical methods like `NumError()`.
 func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, error) {
 	items := make([]*Item, 0)
 	i := make(chan *Item)
@@ -501,20 +483,6 @@ func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, e
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (rp *RequestProgress) ProcessResponse(response *Response) {
-	// Convert to a local status representation
-	var status ResponderStatus
-
-	switch s := response.GetState(); s {
-	case ResponderState_WORKING:
-		status = WORKING
-	case ResponderState_COMPLETE:
-		status = COMPLETE
-	case ResponderState_ERROR:
-		status = FAILED
-	case ResponderState_CANCELLED:
-		status = CANCELLED
-	}
-
 	// Update the stored data
 	rp.respondersMutex.Lock()
 
@@ -530,8 +498,8 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		rp.responders[response.Responder] = responder
 	}
 
-	responder.SetStatus(status)
-	if status == FAILED {
+	responder.SetState(response.State)
+	if response.State == ResponderState_ERROR {
 		responder.Error = response.GetError()
 	}
 
@@ -575,7 +543,7 @@ func StallMonitor(context context.Context, timeout time.Duration, responder *Res
 		// If the timeout elapses before the context is cancelled it
 		// means that we haven't received a response in the expected
 		// time, we now need to mark that responder as STALLED
-		responder.SetStatus(STALLED)
+		responder.SetState(ResponderState_STALLED)
 		rp.checkDone()
 		return
 	}
@@ -589,7 +557,7 @@ func (rp *RequestProgress) NumWorking() int {
 	var numWorking int
 
 	for _, responder := range rp.responders {
-		if responder.LastStatus() == WORKING {
+		if responder.LastState() == ResponderState_WORKING {
 			numWorking++
 		}
 	}
@@ -605,7 +573,7 @@ func (rp *RequestProgress) NumStalled() int {
 	var numStalled int
 
 	for _, responder := range rp.responders {
-		if responder.LastStatus() == STALLED {
+		if responder.LastState() == ResponderState_STALLED {
 			numStalled++
 		}
 	}
@@ -621,7 +589,7 @@ func (rp *RequestProgress) NumComplete() int {
 	var numComplete int
 
 	for _, responder := range rp.responders {
-		if responder.LastStatus() == COMPLETE {
+		if responder.LastState() == ResponderState_COMPLETE {
 			numComplete++
 		}
 	}
@@ -629,20 +597,20 @@ func (rp *RequestProgress) NumComplete() int {
 	return numComplete
 }
 
-// NumFailed returns the number of responders that are in the FAILED state
-func (rp *RequestProgress) NumFailed() int {
+// NumError returns the number of responders that are in the FAILED state
+func (rp *RequestProgress) NumError() int {
 	rp.respondersMutex.RLock()
 	defer rp.respondersMutex.RUnlock()
 
-	var numFailed int
+	var numError int
 
 	for _, responder := range rp.responders {
-		if responder.LastStatus() == FAILED {
-			numFailed++
+		if responder.LastState() == ResponderState_ERROR {
+			numError++
 		}
 	}
 
-	return numFailed
+	return numError
 }
 
 // NumCancelled returns the number of responders that are in the CANCELLED state
@@ -653,7 +621,7 @@ func (rp *RequestProgress) NumCancelled() int {
 	var numCancelled int
 
 	for _, responder := range rp.responders {
-		if responder.LastStatus() == CANCELLED {
+		if responder.LastState() == ResponderState_CANCELLED {
 			numCancelled++
 		}
 	}
@@ -668,14 +636,14 @@ func (rp *RequestProgress) NumResponders() int {
 	return len(rp.responders)
 }
 
-// ResponderStatuses Returns the status details for all responders as a map.
+// ResponderStates Returns the status details for all responders as a map.
 // Where the key is the name of the responder and the value is its status
-func (rp *RequestProgress) ResponderStatuses() map[string]ResponderStatus {
-	statuses := make(map[string]ResponderStatus)
+func (rp *RequestProgress) ResponderStates() map[string]ResponderState {
+	statuses := make(map[string]ResponderState)
 	rp.respondersMutex.RLock()
 	defer rp.respondersMutex.RUnlock()
 	for _, responder := range rp.responders {
-		statuses[responder.Name] = responder.LastStatus()
+		statuses[responder.Name] = responder.LastState()
 	}
 
 	return statuses
@@ -703,7 +671,7 @@ func (rp *RequestProgress) String() string {
 		rp.NumWorking(),
 		rp.NumStalled(),
 		rp.NumComplete(),
-		rp.NumFailed(),
+		rp.NumError(),
 		rp.NumCancelled(),
 		rp.NumResponders(),
 	)
@@ -730,21 +698,4 @@ func (rp *RequestProgress) allDone() bool {
 	}
 	// If there have been no responders at all we can't say that we're "done"
 	return false
-}
-
-func (rs ResponderStatus) String() string {
-	switch rs {
-	case WORKING:
-		return "working"
-	case STALLED:
-		return "stalled"
-	case COMPLETE:
-		return "complete"
-	case FAILED:
-		return "failed"
-	case CANCELLED:
-		return "cancelled"
-	default:
-		return "unknown"
-	}
 }
