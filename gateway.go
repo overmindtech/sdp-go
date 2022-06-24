@@ -2,6 +2,14 @@ package sdp
 
 //Equal Returns whether to statuses are functionally equal
 func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
+	if x == nil {
+		if y == nil {
+			return true
+		} else {
+			return false
+		}
+	}
+
 	// Check the basics first
 	if len(x.ResponderErrors) != len(y.ResponderErrors) {
 		return false
