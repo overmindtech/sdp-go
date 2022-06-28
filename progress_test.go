@@ -82,11 +82,7 @@ func TestResponseSenderError(t *testing.T) {
 	time.Sleep(120 * time.Millisecond)
 
 	// Stop
-	rs.Error(&ItemRequestError{
-		ErrorType:   ItemRequestError_OTHER,
-		ErrorString: "Unknown",
-		Context:     "test",
-	})
+	rs.Error()
 
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
@@ -101,10 +97,6 @@ func TestResponseSenderError(t *testing.T) {
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
 		if finalResponse.State != ResponderState_ERROR {
 			t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.State)
-		}
-
-		if finalResponse.Error.Error() != "Unknown" {
-			t.Errorf("Expected error string to be 'Unknown', got '%v'", finalResponse.Error.Error())
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -192,14 +184,9 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 	}
 
 	rStatus := rp.ResponderStates()
-	rErrors := rp.ResponderErrors()
 
 	if len(rStatus) != em.Responders {
 		return fmt.Errorf("Expected ResponderStatuses to have %v responders, got %v", em.Responders, len(rStatus))
-	}
-
-	if len(rErrors) != em.Error {
-		return fmt.Errorf("Expected ResponderErrors to have %v responders with errors, got %v", em.Error, len(rErrors))
 	}
 
 	return nil
@@ -521,11 +508,6 @@ func TestRequestProgressError(t *testing.T) {
 		rp.ProcessResponse(&Response{
 			Responder: "test1",
 			State:     ResponderState_ERROR,
-			Error: &ItemRequestError{
-				ErrorType:   ItemRequestError_NOCONTEXT,
-				ErrorString: "Context X not found",
-				Context:     "X",
-			},
 		})
 
 		expected = ExpectedMetrics{
@@ -567,8 +549,9 @@ func TestStart(t *testing.T) {
 
 	conn := TestConnection{}
 	items := make(chan *Item)
+	errs := make(chan *ItemRequestError)
 
-	err := rp.Start(&conn, items)
+	err := rp.Start(&conn, items, errs)
 
 	if err != nil {
 		t.Fatal(err)
@@ -603,8 +586,9 @@ func TestCancel(t *testing.T) {
 		rp := NewRequestProgress(&itemRequest)
 
 		itemChan := make(chan *Item)
+		errChan := make(chan *ItemRequestError)
 
-		err := rp.Start(&conn, itemChan)
+		err := rp.Start(&conn, itemChan, errChan)
 
 		if err != nil {
 			t.Fatal(err)
@@ -641,6 +625,7 @@ func TestCancel(t *testing.T) {
 		t.Run("making sure channels closed", func(t *testing.T) {
 			// If the chan is still open this will block forever
 			<-itemChan
+			<-errChan
 		})
 	})
 
@@ -667,7 +652,7 @@ func TestExecute(t *testing.T) {
 		rp := NewRequestProgress(&req)
 		rp.StartTimeout = 100 * time.Millisecond
 
-		_, err := rp.Execute(&conn)
+		_, _, err := rp.Execute(&conn)
 
 		if err != nil {
 			t.Fatal(err)
@@ -722,12 +707,14 @@ func TestExecute(t *testing.T) {
 			})
 		}()
 
-		// TODO: Get these final tests working
-
-		items, err := rp.Execute(&conn)
+		items, errs, err := rp.Execute(&conn)
 
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		if len(errs) != 0 {
+			t.Fatal(errs)
 		}
 
 		if rp.NumComplete() != 1 {
@@ -795,10 +782,11 @@ func TestRealNats(t *testing.T) {
 	}()
 
 	slowChan := make(chan *Item)
+	var nilChan chan *ItemRequestError
 
 	<-ready
 
-	err = rp.Start(enc, slowChan)
+	err = rp.Start(enc, slowChan, nilChan)
 
 	if err != nil {
 		t.Fatal(err)
