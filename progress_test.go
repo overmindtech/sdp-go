@@ -57,7 +57,7 @@ func TestResponseSenderDone(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != Response_COMPLETE {
+		if finalResponse.State != ResponderState_COMPLETE {
 			t.Errorf("Expected final message state to be COMPLETE (1), found: %v", finalResponse.State)
 		}
 	} else {
@@ -82,11 +82,7 @@ func TestResponseSenderError(t *testing.T) {
 	time.Sleep(120 * time.Millisecond)
 
 	// Stop
-	rs.Error(&ItemRequestError{
-		ErrorType:   ItemRequestError_OTHER,
-		ErrorString: "Unknown",
-		Context:     "test",
-	})
+	rs.Error()
 
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
@@ -99,12 +95,8 @@ func TestResponseSenderError(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != Response_ERROR {
+		if finalResponse.State != ResponderState_ERROR {
 			t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.State)
-		}
-
-		if finalResponse.Error.Error() != "Unknown" {
-			t.Errorf("Expected error string to be 'Unknown', got '%v'", finalResponse.Error.Error())
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -141,7 +133,7 @@ func TestResponseSenderCancel(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != Response_CANCELLED {
+		if finalResponse.State != ResponderState_CANCELLED {
 			t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.State)
 		}
 	} else {
@@ -166,7 +158,7 @@ type ExpectedMetrics struct {
 	Stalled    int
 	Cancelled  int
 	Complete   int
-	Failed     int
+	Error      int
 	Responders int
 }
 
@@ -181,14 +173,20 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 	if x := rp.NumComplete(); x != em.Complete {
 		return fmt.Errorf("Expected NumComplete to be %v, got %v", em.Complete, x)
 	}
-	if x := rp.NumFailed(); x != em.Failed {
-		return fmt.Errorf("Expected NumFailed to be %v, got %v", em.Failed, x)
+	if x := rp.NumError(); x != em.Error {
+		return fmt.Errorf("Expected NumError to be %v, got %v", em.Error, x)
 	}
 	if x := rp.NumResponders(); x != em.Responders {
 		return fmt.Errorf("Expected NumResponders to be %v, got %v", em.Responders, x)
 	}
 	if x := rp.NumCancelled(); x != em.Cancelled {
 		return fmt.Errorf("Expected NumCancelled to be %v, got %v", em.Cancelled, x)
+	}
+
+	rStatus := rp.ResponderStates()
+
+	if len(rStatus) != em.Responders {
+		return fmt.Errorf("Expected ResponderStatuses to have %v responders, got %v", em.Responders, len(rStatus))
 	}
 
 	return nil
@@ -204,7 +202,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		Working:    0,
 		Stalled:    0,
 		Complete:   0,
-		Failed:     0,
+		Error:      0,
 		Responders: 0,
 	}
 
@@ -216,7 +214,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -224,7 +222,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -237,13 +235,13 @@ func TestRequestProgressNormal(t *testing.T) {
 		// Then another context starts working
 		rp.ProcessResponse(&Response{
 			Responder:    "test2",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		rp.ProcessResponse(&Response{
 			Responder:    "test3",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -251,7 +249,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    3,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 3,
 		}
 
@@ -266,20 +264,20 @@ func TestRequestProgressNormal(t *testing.T) {
 		// test 1 still working
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 2 finishes
 		rp.ProcessResponse(&Response{
 			Responder: "test2",
-			State:     Response_COMPLETE,
+			State:     ResponderState_COMPLETE,
 		})
 
 		// Test 3 still working
 		rp.ProcessResponse(&Response{
 			Responder:    "test3",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -287,7 +285,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    2,
 			Stalled:    0,
 			Complete:   1,
-			Failed:     0,
+			Error:      0,
 			Responders: 3,
 		}
 
@@ -302,21 +300,21 @@ func TestRequestProgressNormal(t *testing.T) {
 		// test 1 still working
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 3 cancelled
 		rp.ProcessResponse(&Response{
 			Responder: "test3",
-			State:     Response_CANCELLED,
+			State:     ResponderState_CANCELLED,
 		})
 
 		expected = ExpectedMetrics{
 			Working:    1,
 			Stalled:    0,
 			Complete:   1,
-			Failed:     0,
+			Error:      0,
 			Cancelled:  1,
 			Responders: 3,
 		}
@@ -332,7 +330,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		// Test 1 finishes
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_COMPLETE,
+			State:        ResponderState_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -340,7 +338,7 @@ func TestRequestProgressNormal(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   2,
-			Failed:     0,
+			Error:      0,
 			Cancelled:  1,
 			Responders: 3,
 		}
@@ -365,7 +363,7 @@ func TestRequestProgressParallel(t *testing.T) {
 		Working:    0,
 		Stalled:    0,
 		Complete:   0,
-		Failed:     0,
+		Error:      0,
 		Responders: 0,
 	}
 
@@ -383,7 +381,7 @@ func TestRequestProgressParallel(t *testing.T) {
 				// Test the initial response
 				rp.ProcessResponse(&Response{
 					Responder:    "test1",
-					State:        Response_WORKING,
+					State:        ResponderState_WORKING,
 					NextUpdateIn: durationpb.New(10 * time.Millisecond),
 				})
 			}()
@@ -395,7 +393,7 @@ func TestRequestProgressParallel(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -415,7 +413,7 @@ func TestRequestProgressStalled(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -423,7 +421,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -440,7 +438,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			Working:    0,
 			Stalled:    1,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -448,7 +446,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			t.Error(err)
 		}
 
-		if _, ok := rp.Responders["test1"]; !ok {
+		if _, ok := rp.responders["test1"]; !ok {
 			t.Error("Could not get responder for context test1")
 		}
 	})
@@ -457,7 +455,7 @@ func TestRequestProgressStalled(t *testing.T) {
 		// See if it will un-stall itself
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_COMPLETE,
+			State:        ResponderState_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -465,7 +463,7 @@ func TestRequestProgressStalled(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   1,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -489,7 +487,7 @@ func TestRequestProgressError(t *testing.T) {
 		// Test the initial response
 		rp.ProcessResponse(&Response{
 			Responder:    "test1",
-			State:        Response_WORKING,
+			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
@@ -497,7 +495,7 @@ func TestRequestProgressError(t *testing.T) {
 			Working:    1,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     0,
+			Error:      0,
 			Responders: 1,
 		}
 
@@ -509,19 +507,14 @@ func TestRequestProgressError(t *testing.T) {
 	t.Run("After a responder has failed", func(t *testing.T) {
 		rp.ProcessResponse(&Response{
 			Responder: "test1",
-			State:     Response_ERROR,
-			Error: &ItemRequestError{
-				ErrorType:   ItemRequestError_NOCONTEXT,
-				ErrorString: "Context X not found",
-				Context:     "X",
-			},
+			State:     ResponderState_ERROR,
 		})
 
 		expected = ExpectedMetrics{
 			Working:    0,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     1,
+			Error:      1,
 			Responders: 1,
 		}
 
@@ -537,7 +530,7 @@ func TestRequestProgressError(t *testing.T) {
 			Working:    0,
 			Stalled:    0,
 			Complete:   0,
-			Failed:     1,
+			Error:      1,
 			Responders: 1,
 		}
 
@@ -556,8 +549,9 @@ func TestStart(t *testing.T) {
 
 	conn := TestConnection{}
 	items := make(chan *Item)
+	errs := make(chan *ItemRequestError)
 
-	err := rp.Start(&conn, items)
+	err := rp.Start(&conn, items, errs)
 
 	if err != nil {
 		t.Fatal(err)
@@ -592,8 +586,9 @@ func TestCancel(t *testing.T) {
 		rp := NewRequestProgress(&itemRequest)
 
 		itemChan := make(chan *Item)
+		errChan := make(chan *ItemRequestError)
 
-		err := rp.Start(&conn, itemChan)
+		err := rp.Start(&conn, itemChan, errChan)
 
 		if err != nil {
 			t.Fatal(err)
@@ -618,7 +613,7 @@ func TestCancel(t *testing.T) {
 				Working:    0,
 				Stalled:    0,
 				Complete:   0,
-				Failed:     0,
+				Error:      0,
 				Responders: 0,
 			}
 
@@ -630,6 +625,7 @@ func TestCancel(t *testing.T) {
 		t.Run("making sure channels closed", func(t *testing.T) {
 			// If the chan is still open this will block forever
 			<-itemChan
+			<-errChan
 		})
 	})
 
@@ -656,7 +652,7 @@ func TestExecute(t *testing.T) {
 		rp := NewRequestProgress(&req)
 		rp.StartTimeout = 100 * time.Millisecond
 
-		_, err := rp.Execute(&conn)
+		_, _, err := rp.Execute(&conn)
 
 		if err != nil {
 			t.Fatal(err)
@@ -686,7 +682,7 @@ func TestExecute(t *testing.T) {
 
 			conn.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_WORKING,
+				State:           ResponderState_WORKING,
 				ItemRequestUUID: req.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
@@ -706,17 +702,19 @@ func TestExecute(t *testing.T) {
 
 			conn.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_COMPLETE,
+				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
 		}()
 
-		// TODO: Get these final tests working
-
-		items, err := rp.Execute(&conn)
+		items, errs, err := rp.Execute(&conn)
 
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		if len(errs) != 0 {
+			t.Fatal(errs)
 		}
 
 		if rp.NumComplete() != 1 {
@@ -760,7 +758,7 @@ func TestRealNats(t *testing.T) {
 
 			enc.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_WORKING,
+				State:           ResponderState_WORKING,
 				ItemRequestUUID: req.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
@@ -776,7 +774,7 @@ func TestRealNats(t *testing.T) {
 
 			enc.Publish(req.ResponseSubject, &Response{
 				Responder:       "test",
-				State:           Response_COMPLETE,
+				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
 		})
@@ -784,10 +782,11 @@ func TestRealNats(t *testing.T) {
 	}()
 
 	slowChan := make(chan *Item)
+	var nilChan chan *ItemRequestError
 
 	<-ready
 
-	err = rp.Start(enc, slowChan)
+	err = rp.Start(enc, slowChan, nilChan)
 
 	if err != nil {
 		t.Fatal(err)

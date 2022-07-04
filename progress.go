@@ -12,24 +12,6 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-// ResponderStatus represents the state of the responder using the WORKING,
-// STALLED, COMPLETE and FAILED constants
-type ResponderStatus int
-
-const (
-	// WORKING means that the responder is still actively working on the request
-	WORKING = 0
-	// STALLED means that we have not received an update within the expected
-	// time
-	STALLED = 1
-	// COMPLETE means that the responder has completed the query
-	COMPLETE = 2
-	// FAILED means that the responder encountered an error
-	FAILED = 3
-	// CANCELLED Means that the request was cancelled externally
-	CANCELLED = 4
-)
-
 // DEFAULTRESPONSEINTERVAL is the default period of time within which responses
 // are sent (5 seconds)
 const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
@@ -84,7 +66,7 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 	// be done once
 	resp := Response{
 		Responder:    rs.responderName,
-		State:        Response_WORKING,
+		State:        ResponderState_WORKING,
 		NextUpdateIn: nextUpdateIn,
 	}
 
@@ -133,7 +115,7 @@ func (rs *ResponseSender) Done() {
 	// be done once
 	resp := Response{
 		Responder: rs.responderName,
-		State:     Response_COMPLETE,
+		State:     ResponderState_COMPLETE,
 	}
 
 	if rs.connection != nil {
@@ -145,16 +127,16 @@ func (rs *ResponseSender) Done() {
 	}
 }
 
-// Error marks the request and completed with error, and send the final error
-func (rs *ResponseSender) Error(err *ItemRequestError) {
+// Error marks the request and completed with error, and sends the final error
+// response
+func (rs *ResponseSender) Error() {
 	rs.Kill()
 
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
 	resp := Response{
 		Responder: rs.responderName,
-		State:     Response_ERROR,
-		Error:     err,
+		State:     ResponderState_ERROR,
 	}
 
 	if rs.connection != nil {
@@ -172,7 +154,7 @@ func (rs *ResponseSender) Cancel() {
 
 	resp := Response{
 		Responder: rs.responderName,
-		State:     Response_CANCELLED,
+		State:     ResponderState_CANCELLED,
 	}
 
 	if rs.connection != nil {
@@ -188,9 +170,8 @@ type Responder struct {
 	Name           string
 	monitorContext context.Context
 	monitorCancel  context.CancelFunc
-	lastStatus     ResponderStatus
-	lastStatusTime time.Time
-	Error          error
+	lastState      ResponderState
+	lastStateTime  time.Time
 	mutex          sync.RWMutex
 }
 
@@ -214,29 +195,29 @@ func (re *Responder) SetMonitorContext(ctx context.Context, cancel context.Cance
 	re.monitorCancel = cancel
 }
 
-// SetStatus updates the status and last status time of the responder
-func (re *Responder) SetStatus(s ResponderStatus) {
+// SetState updates the state and last state time of the responder
+func (re *Responder) SetState(s ResponderState) {
 	re.mutex.Lock()
 	defer re.mutex.Unlock()
 
-	re.lastStatus = s
-	re.lastStatusTime = time.Now()
+	re.lastState = s
+	re.lastStateTime = time.Now()
 }
 
-// LastStatus Returns the last status response for a given responder
-func (re *Responder) LastStatus() ResponderStatus {
+// LastState Returns the last state response for a given responder
+func (re *Responder) LastState() ResponderState {
 	re.mutex.RLock()
 	defer re.mutex.RUnlock()
 
-	return re.lastStatus
+	return re.lastState
 }
 
-// LastStatusTime Returns the last status response for a given responder
-func (re *Responder) LastStatusTime() time.Time {
+// LastStateTime Returns the last state response for a given responder
+func (re *Responder) LastStateTime() time.Time {
 	re.mutex.RLock()
 	defer re.mutex.RUnlock()
 
-	return re.lastStatusTime
+	return re.lastStateTime
 }
 
 // RequestProgress represents the status of a request
@@ -245,16 +226,18 @@ type RequestProgress struct {
 	// one responder, if there are no responders in this time, the request will
 	// be marked as completed
 	StartTimeout       time.Duration
-	Responders         map[string]*Responder
 	Request            *ItemRequest
+	responders         map[string]*Responder
 	respondersMutex    sync.RWMutex
 	itemChan           chan<- *Item
-	itemChanMutex      sync.RWMutex
+	errorChan          chan<- *ItemRequestError
+	chanMutex          sync.RWMutex
 	started            bool
 	cancelled          bool
 	subMutex           sync.Mutex
 	itemSub            *nats.Subscription
 	responseSub        *nats.Subscription
+	errorSub           *nats.Subscription
 	noResponderContext context.Context
 	noRespondersCancel context.CancelFunc
 }
@@ -264,7 +247,7 @@ type RequestProgress struct {
 func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:    request,
-		Responders: make(map[string]*Responder),
+		responders: make(map[string]*Responder),
 	}
 }
 
@@ -303,7 +286,7 @@ func (rp *RequestProgress) MarkStarted() {
 //
 // 		// This loop  will exit once the request is finished
 // 	}
-func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item) error {
+func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item, errorChannel chan<- *ItemRequestError) error {
 	if rp.started {
 		return errors.New("already started")
 	}
@@ -325,6 +308,10 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		rp.Request.ResponseSubject = fmt.Sprintf("return.response.%v", nats.NewInbox())
 	}
 
+	if rp.Request.ErrorSubject == "" {
+		rp.Request.ErrorSubject = fmt.Sprintf("return.error.%v", nats.NewInbox())
+	}
+
 	if len(rp.Request.UUID) == 0 {
 		u := uuid.New()
 		rp.Request.UUID = u[:]
@@ -342,10 +329,11 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		requestSubject = fmt.Sprintf("request.context.%v", rp.Request.Context)
 	}
 
-	// Create the item channel
-	rp.itemChanMutex.Lock()
-	defer rp.itemChanMutex.Unlock()
+	// Store the channels
+	rp.chanMutex.Lock()
+	defer rp.chanMutex.Unlock()
 	rp.itemChan = itemChannel
+	rp.errorChan = errorChannel
 
 	rp.subMutex.Lock()
 	defer rp.subMutex.Unlock()
@@ -354,10 +342,23 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 	rp.itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
 		if item != nil {
-			rp.itemChanMutex.RLock()
-			defer rp.itemChanMutex.RUnlock()
+			rp.chanMutex.RLock()
+			defer rp.chanMutex.RUnlock()
 
 			rp.itemChan <- item
+		}
+	})
+
+	if err != nil {
+		return err
+	}
+
+	rp.errorSub, err = natsConnection.Subscribe(rp.Request.ErrorSubject, func(err *ItemRequestError) {
+		if err != nil {
+			rp.chanMutex.RLock()
+			defer rp.chanMutex.RUnlock()
+
+			rp.errorChan <- err
 		}
 	})
 
@@ -395,29 +396,13 @@ func (rp *RequestProgress) Drain() error {
 		rp.noRespondersCancel()
 	}
 
-	if rp.itemSub != nil {
-		// Drain NATS connections
-		err := rp.itemSub.Drain()
+	// Close the item and error subscriptions
+	if err := closeGracefully(rp.itemSub); err != nil {
+		return err
+	}
 
-		if err != nil {
-			// If that fails, fall back to an unsubscribe
-			err = rp.itemSub.Unsubscribe()
-
-			if err != nil {
-				return err
-			}
-		}
-
-		// Wait for all items to finish processing, including all callbacks
-		for {
-			messages, _, _ := rp.itemSub.Pending()
-
-			if messages > 0 {
-				time.Sleep(50 * time.Millisecond)
-			} else {
-				break
-			}
-		}
+	if err := closeGracefully(rp.errorSub); err != nil {
+		return err
 	}
 
 	if rp.responseSub != nil {
@@ -432,11 +417,15 @@ func (rp *RequestProgress) Drain() error {
 		}
 	}
 
-	rp.itemChanMutex.Lock()
-	defer rp.itemChanMutex.Unlock()
+	rp.chanMutex.Lock()
+	defer rp.chanMutex.Unlock()
 
 	if rp.itemChan != nil {
 		close(rp.itemChan)
+	}
+
+	if rp.errorChan != nil {
+		close(rp.errorChan)
 	}
 
 	return nil
@@ -474,66 +463,73 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 }
 
 // Execute Executes a given request and waits for it to finish, returns the
-// items that were found. An error will only be returned only if there is a
-// problem making the request. Details of which responders have failed etc.
-// should be determined using thew typical methods like `NumFailed()`.
-func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, error) {
+// items that were found and any errors. The third return error value  will only
+// be returned only if there is a problem making the request. Details of which
+// responders have failed etc. should be determined using the typical methods
+// like `NumError()`.
+func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, []*ItemRequestError, error) {
 	items := make([]*Item, 0)
+	errs := make([]*ItemRequestError, 0)
 	i := make(chan *Item)
+	e := make(chan *ItemRequestError)
 
 	if natsConnection == nil {
-		return items, errors.New("nil NATS connection")
+		return items, errs, errors.New("nil NATS connection")
 	}
 
-	err := rp.Start(natsConnection, i)
+	err := rp.Start(natsConnection, i, e)
 
 	if err != nil {
-		return items, err
+		return items, errs, err
 	}
 
-	for item := range i {
-		items = append(items, item)
+	for {
+		// Read items and errors
+		select {
+		case item, ok := <-i:
+			if ok {
+				items = append(items, item)
+			} else {
+				// If the channel is closed, set it to nil so we don't receive
+				// from it any more
+				i = nil
+			}
+		case err, ok := <-e:
+			if ok {
+				errs = append(errs, err)
+			} else {
+				e = nil
+			}
+		}
+
+		if i == nil && e == nil {
+			// If both channels are closed then we're done
+			break
+		}
 	}
 
-	return items, nil
+	return items, errs, nil
 }
 
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (rp *RequestProgress) ProcessResponse(response *Response) {
-	// Convert to a local status representation
-	var status ResponderStatus
-
-	switch s := response.GetState(); s {
-	case Response_WORKING:
-		status = WORKING
-	case Response_COMPLETE:
-		status = COMPLETE
-	case Response_ERROR:
-		status = FAILED
-	case Response_CANCELLED:
-		status = CANCELLED
-	}
-
 	// Update the stored data
 	rp.respondersMutex.Lock()
 
-	responder, exists := rp.Responders[response.Responder]
+	responder, exists := rp.responders[response.Responder]
 
 	if exists {
 		responder.CancelMonitor()
-
-		// Update the status of the responder
-		responder.SetStatus(status)
 	} else {
 		// If the responder is new, add it to the list
-		rp.Responders[response.Responder] = &Responder{
-			Name:  response.GetResponder(),
-			Error: response.Error,
+		responder = &Responder{
+			Name: response.GetResponder(),
 		}
-
-		rp.Responders[response.Responder].SetStatus(status)
+		rp.responders[response.Responder] = responder
 	}
+
+	responder.SetState(response.State)
 
 	rp.respondersMutex.Unlock()
 
@@ -547,7 +543,7 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 		montorContext, monitorCancel := context.WithCancel(context.Background())
 
 		rp.respondersMutex.RLock()
-		responder = rp.Responders[response.Responder]
+		responder = rp.responders[response.Responder]
 		rp.respondersMutex.RUnlock()
 
 		responder.SetMonitorContext(montorContext, monitorCancel)
@@ -561,26 +557,6 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	rp.checkDone()
 }
 
-// StallMonitor watches for stalled connections. It should be passed the
-// responder to monitor, the time to wait before marking the connection as
-// stalled, and a context. The context is used to allow cancellation of the
-// stall monitor from another thread in the case that another message is
-// received.
-func StallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
-	select {
-	case <-context.Done():
-		// If the context is cancelled then we don't want to do anything
-		return
-	case <-time.After(timeout):
-		// If the timeout elapses before the context is cancelled it
-		// means that we haven't received a response in the expected
-		// time, we now need to mark that responder as STALLED
-		responder.SetStatus(STALLED)
-		rp.checkDone()
-		return
-	}
-}
-
 // NumWorking returns the number of responders that are in the Working state
 func (rp *RequestProgress) NumWorking() int {
 	rp.respondersMutex.RLock()
@@ -588,8 +564,8 @@ func (rp *RequestProgress) NumWorking() int {
 
 	var numWorking int
 
-	for _, responder := range rp.Responders {
-		if responder.LastStatus() == WORKING {
+	for _, responder := range rp.responders {
+		if responder.LastState() == ResponderState_WORKING {
 			numWorking++
 		}
 	}
@@ -604,8 +580,8 @@ func (rp *RequestProgress) NumStalled() int {
 
 	var numStalled int
 
-	for _, responder := range rp.Responders {
-		if responder.LastStatus() == STALLED {
+	for _, responder := range rp.responders {
+		if responder.LastState() == ResponderState_STALLED {
 			numStalled++
 		}
 	}
@@ -620,8 +596,8 @@ func (rp *RequestProgress) NumComplete() int {
 
 	var numComplete int
 
-	for _, responder := range rp.Responders {
-		if responder.LastStatus() == COMPLETE {
+	for _, responder := range rp.responders {
+		if responder.LastState() == ResponderState_COMPLETE {
 			numComplete++
 		}
 	}
@@ -629,20 +605,20 @@ func (rp *RequestProgress) NumComplete() int {
 	return numComplete
 }
 
-// NumFailed returns the number of responders that are in the FAILED state
-func (rp *RequestProgress) NumFailed() int {
+// NumError returns the number of responders that are in the FAILED state
+func (rp *RequestProgress) NumError() int {
 	rp.respondersMutex.RLock()
 	defer rp.respondersMutex.RUnlock()
 
-	var numFailed int
+	var numError int
 
-	for _, responder := range rp.Responders {
-		if responder.LastStatus() == FAILED {
-			numFailed++
+	for _, responder := range rp.responders {
+		if responder.LastState() == ResponderState_ERROR {
+			numError++
 		}
 	}
 
-	return numFailed
+	return numError
 }
 
 // NumCancelled returns the number of responders that are in the CANCELLED state
@@ -652,8 +628,8 @@ func (rp *RequestProgress) NumCancelled() int {
 
 	var numCancelled int
 
-	for _, responder := range rp.Responders {
-		if responder.LastStatus() == CANCELLED {
+	for _, responder := range rp.responders {
+		if responder.LastState() == ResponderState_CANCELLED {
 			numCancelled++
 		}
 	}
@@ -665,7 +641,20 @@ func (rp *RequestProgress) NumCancelled() int {
 func (rp *RequestProgress) NumResponders() int {
 	rp.respondersMutex.RLock()
 	defer rp.respondersMutex.RUnlock()
-	return len(rp.Responders)
+	return len(rp.responders)
+}
+
+// ResponderStates Returns the status details for all responders as a map.
+// Where the key is the name of the responder and the value is its status
+func (rp *RequestProgress) ResponderStates() map[string]ResponderState {
+	statuses := make(map[string]ResponderState)
+	rp.respondersMutex.RLock()
+	defer rp.respondersMutex.RUnlock()
+	for _, responder := range rp.responders {
+		statuses[responder.Name] = responder.LastState()
+	}
+
+	return statuses
 }
 
 func (rp *RequestProgress) String() string {
@@ -674,7 +663,7 @@ func (rp *RequestProgress) String() string {
 		rp.NumWorking(),
 		rp.NumStalled(),
 		rp.NumComplete(),
-		rp.NumFailed(),
+		rp.NumError(),
 		rp.NumCancelled(),
 		rp.NumResponders(),
 	)
@@ -703,19 +692,53 @@ func (rp *RequestProgress) allDone() bool {
 	return false
 }
 
-func (rs ResponderStatus) String() string {
-	switch rs {
-	case WORKING:
-		return "working"
-	case STALLED:
-		return "stalled"
-	case COMPLETE:
-		return "complete"
-	case FAILED:
-		return "failed"
-	case CANCELLED:
-		return "cancelled"
-	default:
-		return "unknown"
+// StallMonitor watches for stalled connections. It should be passed the
+// responder to monitor, the time to wait before marking the connection as
+// stalled, and a context. The context is used to allow cancellation of the
+// stall monitor from another thread in the case that another message is
+// received.
+func StallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
+	select {
+	case <-context.Done():
+		// If the context is cancelled then we don't want to do anything
+		return
+	case <-time.After(timeout):
+		// If the timeout elapses before the context is cancelled it
+		// means that we haven't received a response in the expected
+		// time, we now need to mark that responder as STALLED
+		responder.SetState(ResponderState_STALLED)
+		rp.checkDone()
+		return
 	}
+}
+
+// closeGracefully Closes a NATS subscription gracefully, this includes
+// draining, unsubscribing and ensuring that all callbacks are complete
+func closeGracefully(c *nats.Subscription) error {
+	if c != nil {
+		// Drain NATS connections
+		err := c.Drain()
+
+		if err != nil {
+			// If that fails, fall back to an unsubscribe
+			err = c.Unsubscribe()
+
+			if err != nil {
+				return err
+			}
+		}
+
+		// Wait for all items to finish processing, including all callbacks
+		for {
+			messages, _, _ := c.Pending()
+
+			if messages > 0 {
+				time.Sleep(50 * time.Millisecond)
+			} else {
+				break
+			}
+		}
+	}
+
+	return nil
 }
