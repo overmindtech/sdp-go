@@ -9,7 +9,7 @@ import (
 var ENCODER = SDPEncoder{}
 
 // UnknownFieldsError This error is returned when a message is decoded with
-// reminaing unknown fields. This happens when a type was provided that is
+// remaining unknown fields. This happens when a type was provided that is
 // somewhat compatible with the actual message but not quite the tight one
 type UnknownFieldsError struct {
 	TargetPtr interface{}
