@@ -1,8 +1,26 @@
 package sdp
 
+import "fmt"
+
+const ErrorTemplate string = `%v
+
+ErrorType: %v
+Context: %v
+SourceName: %v
+ItemType: %v
+ResponderName: %v`
+
 // Ensure that the ItemRequestError is seen as a valid error in golang
 func (e *ItemRequestError) Error() string {
-	return e.GetErrorString()
+	return fmt.Sprintf(
+		ErrorTemplate,
+		e.ErrorString,
+		e.ErrorType.String(),
+		e.Context,
+		e.SourceName,
+		e.ItemType,
+		e.ResponderName,
+	)
 }
 
 // NewItemRequestError converts a regular error to an ItemRequestError of type
