@@ -90,7 +90,7 @@ func TestResponseSenderError(t *testing.T) {
 		t.Errorf("Expected <= 10 responses to be sent, found %v", len(tp.Messages))
 	}
 
-	// Make sure that the final message was a complation one
+	// Make sure that the final message was a completion one
 	finalMessage := tp.Messages[len(tp.Messages)-1]
 	tp.messagesMutex.Unlock()
 
@@ -432,7 +432,7 @@ func TestRequestProgressStalled(t *testing.T) {
 
 	t.Run("After a responder has stalled", func(t *testing.T) {
 		// Wait long enough for the thing to be marked as stalled
-		time.Sleep(12 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 
 		expected = ExpectedMetrics{
 			Working:    0,

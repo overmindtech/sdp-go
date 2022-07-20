@@ -33,8 +33,7 @@ type ResponseSender struct {
 	// marked as stalled
 	ResponseInterval time.Duration
 	ResponseSubject  string
-	monitorContext   context.Context
-	monitorCancel    context.CancelFunc
+	monitorKill      chan struct{} // Sending to this channel will kill the response sender goroutine
 	responderName    string
 	connection       EncodedConnection
 }
@@ -47,7 +46,7 @@ type ResponseSender struct {
 // encode and decode SDP messages. This can be done using
 // `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
 func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName string) {
-	rs.monitorContext, rs.monitorCancel = context.WithCancel(context.Background())
+	rs.monitorKill = make(chan struct{})
 
 	// Set the default if it's not set
 	if rs.ResponseInterval == 0 {
@@ -79,15 +78,16 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 	}
 
 	// Start a goroutine to send further responses
-	go func(ctx context.Context, respInterval time.Duration, conn EncodedConnection, r *Response) {
+	go func(respInterval time.Duration, conn EncodedConnection, r *Response, kill chan struct{}) {
 		tick := time.NewTicker(respInterval)
 
 		for {
 			select {
-			case <-ctx.Done():
+			case <-kill:
 				// If the context is cancelled then we don't want to do anything
 				// other than exit
 				tick.Stop()
+
 				return
 			case <-tick.C:
 				if conn != nil {
@@ -98,13 +98,16 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 				}
 			}
 		}
-	}(rs.monitorContext, rs.ResponseInterval, rs.connection, &resp)
+	}(rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
 }
 
 // Kill Kills the response sender immediately. This should be used if something
 // has failed and you don't want to send a completed response
 func (rs *ResponseSender) Kill() {
-	rs.monitorCancel()
+	// This will block until the channel has been read from, meaning that we can
+	// be sure that the goroutine is actually closing down and won't send any
+	// more messages
+	rs.monitorKill <- struct{}{}
 }
 
 // Done kills the responder but sends a final completion message
