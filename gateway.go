@@ -56,3 +56,8 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 
 	return true
 }
+
+// Whether the gateway request is complete
+func (x *GatewayRequestStatus) Done() bool {
+	return x.PostProcessingComplete && x.Summary.Working == 0
+}

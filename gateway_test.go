@@ -116,3 +116,57 @@ func TestEqual(t *testing.T) {
 		}
 	})
 }
+
+func TestDone(t *testing.T) {
+	t.Run("with a request that should be done", func(t *testing.T) {
+		r := &GatewayRequestStatus{
+			ResponderStates: map[string]ResponderState{
+				"foo": ResponderState_COMPLETE,
+				"boo": ResponderState_STALLED,
+				"bar": ResponderState_ERROR,
+			},
+			Summary: &GatewayRequestStatus_Summary{
+				Working:    0,
+				Stalled:    1,
+				Complete:   1,
+				Error:      1,
+				Cancelled:  0,
+				Responders: 3,
+			},
+			PostProcessingComplete: true,
+		}
+
+		if !r.Done() {
+			t.Error("expected request .Done() to be true")
+		}
+	})
+
+	t.Run("with a request that shouldn't be done", func(t *testing.T) {
+		r := &GatewayRequestStatus{
+			ResponderStates: map[string]ResponderState{
+				"foo": ResponderState_COMPLETE,
+				"boo": ResponderState_WORKING,
+				"bar": ResponderState_ERROR,
+			},
+			Summary: &GatewayRequestStatus_Summary{
+				Working:    1,
+				Stalled:    0,
+				Complete:   1,
+				Error:      1,
+				Cancelled:  0,
+				Responders: 3,
+			},
+			PostProcessingComplete: false,
+		}
+
+		if r.Done() {
+			t.Error("expected request .Done() to be false")
+		}
+
+		r.PostProcessingComplete = true
+
+		if r.Done() {
+			t.Error("expected request .Done() to be false")
+		}
+	})
+}
