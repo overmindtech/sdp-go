@@ -94,6 +94,29 @@ func TestEqual(t *testing.T) {
 		}
 	})
 
+	t.Run("with different postprocessing states", func(t *testing.T) {
+		y := &GatewayRequestStatus{
+			ResponderStates: map[string]ResponderState{
+				"foo": ResponderState_COMPLETE,
+				"boo": ResponderState_WORKING,
+				"bar": ResponderState_ERROR,
+			},
+			Summary: &GatewayRequestStatus_Summary{
+				Working:    1,
+				Stalled:    0,
+				Complete:   1,
+				Error:      1,
+				Cancelled:  0,
+				Responders: 3,
+			},
+			PostProcessingComplete: true,
+		}
+
+		if x.Equal(y) {
+			t.Error("expected items to be different")
+		}
+	})
+
 	t.Run("with same everything", func(t *testing.T) {
 		y := &GatewayRequestStatus{
 			ResponderStates: map[string]ResponderState{

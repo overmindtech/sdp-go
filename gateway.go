@@ -51,7 +51,10 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 		if x.Summary.Responders != y.Summary.Responders {
 			return false
 		}
+	}
 
+	if x.PostProcessingComplete != y.PostProcessingComplete {
+		return false
 	}
 
 	return true
