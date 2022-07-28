@@ -273,6 +273,10 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 // MarkStarted Marks the request as started and will cause it to be marked as
 // done if there are no responders after StartTimeout duration
 func (rp *RequestProgress) MarkStarted() {
+	// We're using this mutex to also lock access to the context and cancel
+	rp.respondersMutex.Lock()
+	defer rp.respondersMutex.Unlock()
+
 	rp.started = true
 	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
 
@@ -566,13 +570,13 @@ func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, [
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (rp *RequestProgress) ProcessResponse(response *Response) {
+	// Update the stored data
+	rp.respondersMutex.Lock()
+
 	// As soon as we get a response, we can cancel the "no responders" goroutine
 	if rp.noRespondersCancel != nil {
 		rp.noRespondersCancel()
 	}
-
-	// Update the stored data
-	rp.respondersMutex.Lock()
 
 	responder, exists := rp.responders[response.Responder]
 
