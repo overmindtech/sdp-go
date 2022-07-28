@@ -273,18 +273,23 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 // MarkStarted Marks the request as started and will cause it to be marked as
 // done if there are no responders after StartTimeout duration
 func (rp *RequestProgress) MarkStarted() {
+	// We're using this mutex to also lock access to the context and cancel
+	rp.respondersMutex.Lock()
+	defer rp.respondersMutex.Unlock()
+
 	rp.started = true
 	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
 
 	if rp.StartTimeout != 0 {
 		go func(ctx context.Context) {
+			startTimeout := time.NewTimer(rp.StartTimeout)
 			select {
-			case <-time.After(rp.StartTimeout):
+			case <-startTimeout.C:
 				if rp.NumResponders() == 0 {
 					rp.Drain()
 				}
 			case <-ctx.Done():
-				// Do nothing
+				startTimeout.Stop()
 			}
 		}(rp.noResponderContext)
 	}
@@ -567,6 +572,11 @@ func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, [
 func (rp *RequestProgress) ProcessResponse(response *Response) {
 	// Update the stored data
 	rp.respondersMutex.Lock()
+
+	// As soon as we get a response, we can cancel the "no responders" goroutine
+	if rp.noRespondersCancel != nil {
+		rp.noRespondersCancel()
+	}
 
 	responder, exists := rp.responders[response.Responder]
 
