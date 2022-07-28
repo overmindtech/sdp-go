@@ -278,13 +278,14 @@ func (rp *RequestProgress) MarkStarted() {
 
 	if rp.StartTimeout != 0 {
 		go func(ctx context.Context) {
+			startTimeout := time.NewTimer(rp.StartTimeout)
 			select {
-			case <-time.After(rp.StartTimeout):
+			case <-startTimeout.C:
 				if rp.NumResponders() == 0 {
 					rp.Drain()
 				}
 			case <-ctx.Done():
-				// Do nothing
+				startTimeout.Stop()
 			}
 		}(rp.noResponderContext)
 	}
@@ -565,6 +566,11 @@ func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, [
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (rp *RequestProgress) ProcessResponse(response *Response) {
+	// As soon as we get a response, we can cancel the "no responders" goroutine
+	if rp.noRespondersCancel != nil {
+		rp.noRespondersCancel()
+	}
+
 	// Update the stored data
 	rp.respondersMutex.Lock()
 
