@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -228,19 +229,32 @@ type RequestProgress struct {
 	// How long to wait after `MarkStarted()` has been called to get at least
 	// one responder, if there are no responders in this time, the request will
 	// be marked as completed
-	StartTimeout       time.Duration
-	Request            *ItemRequest
-	responders         map[string]*Responder
-	respondersMutex    sync.RWMutex
-	itemChan           chan<- *Item
-	errorChan          chan<- *ItemRequestError
-	chanMutex          sync.RWMutex
-	started            bool
-	cancelled          bool
-	subMutex           sync.Mutex
-	itemSub            *nats.Subscription
-	responseSub        *nats.Subscription
-	errorSub           *nats.Subscription
+	StartTimeout time.Duration
+	Request      *ItemRequest
+
+	responders      map[string]*Responder
+	respondersMutex sync.RWMutex
+
+	// Channel storage for sending back to the user
+	itemChan  chan<- *Item
+	errorChan chan<- *ItemRequestError
+	chanMutex sync.RWMutex
+
+	started   bool
+	cancelled bool
+	subMutex  sync.Mutex
+
+	// NATS subscriptions
+	itemSub     *nats.Subscription
+	responseSub *nats.Subscription
+	errorSub    *nats.Subscription
+
+	// Counters for how many things we have sent over the channels. This is
+	// required to make sure that we aren't closing channels that have pending
+	// things to be sent on them
+	itemsProcessed  *int64
+	errorsProcessed *int64
+
 	noResponderContext context.Context
 	noRespondersCancel context.CancelFunc
 }
@@ -249,8 +263,10 @@ type RequestProgress struct {
 // responders map initialised
 func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
-		Request:    request,
-		responders: make(map[string]*Responder),
+		Request:         request,
+		responders:      make(map[string]*Responder),
+		itemsProcessed:  new(int64),
+		errorsProcessed: new(int64),
 	}
 }
 
@@ -344,6 +360,8 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 	var err error
 
 	rp.itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
+		defer atomic.AddInt64(rp.itemsProcessed, 1)
+
 		if item != nil {
 			rp.chanMutex.RLock()
 			defer rp.chanMutex.RUnlock()
@@ -357,6 +375,8 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 	}
 
 	rp.errorSub, err = natsConnection.Subscribe(rp.Request.ErrorSubject, func(err *ItemRequestError) {
+		defer atomic.AddInt64(rp.errorsProcessed, 1)
+
 		if err != nil {
 			rp.chanMutex.RLock()
 			defer rp.chanMutex.RUnlock()
@@ -400,11 +420,11 @@ func (rp *RequestProgress) Drain() error {
 	}
 
 	// Close the item and error subscriptions
-	if err := closeGracefully(rp.itemSub); err != nil {
+	if err := unsubscribeGracefully(rp.itemSub); err != nil {
 		return err
 	}
 
-	if err := closeGracefully(rp.errorSub); err != nil {
+	if err := unsubscribeGracefully(rp.errorSub); err != nil {
 		return err
 	}
 
@@ -418,6 +438,34 @@ func (rp *RequestProgress) Drain() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// This double-checks that all callbacks are *definitely* complete to avoid
+	// a situation where we close the channel with a goroutine still pending a
+	// send. This is rare due to the use of RWMutex on the channel, but still
+	// possible
+	var itemsDelivered int64
+	var errorsDelivered int64
+	var err error
+
+	for {
+		itemsDelivered, err = rp.itemSub.Delivered()
+
+		if err != nil {
+			break
+		}
+
+		errorsDelivered, err = rp.errorSub.Delivered()
+
+		if err != nil {
+			break
+		}
+
+		if (itemsDelivered == *rp.itemsProcessed) && (errorsDelivered == *rp.errorsProcessed) {
+			break
+		}
+
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	rp.chanMutex.Lock()
@@ -543,16 +591,16 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 	if expectFollowUp {
 		timeout := response.GetNextUpdateIn().AsDuration()
 
-		montorContext, monitorCancel := context.WithCancel(context.Background())
+		monitorContext, monitorCancel := context.WithCancel(context.Background())
 
 		rp.respondersMutex.RLock()
 		responder = rp.responders[response.Responder]
 		rp.respondersMutex.RUnlock()
 
-		responder.SetMonitorContext(montorContext, monitorCancel)
+		responder.SetMonitorContext(monitorContext, monitorCancel)
 
 		// Create a goroutine to watch for a stalled connection
-		go StallMonitor(montorContext, timeout, responder, rp)
+		go StallMonitor(monitorContext, timeout, responder, rp)
 	}
 
 	// Finally check to see if this was the final request and if so update the
@@ -715,9 +763,9 @@ func StallMonitor(context context.Context, timeout time.Duration, responder *Res
 	}
 }
 
-// closeGracefully Closes a NATS subscription gracefully, this includes
+// unsubscribeGracefully Closes a NATS subscription gracefully, this includes
 // draining, unsubscribing and ensuring that all callbacks are complete
-func closeGracefully(c *nats.Subscription) error {
+func unsubscribeGracefully(c *nats.Subscription) error {
 	if c != nil {
 		// Drain NATS connections
 		err := c.Drain()
