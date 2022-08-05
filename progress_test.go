@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -477,6 +478,50 @@ func TestRequestProgressStalled(t *testing.T) {
 	}
 }
 
+func TestRogueResponder(t *testing.T) {
+	rp := NewRequestProgress(&itemRequest)
+	rp.StartTimeout = 100 * time.Millisecond
+
+	// Create our rogue responder that doesn't cancel when it should
+	ticker := time.NewTicker(5 * time.Second)
+	tickerCtx, tickerCancel := context.WithCancel(context.Background())
+	defer tickerCancel()
+	defer ticker.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				rp.ProcessResponse(&Response{
+					Responder:    "testRogue",
+					State:        ResponderState_WORKING,
+					NextUpdateIn: durationpb.New(5 * time.Second),
+				})
+			case <-tickerCtx.Done():
+				return
+			}
+		}
+	}()
+
+	time.Sleep(300 * time.Millisecond)
+
+	// Check that we've noticed the testRogue responder
+	if rp.allDone() == true {
+		t.Error("expected allDone() to be false")
+	}
+
+	cancelCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	// Try to cancel the request. This will never get a response to say it's all
+	// done so instead we're expecting it to be forcibly cancelled
+	err := rp.Cancel(cancelCtx, nil)
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestRequestProgressError(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
 
@@ -579,7 +624,7 @@ func TestStart(t *testing.T) {
 	}
 }
 
-func TestCancel(t *testing.T) {
+func TestAsyncCancel(t *testing.T) {
 	t.Run("With no responders", func(t *testing.T) {
 		conn := TestConnection{}
 
@@ -594,7 +639,7 @@ func TestCancel(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = rp.Cancel(&conn)
+		err = rp.AsyncCancel(&conn)
 
 		if err != nil {
 			t.Fatal(err)

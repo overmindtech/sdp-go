@@ -238,7 +238,9 @@ type RequestProgress struct {
 	// Channel storage for sending back to the user
 	itemChan  chan<- *Item
 	errorChan chan<- *ItemRequestError
+	doneChan  chan struct{} // Closed when request is fully complete
 	chanMutex sync.RWMutex
+	drain     sync.Once
 
 	started   bool
 	cancelled bool
@@ -265,6 +267,7 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:         request,
 		responders:      make(map[string]*Responder),
+		doneChan:        make(chan struct{}),
 		itemsProcessed:  new(int64),
 		errorsProcessed: new(int64),
 	}
@@ -414,81 +417,103 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 	return nil
 }
 
-// Drain Tries to drain connections gracefully
-func (rp *RequestProgress) Drain() error {
-	rp.subMutex.Lock()
-	defer rp.subMutex.Unlock()
+// Drain Tries to drain connections gracefully. If not though, connections are
+// forcibly closed and the item and error channels closed
+func (rp *RequestProgress) Drain() {
+	// Use sync.Once to ensure that if this is called in parallel goroutines it
+	// isn't run twice
+	rp.drain.Do(func() {
+		rp.subMutex.Lock()
+		defer rp.subMutex.Unlock()
 
-	if rp.noRespondersCancel != nil {
-		// Cancel the no responders watcher to release the resources
-		rp.noRespondersCancel()
-	}
-
-	// Close the item and error subscriptions
-	if err := unsubscribeGracefully(rp.itemSub); err != nil {
-		return err
-	}
-
-	if err := unsubscribeGracefully(rp.errorSub); err != nil {
-		return err
-	}
-
-	if rp.responseSub != nil {
-		// Drain the response connection to, but don't wait for callbacks to finish.
-		// this is because this code here is likely called as part of a callback and
-		// therefore would cause deadlock as it essentially waits for itself to
-		// finish
-		err := rp.responseSub.Unsubscribe()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	// This double-checks that all callbacks are *definitely* complete to avoid
-	// a situation where we close the channel with a goroutine still pending a
-	// send. This is rare due to the use of RWMutex on the channel, but still
-	// possible
-	var itemsDelivered int64
-	var errorsDelivered int64
-	var err error
-
-	for {
-		itemsDelivered, err = rp.itemSub.Delivered()
-
-		if err != nil {
-			break
+		if rp.noRespondersCancel != nil {
+			// Cancel the no responders watcher to release the resources
+			rp.noRespondersCancel()
 		}
 
-		errorsDelivered, err = rp.errorSub.Delivered()
+		// Close the item and error subscriptions
+		unsubscribeGracefully(rp.itemSub)
+		unsubscribeGracefully(rp.errorSub)
 
-		if err != nil {
-			break
+		if rp.responseSub != nil {
+			// Drain the response connection to, but don't wait for callbacks to finish.
+			// this is because this code here is likely called as part of a callback and
+			// therefore would cause deadlock as it essentially waits for itself to
+			// finish
+			rp.responseSub.Unsubscribe()
 		}
 
-		if (itemsDelivered == *rp.itemsProcessed) && (errorsDelivered == *rp.errorsProcessed) {
-			break
+		// This double-checks that all callbacks are *definitely* complete to avoid
+		// a situation where we close the channel with a goroutine still pending a
+		// send. This is rare due to the use of RWMutex on the channel, but still
+		// possible
+		var itemsDelivered int64
+		var errorsDelivered int64
+		var err error
+
+		for {
+			itemsDelivered, err = rp.itemSub.Delivered()
+
+			if err != nil {
+				break
+			}
+
+			errorsDelivered, err = rp.errorSub.Delivered()
+
+			if err != nil {
+				break
+			}
+
+			if (itemsDelivered == *rp.itemsProcessed) && (errorsDelivered == *rp.errorsProcessed) {
+				break
+			}
+
+			time.Sleep(50 * time.Millisecond)
 		}
 
-		time.Sleep(50 * time.Millisecond)
-	}
+		rp.chanMutex.Lock()
+		defer rp.chanMutex.Unlock()
 
-	rp.chanMutex.Lock()
-	defer rp.chanMutex.Unlock()
+		if rp.itemChan != nil {
+			close(rp.itemChan)
+		}
 
-	if rp.itemChan != nil {
-		close(rp.itemChan)
-	}
+		if rp.errorChan != nil {
+			close(rp.errorChan)
+		}
 
-	if rp.errorChan != nil {
-		close(rp.errorChan)
+		// Only if the drain is fully complete should we close the doneChan
+		close(rp.doneChan)
+	})
+}
+
+// Done Returns a channel when the request is fully complete and all channels
+// closed
+func (rp *RequestProgress) Done() <-chan struct{} {
+	return rp.doneChan
+}
+
+// Cancel Cancels a request and waits for all responders to report that they
+// were finished, cancelled or to be marked as stalled. If the context expires
+// before this happens, the request is cancelled forcibly, with subscriptions
+// being removed and channels closed. This method will only return when
+// cancellation is complete
+func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedConnection) error {
+	rp.AsyncCancel(natsConnection)
+
+	select {
+	case <-rp.Done():
+		// If the request finishes gracefully, that's good
+	case <-ctx.Done():
+		// If the context is cancelled first, then force the draining
+		rp.Drain()
 	}
 
 	return nil
 }
 
 // Cancel Sends a cancellation request for a given request
-func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
+func (rp *RequestProgress) AsyncCancel(natsConnection EncodedConnection) error {
 	if natsConnection == nil {
 		return errors.New("nil NATS connection")
 	}
@@ -513,9 +538,12 @@ func (rp *RequestProgress) Cancel(natsConnection EncodedConnection) error {
 		return err
 	}
 
-	err = rp.checkDone()
+	// Check this immediately in case nothing had started yet
+	if rp.allDone() {
+		rp.Drain()
+	}
 
-	return err
+	return nil
 }
 
 // Execute Executes a given request and waits for it to finish, returns the
@@ -615,7 +643,9 @@ func (rp *RequestProgress) ProcessResponse(response *Response) {
 
 	// Finally check to see if this was the final request and if so update the
 	// chan
-	rp.checkDone()
+	if rp.allDone() {
+		rp.Drain()
+	}
 }
 
 // NumWorking returns the number of responders that are in the Working state
@@ -730,16 +760,6 @@ func (rp *RequestProgress) String() string {
 	)
 }
 
-// checkDone checks everything is complete and if so runs `Drain()`
-func (rp *RequestProgress) checkDone() error {
-	if rp.allDone() {
-		// Automatically drain connections
-		return rp.Drain()
-	}
-
-	return nil
-}
-
 // Complete will return true if there are no remaining responders working
 func (rp *RequestProgress) allDone() bool {
 	if rp.NumResponders() > 0 || rp.cancelled {
@@ -768,7 +788,11 @@ func StallMonitor(context context.Context, timeout time.Duration, responder *Res
 		// means that we haven't received a response in the expected
 		// time, we now need to mark that responder as STALLED
 		responder.SetState(ResponderState_STALLED)
-		rp.checkDone()
+
+		if rp.allDone() {
+			rp.Drain()
+		}
+
 		return
 	}
 }
