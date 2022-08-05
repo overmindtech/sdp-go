@@ -498,7 +498,7 @@ func (rp *RequestProgress) Done() <-chan struct{} {
 // before this happens, the request is cancelled forcibly, with subscriptions
 // being removed and channels closed. This method will only return when
 // cancellation is complete
-func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedConnection) error {
+func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedConnection) {
 	rp.AsyncCancel(natsConnection)
 
 	select {
@@ -508,8 +508,6 @@ func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedCon
 		// If the context is cancelled first, then force the draining
 		rp.Drain()
 	}
-
-	return nil
 }
 
 // Cancel Sends a cancellation request for a given request
