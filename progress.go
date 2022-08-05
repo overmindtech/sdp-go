@@ -498,15 +498,19 @@ func (rp *RequestProgress) Done() <-chan struct{} {
 // before this happens, the request is cancelled forcibly, with subscriptions
 // being removed and channels closed. This method will only return when
 // cancellation is complete
-func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedConnection) {
+//
+// Returns a boolean indicating whether the cancellation needed to be forced
+func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedConnection) bool {
 	rp.AsyncCancel(natsConnection)
 
 	select {
 	case <-rp.Done():
 		// If the request finishes gracefully, that's good
+		return false
 	case <-ctx.Done():
 		// If the context is cancelled first, then force the draining
 		rp.Drain()
+		return true
 	}
 }
 

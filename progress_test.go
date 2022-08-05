@@ -515,7 +515,11 @@ func TestRogueResponder(t *testing.T) {
 
 	// Try to cancel the request. This will never get a response to say it's all
 	// done so instead we're expecting it to be forcibly cancelled
-	rp.Cancel(cancelCtx, nil)
+	forced := rp.Cancel(cancelCtx, nil)
+
+	if !forced {
+		t.Error("expected cancellation to be forced")
+	}
 }
 
 func TestRequestProgressError(t *testing.T) {
