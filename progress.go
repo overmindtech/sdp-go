@@ -18,25 +18,25 @@ import (
 const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
 
 const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
-Type: %v
-Context: %v
-Unique Attribute Value: %v
-Timestamp: %v
-Current Time: %v
+	Type: %v
+	Context: %v
+	Unique Attribute Value: %v
+	Timestamp: %v
+	Current Time: %v
 
-Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
+	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
 
 const ClosedChannelError = `SDP-GO ERROR: An ItemRequestError was processed after Drain() was called. Error details:
-ItemRequestUUID: %v
-ErrorType: %v
-ErrorString: %v
-Context: %v
-SourceName: %v
-ItemType: %v
-ResponderName: %v
+	ItemRequestUUID: %v
+	ErrorType: %v
+	ErrorString: %v
+	Context: %v
+	SourceName: %v
+	ItemType: %v
+	ResponderName: %v
 
 
-Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
+	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
 
 // EncodedConnection is an interface that allows messages to be published to it.
 // In production this would always be filled by a *nats.EncodedConn, however in
