@@ -17,6 +17,27 @@ import (
 // are sent (5 seconds)
 const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
 
+const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
+	Type: %v
+	Context: %v
+	Unique Attribute Value: %v
+	Timestamp: %v
+	Current Time: %v
+
+	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
+
+const ClosedChannelError = `SDP-GO ERROR: An ItemRequestError was processed after Drain() was called. Error details:
+	ItemRequestUUID: %v
+	ErrorType: %v
+	ErrorString: %v
+	Context: %v
+	SourceName: %v
+	ItemType: %v
+	ResponderName: %v
+
+
+	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
+
 // EncodedConnection is an interface that allows messages to be published to it.
 // In production this would always be filled by a *nats.EncodedConn, however in
 // testing we will mock this with something that does nothing
@@ -236,11 +257,12 @@ type RequestProgress struct {
 	respondersMutex sync.RWMutex
 
 	// Channel storage for sending back to the user
-	itemChan  chan<- *Item
-	errorChan chan<- *ItemRequestError
-	doneChan  chan struct{} // Closed when request is fully complete
-	chanMutex sync.RWMutex
-	drain     sync.Once
+	itemChan       chan<- *Item
+	errorChan      chan<- *ItemRequestError
+	doneChan       chan struct{} // Closed when request is fully complete
+	chanMutex      sync.RWMutex
+	channelsClosed bool // Additional protection against send on closed chan. This isn't brilliant but I can't think of a better way at the moment
+	drain          sync.Once
 
 	started   bool
 	cancelled bool
@@ -373,6 +395,27 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		if item != nil {
 			rp.chanMutex.RLock()
 			defer rp.chanMutex.RUnlock()
+			if rp.channelsClosed {
+				var itemTime time.Time
+
+				if item.GetMetadata() != nil {
+					itemTime = item.GetMetadata().Timestamp.AsTime()
+				}
+
+				// This *should* never happen but I am seeing it happen
+				// occasionally. In order to avoid a panic I'm instead going to
+				// log it here
+				fmt.Printf(
+					ClosedChannelItemError,
+					item.Type,
+					item.Context,
+					item.UniqueAttributeValue(),
+					itemTime.String(),
+					time.Now().String(),
+				)
+
+				return
+			}
 
 			rp.itemChan <- item
 		}
@@ -388,6 +431,23 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 		if err != nil {
 			rp.chanMutex.RLock()
 			defer rp.chanMutex.RUnlock()
+			if rp.channelsClosed {
+				// This *should* never happen but I am seeing it happen
+				// occasionally. In order to avoid a panic I'm instead going to
+				// log it here
+				fmt.Printf(
+					ClosedChannelError,
+					err.ItemRequestUUID,
+					err.ErrorType,
+					err.ErrorString,
+					err.Context,
+					err.SourceName,
+					err.ItemType,
+					err.ResponderName,
+				)
+
+				return
+			}
 
 			rp.errorChan <- err
 		}
