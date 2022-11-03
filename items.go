@@ -34,8 +34,8 @@ func (i *Item) UniqueAttributeValue() string {
 }
 
 // Reference returns an SDP reference for the item
-func (i *Item) Reference() Reference {
-	return Reference{
+func (i *Item) Reference() *Reference {
+	return &Reference{
 		Context:              i.Context,
 		Type:                 i.Type,
 		UniqueAttributeValue: i.UniqueAttributeValue(),
@@ -45,9 +45,9 @@ func (i *Item) Reference() Reference {
 // GloballyUniqueName Returns a string that defines the Item globally. This a
 // combination of the following values:
 //
-//  * context
-//  * type
-//  * uniqueAttributeValue
+//   - context
+//   - type
+//   - uniqueAttributeValue
 //
 // They are concatenated with dots (.)
 func (i *Item) GloballyUniqueName() string {
@@ -116,9 +116,9 @@ func (r *Reference) Hash() string {
 // GloballyUniqueName Returns a string that defines the Item globally. This a
 // combination of the following values:
 //
-//  * context
-//  * type
-//  * uniqueAttributeValue
+//   - context
+//   - type
+//   - uniqueAttributeValue
 //
 // They are concatenated with dots (.)
 func (r *Reference) GloballyUniqueName() string {
@@ -334,19 +334,19 @@ func ToAttributesViaJson(v interface{}) (*ItemAttributes, error) {
 // converted to a protobuf value. The structpb.ToValue() function expects things
 // to be in one of the following formats:
 //
-//  ╔════════════════════════╤════════════════════════════════════════════╗
-//  ║ Go type                │ Conversion                                 ║
-//  ╠════════════════════════╪════════════════════════════════════════════╣
-//  ║ nil                    │ stored as NullValue                        ║
-//  ║ bool                   │ stored as BoolValue                        ║
-//  ║ int, int32, int64      │ stored as NumberValue                      ║
-//  ║ uint, uint32, uint64   │ stored as NumberValue                      ║
-//  ║ float32, float64       │ stored as NumberValue                      ║
-//  ║ string                 │ stored as StringValue; must be valid UTF-8 ║
-//  ║ []byte                 │ stored as StringValue; base64-encoded      ║
-//  ║ map[string]interface{} │ stored as StructValue                      ║
-//  ║ []interface{}          │ stored as ListValue                        ║
-//  ╚════════════════════════╧════════════════════════════════════════════╝
+//	╔════════════════════════╤════════════════════════════════════════════╗
+//	║ Go type                │ Conversion                                 ║
+//	╠════════════════════════╪════════════════════════════════════════════╣
+//	║ nil                    │ stored as NullValue                        ║
+//	║ bool                   │ stored as BoolValue                        ║
+//	║ int, int32, int64      │ stored as NumberValue                      ║
+//	║ uint, uint32, uint64   │ stored as NumberValue                      ║
+//	║ float32, float64       │ stored as NumberValue                      ║
+//	║ string                 │ stored as StringValue; must be valid UTF-8 ║
+//	║ []byte                 │ stored as StringValue; base64-encoded      ║
+//	║ map[string]interface{} │ stored as StructValue                      ║
+//	║ []interface{}          │ stored as ListValue                        ║
+//	╚════════════════════════╧════════════════════════════════════════════╝
 //
 // However this means that a data type like []string won't work, despite the
 // function being perfectly able to represent it in a protobuf struct. This
