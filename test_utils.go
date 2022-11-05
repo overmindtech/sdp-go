@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"context"
 	sync "sync"
 
 	"github.com/nats-io/nats.go"
@@ -13,8 +14,10 @@ type ResponseMessage struct {
 
 // TestConnection Used to mock a NATS connection for testing
 type TestConnection struct {
-	Messages           []ResponseMessage
-	Subscriptions      map[string][]nats.Handler
+	Messages      []ResponseMessage
+	Subscriptions map[string][]nats.Handler
+	// RequestHandler Executed when a user runs RequestWithContext
+	RequestHandler     func(subject string, v interface{}, vPtr interface{}) error
 	messagesMutex      sync.Mutex
 	subscriptionsMutex sync.Mutex
 }
@@ -44,6 +47,12 @@ func (t *TestConnection) Subscribe(subject string, cb nats.Handler) (*nats.Subsc
 	t.Subscriptions[subject] = append(t.Subscriptions[subject], cb)
 
 	return nil, nil
+}
+
+// RequestWithContext Simulates a request on the given subject, the input v is
+// the sent data, and received data will be added to vPtr. This ha handled by
+func (t *TestConnection) RequestWithContext(ctx context.Context, subject string, v interface{}, vPtr interface{}) error {
+	return t.RequestHandler(subject, v, vPtr)
 }
 
 // runHandlers Runs the handlers for a given subject

@@ -44,6 +44,7 @@ const ClosedChannelError = `SDP-GO ERROR: An ItemRequestError was processed afte
 type EncodedConnection interface {
 	Publish(subject string, v interface{}) error
 	Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error)
+	RequestWithContext(ctx context.Context, subject string, v interface{}, vPtr interface{}) error
 }
 
 // ResponseSender is a struct responsible for sending responses out on behalf of
@@ -329,12 +330,12 @@ func (rp *RequestProgress) MarkStarted() {
 // means that the only thing a user needs to do in order to process all items
 // and then continue is range over the channel e.g.
 //
-// 	for item := range itemChannel {
-// 		// Do something with the item
-// 		fmt.Println(item)
+//	for item := range itemChannel {
+//		// Do something with the item
+//		fmt.Println(item)
 //
-// 		// This loop  will exit once the request is finished
-// 	}
+//		// This loop  will exit once the request is finished
+//	}
 func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item, errorChannel chan<- *ItemRequestError) error {
 	if rp.started {
 		return errors.New("already started")
