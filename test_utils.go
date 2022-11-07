@@ -148,6 +148,12 @@ func (t *TestConnection) runHandlers(subject string, object interface{}) {
 			case func(*ReverseLinksResponse):
 				r := object.(*ReverseLinksResponse)
 				go v(r)
+			case func(*GatewayRequest):
+				r := object.(*GatewayRequest)
+				go v(r)
+			case func(*GatewayResponse):
+				r := object.(*GatewayResponse)
+				go v(r)
 			case func(interface{}):
 				go v(object)
 			default:
