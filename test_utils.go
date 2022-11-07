@@ -2,9 +2,13 @@ package sdp
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"math/rand"
 	sync "sync"
 
 	"github.com/nats-io/nats.go"
+	"google.golang.org/protobuf/proto"
 )
 
 type ResponseMessage struct {
@@ -14,10 +18,8 @@ type ResponseMessage struct {
 
 // TestConnection Used to mock a NATS connection for testing
 type TestConnection struct {
-	Messages      []ResponseMessage
-	Subscriptions map[string][]nats.Handler
-	// RequestHandler Executed when a user runs RequestWithContext
-	RequestHandler     func(subject string, v interface{}, vPtr interface{}) error
+	Messages           []ResponseMessage
+	Subscriptions      map[string][]nats.Handler
 	messagesMutex      sync.Mutex
 	subscriptionsMutex sync.Mutex
 }
@@ -49,10 +51,69 @@ func (t *TestConnection) Subscribe(subject string, cb nats.Handler) (*nats.Subsc
 	return nil, nil
 }
 
-// RequestWithContext Simulates a request on the given subject, the input v is
-// the sent data, and received data will be added to vPtr. This ha handled by
+// RequestWithContext Simulates a request on the given subject, assigns a random
+// response subject then calls the handler on the given subject, we are
+// expecting the handler to be in the format: func(subject, reply string, o *obj)
 func (t *TestConnection) RequestWithContext(ctx context.Context, subject string, v interface{}, vPtr interface{}) error {
-	return t.RequestHandler(subject, v, vPtr)
+	reply := randSeq(10)
+	replies := make(chan interface{}, 128)
+
+	t.subscriptionsMutex.Lock()
+	handlers, ok := t.Subscriptions[subject]
+	t.subscriptionsMutex.Unlock()
+
+	if ok {
+		// Subscribe to the reply subject
+		t.Subscribe(reply, func(i interface{}) {
+			replies <- i
+		})
+
+		// Run the handlers
+		for _, handler := range handlers {
+			switch h := handler.(type) {
+			// Currently these are the only services that implement true
+			// request-response patterns
+			case func(subject, reply string, o *ReverseLinksRequest):
+				req := v.(*ReverseLinksRequest)
+				h(subject, reply, req)
+			case func(subject, reply string, o *GatewayRequest):
+				req := v.(*GatewayRequest)
+				h(subject, reply, req)
+			}
+		}
+	} else {
+		return fmt.Errorf("no responders on subject %v", subject)
+	}
+
+	// Assign the first result to vPtr
+	if len(replies) > 0 {
+		reply, ok := <-replies
+
+		if ok {
+			// Encode and decode again into the pointer given
+			if m, ok := reply.(proto.Message); ok {
+				b, err := proto.Marshal(m)
+
+				if err != nil {
+					return err
+				}
+
+				if vMsg, ok := vPtr.(proto.Message); ok {
+					err = proto.Unmarshal(b, vMsg)
+
+					if err != nil {
+						return err
+					}
+				} else {
+					return errors.New("vPtr was not a protobuf message type")
+				}
+			} else {
+				return errors.New("response was not a protobuf type")
+			}
+		}
+	}
+
+	return nil
 }
 
 // runHandlers Runs the handlers for a given subject
@@ -86,9 +147,21 @@ func (t *TestConnection) runHandlers(subject string, object interface{}) {
 			case func(*ReverseLinksResponse):
 				r := object.(*ReverseLinksResponse)
 				go v(r)
+			case func(interface{}):
+				go v(object)
 			default:
 				panic("unknown handler type")
 			}
 		}
 	}
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
