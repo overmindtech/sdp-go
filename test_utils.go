@@ -86,9 +86,8 @@ func (t *TestConnection) RequestWithContext(ctx context.Context, subject string,
 	}
 
 	// Assign the first result to vPtr
-	if len(replies) > 0 {
-		reply, ok := <-replies
-
+	select {
+	case reply, ok := <-replies:
 		if ok {
 			// Encode and decode again into the pointer given
 			if m, ok := reply.(proto.Message); ok {
@@ -111,6 +110,8 @@ func (t *TestConnection) RequestWithContext(ctx context.Context, subject string,
 				return errors.New("response was not a protobuf type")
 			}
 		}
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 
 	return nil
