@@ -6,39 +6,27 @@ import (
 )
 
 func TestRequestWithContext(t *testing.T) {
-	type Request struct {
-		RequestString string
-	}
+	tc := TestConnection{}
 
-	type Response struct {
-		ResponseString string
-	}
+	// Create the responder
+	tc.Subscribe("test", func(subject, reply string, req *ReverseLinksRequest) {
+		tc.Publish(reply, &ReverseLinksResponse{
+			LinkedItemRequests: []*ItemRequest{},
+			Error:              "testing",
+		})
+	})
 
-	tc := TestConnection{
-		RequestHandler: func(subject string, v, vPtr interface{}) error {
-			if req, ok := v.(Request); ok {
-				if resp, ok := vPtr.(*Response); ok {
-					resp.ResponseString = req.RequestString
-				}
-			}
+	request := ReverseLinksRequest{}
 
-			return nil
-		},
-	}
+	response := ReverseLinksResponse{}
 
-	request := Request{
-		RequestString: "foo",
-	}
-
-	response := Response{}
-
-	err := tc.RequestWithContext(context.Background(), "test", request, &response)
+	err := tc.RequestWithContext(context.Background(), "test", &request, &response)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if response.ResponseString != request.RequestString {
-		t.Errorf("expected response string to be %v, got %v", request.RequestString, response.ResponseString)
+	if response.Error != "testing" {
+		t.Errorf("expected error to be 'testing', got '%v'", response.Error)
 	}
 }
