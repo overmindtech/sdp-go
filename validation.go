@@ -20,8 +20,8 @@ func (i *Item) Validate() error {
 		return errors.New("item has nil Attributes")
 	}
 
-	if i.Context == "" {
-		return errors.New("item has empty Context")
+	if i.Scope == "" {
+		return errors.New("item has empty Scope")
 	}
 
 	if i.UniqueAttributeValue() == "" {
@@ -43,8 +43,8 @@ func (r *Reference) Validate() error {
 	if r.UniqueAttributeValue == "" {
 		return errors.New("reference has empty UniqueAttributeValue")
 	}
-	if r.Context == "" {
-		return errors.New("reference has empty Context")
+	if r.Scope == "" {
+		return errors.New("reference has empty Scope")
 	}
 
 	return nil
@@ -119,8 +119,8 @@ func (e *ItemRequestError) Validate() error {
 		return errors.New("ItemRequestError has empty ErrorString")
 	}
 
-	if e.Context == "" {
-		return errors.New("ItemRequestError has empty Context")
+	if e.Scope == "" {
+		return errors.New("ItemRequestError has empty Scope")
 	}
 
 	if e.SourceName == "" {
@@ -148,8 +148,8 @@ func (r *ItemRequest) Validate() error {
 		return errors.New("ItemRequest has empty Type")
 	}
 
-	if r.Context == "" {
-		return errors.New("ItemRequest has empty Context")
+	if r.Scope == "" {
+		return errors.New("ItemRequest has empty Scope")
 	}
 
 	if len(r.UUID) == 0 {

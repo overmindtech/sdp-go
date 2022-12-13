@@ -19,7 +19,7 @@ const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
 
 const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
 	Type: %v
-	Context: %v
+	Scope: %v
 	Unique Attribute Value: %v
 	Timestamp: %v
 	Current Time: %v
@@ -30,7 +30,7 @@ const ClosedChannelError = `SDP-GO ERROR: An ItemRequestError was processed afte
 	ItemRequestUUID: %v
 	ErrorType: %v
 	ErrorString: %v
-	Context: %v
+	Scope: %v
 	SourceName: %v
 	ItemType: %v
 	ResponderName: %v
@@ -369,14 +369,14 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 	var requestSubject string
 
-	if rp.Request.Context == "" {
-		return errors.New("cannot execute request with blank context")
+	if rp.Request.Scope == "" {
+		return errors.New("cannot execute request with blank scope")
 	}
 
-	if rp.Request.Context == WILDCARD {
+	if rp.Request.Scope == WILDCARD {
 		requestSubject = "request.all"
 	} else {
-		requestSubject = fmt.Sprintf("request.context.%v", rp.Request.Context)
+		requestSubject = fmt.Sprintf("request.scope.%v", rp.Request.Scope)
 	}
 
 	// Store the channels
@@ -409,7 +409,7 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 				fmt.Printf(
 					ClosedChannelItemError,
 					item.Type,
-					item.Context,
+					item.Scope,
 					item.UniqueAttributeValue(),
 					itemTime.String(),
 					time.Now().String(),
@@ -441,7 +441,7 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 					err.ItemRequestUUID,
 					err.ErrorType,
 					err.ErrorString,
-					err.Context,
+					err.Scope,
 					err.SourceName,
 					err.ItemType,
 					err.ResponderName,
@@ -587,10 +587,10 @@ func (rp *RequestProgress) AsyncCancel(natsConnection EncodedConnection) error {
 
 	var cancelSubject string
 
-	if rp.Request.Context == WILDCARD {
+	if rp.Request.Scope == WILDCARD {
 		cancelSubject = "cancel.all"
 	} else {
-		cancelSubject = fmt.Sprintf("cancel.context.%v", rp.Request.Context)
+		cancelSubject = fmt.Sprintf("cancel.scope.%v", rp.Request.Scope)
 	}
 
 	rp.cancelled = true

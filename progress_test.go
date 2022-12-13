@@ -232,8 +232,8 @@ func TestRequestProgressNormal(t *testing.T) {
 		}
 	})
 
-	t.Run("Processing come other contexts also responding", func(t *testing.T) {
-		// Then another context starts working
+	t.Run("Processing come other scopes also responding", func(t *testing.T) {
+		// Then another scope starts working
 		rp.ProcessResponse(&Response{
 			Responder:    "test2",
 			State:        ResponderState_WORKING,
@@ -448,7 +448,7 @@ func TestRequestProgressStalled(t *testing.T) {
 		}
 
 		if _, ok := rp.responders["test1"]; !ok {
-			t.Error("Could not get responder for context test1")
+			t.Error("Could not get responder for scope test1")
 		}
 	})
 
@@ -686,7 +686,7 @@ func TestExecute(t *testing.T) {
 			Method:          RequestMethod_GET,
 			Query:           "Dylan",
 			LinkDepth:       0,
-			Context:         "global",
+			Scope:           "global",
 			IgnoreCache:     false,
 			UUID:            u[:],
 			Timeout:         durationpb.New(10 * time.Second),
@@ -710,7 +710,7 @@ func TestExecute(t *testing.T) {
 			Method:          RequestMethod_GET,
 			Query:           "Dylan",
 			LinkDepth:       0,
-			Context:         "global",
+			Scope:           "global",
 			IgnoreCache:     false,
 			UUID:            u[:],
 			Timeout:         durationpb.New(10 * time.Second),
@@ -785,18 +785,18 @@ func TestRealNats(t *testing.T) {
 	u := uuid.New()
 
 	req := ItemRequest{
-		Type:    "person",
-		Method:  RequestMethod_GET,
-		Query:   "dylan",
-		Context: "global",
-		UUID:    u[:],
+		Type:   "person",
+		Method: RequestMethod_GET,
+		Query:  "dylan",
+		Scope:  "global",
+		UUID:   u[:],
 	}
 
 	rp := NewRequestProgress(&req)
 	ready := make(chan bool)
 
 	go func() {
-		enc.Subscribe("request.context.global", func(r *ItemRequest) {
+		enc.Subscribe("request.scope.global", func(r *ItemRequest) {
 			delay := 100 * time.Millisecond
 
 			time.Sleep(delay)

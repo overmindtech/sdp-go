@@ -5,7 +5,7 @@ import "fmt"
 const ErrorTemplate string = `%v
 
 ErrorType: %v
-Context: %v
+Scope: %v
 SourceName: %v
 ItemType: %v
 ResponderName: %v`
@@ -16,7 +16,7 @@ func (e *ItemRequestError) Error() string {
 		ErrorTemplate,
 		e.ErrorString,
 		e.ErrorType.String(),
-		e.Context,
+		e.Scope,
 		e.SourceName,
 		e.ItemType,
 		e.ResponderName,
