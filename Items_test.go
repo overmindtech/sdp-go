@@ -225,7 +225,7 @@ func TestCopy(t *testing.T) {
 		itemA := Item{
 			Type:            "user",
 			UniqueAttribute: "name",
-			Context:         "test",
+			Scope:           "test",
 			Attributes:      exampleAttributes,
 			LinkedItemRequests: []*ItemRequest{
 				{
@@ -238,11 +238,11 @@ func TestCopy(t *testing.T) {
 			Metadata: &Metadata{
 				SourceName: "test",
 				SourceRequest: &ItemRequest{
-					Type:    "user",
-					Method:  RequestMethod_GET,
-					Query:   "Dylan",
-					Context: "testContext",
-					UUID:    u[:],
+					Type:   "user",
+					Method: RequestMethod_GET,
+					Query:  "Dylan",
+					Scope:  "testScope",
+					UUID:   u[:],
 				},
 				Timestamp:             timestamppb.Now(),
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
@@ -263,7 +263,7 @@ func TestCopy(t *testing.T) {
 		itemA := Item{
 			Type:            "user",
 			UniqueAttribute: "name",
-			Context:         "test",
+			Scope:           "test",
 			Attributes:      exampleAttributes,
 			LinkedItemRequests: []*ItemRequest{
 				{
@@ -294,7 +294,7 @@ func TestCopy(t *testing.T) {
 		itemA := Item{
 			Type:               "user",
 			UniqueAttribute:    "name",
-			Context:            "test",
+			Scope:              "test",
 			Attributes:         exampleAttributes,
 			LinkedItemRequests: []*ItemRequest{},
 			LinkedItems:        []*Reference{},
@@ -312,8 +312,8 @@ func TestCopy(t *testing.T) {
 }
 
 func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
-	if itemA.Context != itemB.Context {
-		t.Error("Context did not match")
+	if itemA.Scope != itemB.Scope {
+		t.Error("Scope did not match")
 	}
 
 	if itemA.Type != itemB.Type {
@@ -383,8 +383,8 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 		}
 
 		if itemA.Metadata.SourceRequest != nil {
-			if itemA.Metadata.SourceRequest.Context != itemB.Metadata.SourceRequest.Context {
-				t.Error("Metadata.SourceRequest.Context does not match")
+			if itemA.Metadata.SourceRequest.Scope != itemB.Metadata.SourceRequest.Scope {
+				t.Error("Metadata.SourceRequest.Scope does not match")
 			}
 
 			if itemA.Metadata.SourceRequest.Method != itemB.Metadata.SourceRequest.Method {

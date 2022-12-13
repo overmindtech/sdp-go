@@ -64,10 +64,10 @@ func TestValidateItem(t *testing.T) {
 		}
 	})
 
-	t.Run("item has empty Context", func(t *testing.T) {
+	t.Run("item has empty Scope", func(t *testing.T) {
 		i := newItem()
 
-		i.Context = ""
+		i.Scope = ""
 
 		err := i.Validate()
 
@@ -134,10 +134,10 @@ func TestValidateReference(t *testing.T) {
 		}
 	})
 
-	t.Run("reference has empty Context", func(t *testing.T) {
+	t.Run("reference has empty Scope", func(t *testing.T) {
 		r := newReference()
 
-		r.Context = ""
+		r.Scope = ""
 
 		err := r.Validate()
 
@@ -197,7 +197,7 @@ func TestValidateEdge(t *testing.T) {
 	t.Run("Edge has invalid To", func(t *testing.T) {
 		e := newEdge()
 
-		e.To.Context = ""
+		e.To.Scope = ""
 
 		err := e.Validate()
 
@@ -332,9 +332,9 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError has empty Context", func(t *testing.T) {
+	t.Run("ItemRequestError has empty Scope", func(t *testing.T) {
 		e := newItemRequestError()
-		e.Context = ""
+		e.Scope = ""
 		err := e.Validate()
 
 		if err == nil {
@@ -399,9 +399,9 @@ func TestValidateItemRequest(t *testing.T) {
 
 	})
 
-	t.Run("ItemRequest has empty Context", func(t *testing.T) {
+	t.Run("ItemRequest has empty Scope", func(t *testing.T) {
 		r := newItemRequest()
-		r.Context = ""
+		r.Scope = ""
 		err := r.Validate()
 
 		if err == nil {
@@ -442,7 +442,7 @@ func newItemRequest() *ItemRequest {
 		Method:          RequestMethod_GET,
 		Query:           "Dylan",
 		LinkDepth:       1,
-		Context:         "global",
+		Scope:           "global",
 		UUID:            u[:],
 		Timeout:         durationpb.New(time.Second),
 		IgnoreCache:     false,
@@ -459,7 +459,7 @@ func newItemRequestError() *ItemRequestError {
 		ItemRequestUUID: u[:],
 		ErrorType:       ItemRequestError_OTHER,
 		ErrorString:     "bad",
-		Context:         "global",
+		Scope:           "global",
 		SourceName:      "test-source",
 		ItemType:        "test",
 		ResponderName:   "test-responder",
@@ -495,7 +495,7 @@ func newReference() *Reference {
 	return &Reference{
 		Type:                 "person",
 		UniqueAttributeValue: "Dylan",
-		Context:              "global",
+		Scope:                "global",
 	}
 }
 
@@ -503,7 +503,7 @@ func newItem() *Item {
 	return &Item{
 		Type:               "user",
 		UniqueAttribute:    "name",
-		Context:            "test",
+		Scope:              "test",
 		LinkedItemRequests: []*ItemRequest{},
 		LinkedItems:        []*Reference{},
 		Attributes: &ItemAttributes{
@@ -521,10 +521,10 @@ func newItem() *Item {
 			SourceName: "users",
 			SourceRequest: &ItemRequest{
 				Type:            "user",
-				Method:          RequestMethod_FIND,
+				Method:          RequestMethod_LIST,
 				Query:           "*",
 				LinkDepth:       12,
-				Context:         "testContext",
+				Scope:           "testScope",
 				ItemSubject:     "items",
 				ResponseSubject: "responses",
 			},

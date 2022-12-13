@@ -36,7 +36,7 @@ func (i *Item) UniqueAttributeValue() string {
 // Reference returns an SDP reference for the item
 func (i *Item) Reference() *Reference {
 	return &Reference{
-		Context:              i.Context,
+		Scope:                i.Scope,
 		Type:                 i.Type,
 		UniqueAttributeValue: i.UniqueAttributeValue(),
 	}
@@ -45,14 +45,14 @@ func (i *Item) Reference() *Reference {
 // GloballyUniqueName Returns a string that defines the Item globally. This a
 // combination of the following values:
 //
-//   - context
+//   - scope
 //   - type
 //   - uniqueAttributeValue
 //
 // They are concatenated with dots (.)
 func (i *Item) GloballyUniqueName() string {
 	return strings.Join([]string{
-		i.GetContext(),
+		i.GetScope(),
 		i.GetType(),
 		i.UniqueAttributeValue(),
 	},
@@ -65,7 +65,7 @@ func (i *Item) Copy(dest *Item) {
 	// Values can be copied directly
 	dest.Type = i.Type
 	dest.UniqueAttribute = i.UniqueAttribute
-	dest.Context = i.Context
+	dest.Scope = i.Scope
 
 	// We need to check that any pointers are actually populated with pointers
 	// to somewhere in memory. If they are nil then there is no data structure
@@ -116,14 +116,14 @@ func (r *Reference) Hash() string {
 // GloballyUniqueName Returns a string that defines the Item globally. This a
 // combination of the following values:
 //
-//   - context
+//   - scope
 //   - type
 //   - uniqueAttributeValue
 //
 // They are concatenated with dots (.)
 func (r *Reference) GloballyUniqueName() string {
 	return strings.Join([]string{
-		r.GetContext(),
+		r.GetScope(),
 		r.GetType(),
 		r.GetUniqueAttributeValue(),
 	},
@@ -135,7 +135,7 @@ func (r *Reference) GloballyUniqueName() string {
 func (r *Reference) Copy(dest *Reference) {
 	dest.Type = r.Type
 	dest.UniqueAttributeValue = r.UniqueAttributeValue
-	dest.Context = r.Context
+	dest.Scope = r.Scope
 }
 
 // Copy copies all information from one Metadata pointer to another
@@ -245,7 +245,7 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 	dest.Method = r.Method
 	dest.Query = r.Query
 	dest.LinkDepth = r.LinkDepth
-	dest.Context = r.Context
+	dest.Scope = r.Scope
 	dest.ItemSubject = r.ItemSubject
 	dest.ResponseSubject = r.ResponseSubject
 	dest.IgnoreCache = r.IgnoreCache

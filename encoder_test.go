@@ -17,9 +17,9 @@ var _u = uuid.New()
 
 var itemRequest = ItemRequest{
 	Type:      "user",
-	Method:    RequestMethod_FIND,
+	Method:    RequestMethod_LIST,
 	LinkDepth: 10,
-	Context:   "test",
+	Scope:     "test",
 	UUID:      _u[:],
 	Timeout:   durationpb.New(10 * time.Second),
 }
@@ -40,10 +40,10 @@ var metadata = Metadata{
 	SourceName: "users",
 	SourceRequest: &ItemRequest{
 		Type:            "user",
-		Method:          RequestMethod_FIND,
+		Method:          RequestMethod_LIST,
 		Query:           "*",
 		LinkDepth:       12,
-		Context:         "testContext",
+		Scope:           "testScope",
 		ItemSubject:     "items",
 		ResponseSubject: "responses",
 	},
@@ -74,13 +74,13 @@ var items = Items{
 var reference = Reference{
 	Type:                 "user",
 	UniqueAttributeValue: "dylan",
-	Context:              "test",
+	Scope:                "test",
 }
 
 var itemRequestError = ItemRequestError{
 	ErrorType:   ItemRequestError_OTHER,
 	ErrorString: "uh oh",
-	Context:     "test",
+	Scope:       "test",
 }
 
 var response = Response{
