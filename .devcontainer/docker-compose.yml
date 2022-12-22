@@ -1,36 +1,33 @@
 version: "3"
 services:
-  nats:
-    image: nats:latest
-    command: "-DV"
-    networks:
-      - sdp-go
-
   devcontainer:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        # Update 'VARIANT' to pick an LTS version of Node.js: 16, 14, 12.
-        # Append -bullseye or -buster to pin to an OS version.
-        # Use -bullseye variants on local arm64/Apple Silicon.
-        VARIANT: 1-bullseye
-        NODE_VERSION: lts/*
+    image: "mcr.microsoft.com/devcontainers/go:0-1-bullseye"
     volumes:
       - ..:/workspace:cached
+      # mount the user's AWS config so that the CLI works as expected
+      - ~/.aws:/home/vscode/.aws:cached
+      # make the rest of the checkouts from the host available, so that
+      # cross-mod changes can be developed and tested inside the container
+      - ../..:/sources
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
+
+    # Uncomment the next line to use a non-root user for all processes.
+    user: vscode
 
     # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
     networks:
       - sdp-go
 
-    # Uncomment the next line to use a non-root user for all processes.
-    # user: node
-
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  nats:
+    image: nats:latest
+    command: "-DV"
+    networks:
+      - sdp-go
 
 networks:
   sdp-go:
