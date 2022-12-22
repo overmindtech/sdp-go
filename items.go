@@ -260,20 +260,20 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 }
 
 // Context returns a context and cancel function representing the timeout for this request
-func (r *ItemRequest) TimeoutContext() (context.Context, context.CancelFunc) {
+func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if r == nil || r.Timeout == nil {
-		return context.WithCancel(context.Background())
+		return context.WithCancel(ctx)
 	}
 
 	// If the timeout is 0, treat that as infinite
 	if r.Timeout.Nanos == 0 && r.Timeout.Seconds == 0 {
-		return context.WithCancel(context.Background())
+		return context.WithCancel(ctx)
 	}
 
-	return context.WithTimeout(context.Background(), r.Timeout.AsDuration())
+	return context.WithTimeout(ctx, r.Timeout.AsDuration())
 }
 
-// ToAttributes Convers a map[string]interface{} to an ItemAttributes object
+// ToAttributes Converts a map[string]interface{} to an ItemAttributes object
 func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
 	if m == nil {
 		return nil, nil

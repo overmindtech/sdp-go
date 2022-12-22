@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -419,7 +420,7 @@ func TestTimeoutContext(t *testing.T) {
 		Timeout:     durationpb.New(10 * time.Millisecond),
 	}
 
-	ctx, cancel := r.TimeoutContext()
+	ctx, cancel := r.TimeoutContext(context.Background())
 	defer cancel()
 
 	select {
