@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/nats-io/nats.go v1.15.0
+	github.com/nats-io/nats.go v1.22.1
 	google.golang.org/protobuf v1.28.0
 )
 
