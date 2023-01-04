@@ -1,8 +1,12 @@
 package sdp
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/nats-io/nats.go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -64,4 +68,40 @@ func (e *SDPEncoder) Decode(subject string, data []byte, vPtr interface{}) error
 	}
 
 	return fmt.Errorf("cannot decode SDP message into variable of type %T, must be a proto.Message", vPtr)
+}
+
+func BuildMsg(ctx context.Context, subject string, in proto.Message) (nats.Msg, error) {
+	data, err := proto.Marshal(in)
+	if err != nil {
+		return nats.Msg{}, err
+	}
+	headers := make(nats.Header)
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(headers))
+	return nats.Msg{
+		Subject: subject,
+		Header:  headers,
+		Data:    data,
+	}, nil
+}
+
+func ParseMsg(ctx context.Context, in *nats.Msg, out proto.Message) (context.Context, error) {
+	err := proto.Unmarshal(in.Data, out)
+
+	if err != nil {
+		return ctx, err
+	}
+
+	// Check for possible type mismatch. If the wong type was provided it
+	// may have been able to partially decode the message, but there will be
+	// some remaining unknown fields. If there are some, fail.
+	if out.ProtoReflect().GetUnknown() != nil {
+		return ctx, UnknownFieldsError{
+			Message: out,
+		}
+	}
+
+	ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(in.Header))
+
+	// This means it worked
+	return ctx, err
 }
