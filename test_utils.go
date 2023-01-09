@@ -86,6 +86,7 @@ func (t *TestConnection) QueueSubscribe(subj, queue string, cb nats.MsgHandler) 
 // expecting the handler to be in the format: func(msg *nats.Msg)
 func (t *TestConnection) RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
 	replySubject := randSeq(10)
+	msg.Reply = replySubject
 	replies := make(chan interface{}, 128)
 
 	t.subscriptionsMutex.Lock()
