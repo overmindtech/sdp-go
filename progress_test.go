@@ -593,8 +593,8 @@ func TestStart(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
 
 	conn := TestConnection{}
-	items := make(chan *Item)
-	errs := make(chan *ItemRequestError)
+	items := make(chan *Item, 128)
+	errs := make(chan *ItemRequestError, 128)
 
 	err := rp.Start(context.Background(), &conn, items, errs)
 
@@ -630,8 +630,8 @@ func TestAsyncCancel(t *testing.T) {
 
 		rp := NewRequestProgress(&itemRequest)
 
-		itemChan := make(chan *Item)
-		errChan := make(chan *ItemRequestError)
+		itemChan := make(chan *Item, 128)
+		errChan := make(chan *ItemRequestError, 128)
 
 		err := rp.Start(context.Background(), &conn, itemChan, errChan)
 
