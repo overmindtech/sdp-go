@@ -111,14 +111,13 @@ func (t *TestConnection) RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.M
 	select {
 	case reply, ok := <-replies:
 		if ok {
-			// Encode and decode again into the pointer given
-			if m, ok := reply.([]byte); ok {
+			if m, ok := reply.(*nats.Msg); ok {
 				return &nats.Msg{
 					Subject: replySubject,
-					Data:    m,
+					Data:    m.Data,
 				}, nil
 			} else {
-				return nil, errors.New("response was not a []byte")
+				return nil, fmt.Errorf("reply was not a *nats.Msg, but a %T", reply)
 			}
 		} else {
 			return nil, errors.New("no replies")
