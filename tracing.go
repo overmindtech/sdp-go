@@ -25,7 +25,11 @@ var (
 
 type CtxMsgHandler func(ctx context.Context, msg *nats.Msg)
 
-func MakeOtelExtractingHandler(spanName string, h CtxMsgHandler, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+func NewOtelExtractingHandler(spanName string, h CtxMsgHandler, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+	if h == nil {
+		return nil
+	}
+
 	return func(msg *nats.Msg) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

@@ -38,15 +38,6 @@ const ClosedChannelError = `SDP-GO ERROR: An ItemRequestError was processed afte
 
 	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
 
-// EncodedConnection is an interface that allows messages to be published to it.
-// In production this would always be filled by a *nats.EncodedConn, however in
-// testing we will mock this with something that does nothing
-type EncodedConnection interface {
-	Publish(subject string, v interface{}) error
-	Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error)
-	RequestWithContext(ctx context.Context, subject string, v interface{}, vPtr interface{}) error
-}
-
 // ResponseSender is a struct responsible for sending responses out on behalf of
 // agents that are working on that request. Think of it as the agent side
 // component of Responder
@@ -59,6 +50,7 @@ type ResponseSender struct {
 	monitorKill      chan struct{} // Sending to this channel will kill the response sender goroutine
 	responderName    string
 	connection       EncodedConnection
+	responseCtx      context.Context
 }
 
 // Start sends the first response on the given subject and connection to say
@@ -66,10 +58,10 @@ type ResponseSender struct {
 // sending responses until it is cancelled
 //
 // Note that the NATS connection must be an encoded connection that is able to
-// encode and decode SDP messages. This can be done using
-// `nats.RegisterEncoder("sdp", &sdp.ENCODER)`
-func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName string) {
+// encode and decode SDP messages.
+func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string) {
 	rs.monitorKill = make(chan struct{})
+	rs.responseCtx = ctx
 
 	// Set the default if it's not set
 	if rs.ResponseInterval == 0 {
@@ -82,7 +74,7 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 
 	// Set struct values
 	rs.responderName = responderName
-	rs.connection = natsConnection
+	rs.connection = ec
 
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
@@ -95,13 +87,14 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 	if rs.connection != nil {
 		// Send the initial response
 		rs.connection.Publish(
+			ctx,
 			rs.ResponseSubject,
 			&resp,
 		)
 	}
 
 	// Start a goroutine to send further responses
-	go func(respInterval time.Duration, conn EncodedConnection, r *Response, kill chan struct{}) {
+	go func(respInterval time.Duration, ec EncodedConnection, r *Response, kill chan struct{}) {
 		tick := time.NewTicker(respInterval)
 
 		for {
@@ -113,8 +106,9 @@ func (rs *ResponseSender) Start(natsConnection EncodedConnection, responderName 
 
 				return
 			case <-tick.C:
-				if conn != nil {
-					conn.Publish(
+				if ec != nil {
+					ec.Publish(
+						ctx,
 						rs.ResponseSubject,
 						r,
 					)
@@ -137,16 +131,17 @@ func (rs *ResponseSender) Kill() {
 func (rs *ResponseSender) Done() {
 	rs.Kill()
 
-	// Create the response before starting the goroutine since it only needs to
-	// be done once
-	resp := Response{
-		Responder: rs.responderName,
-		State:     ResponderState_COMPLETE,
-	}
-
 	if rs.connection != nil {
-		// Send the initial response
+		// Create the response before starting the goroutine since it only needs to
+		// be done once
+		resp := Response{
+			Responder: rs.responderName,
+			State:     ResponderState_COMPLETE,
+		}
+
+		// Send the final completion message
 		rs.connection.Publish(
+			context.TODO(),
 			rs.ResponseSubject,
 			&resp,
 		)
@@ -168,6 +163,7 @@ func (rs *ResponseSender) Error() {
 	if rs.connection != nil {
 		// Send the initial response
 		rs.connection.Publish(
+			rs.responseCtx,
 			rs.ResponseSubject,
 			&resp,
 		)
@@ -185,6 +181,7 @@ func (rs *ResponseSender) Cancel() {
 
 	if rs.connection != nil {
 		rs.connection.Publish(
+			rs.responseCtx,
 			rs.ResponseSubject,
 			&resp,
 		)
@@ -253,6 +250,7 @@ type RequestProgress struct {
 	// be marked as completed
 	StartTimeout time.Duration
 	Request      *ItemRequest
+	requestCtx   context.Context
 
 	responders      map[string]*Responder
 	respondersMutex sync.RWMutex
@@ -336,18 +334,20 @@ func (rp *RequestProgress) MarkStarted() {
 //
 //		// This loop  will exit once the request is finished
 //	}
-func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel chan<- *Item, errorChannel chan<- *ItemRequestError) error {
+func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, itemChannel chan<- *Item, errorChannel chan<- *ItemRequestError) error {
 	if rp.started {
 		return errors.New("already started")
 	}
 
-	if natsConnection == nil {
+	if ec.Underlying() == nil {
 		return errors.New("nil NATS connection")
 	}
 
 	if itemChannel == nil {
 		return errors.New("nil item channel")
 	}
+
+	rp.requestCtx = ctx
 
 	// Populate inboxes if they aren't already
 	if rp.Request.ItemSubject == "" {
@@ -390,7 +390,7 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 	var err error
 
-	rp.itemSub, err = natsConnection.Subscribe(rp.Request.ItemSubject, func(item *Item) {
+	rp.itemSub, err = ec.Subscribe(rp.Request.ItemSubject, NewMsgHandler("Request.ItemSubject", func(ctx context.Context, item *Item) {
 		defer atomic.AddInt64(rp.itemsProcessed, 1)
 
 		if item != nil {
@@ -420,13 +420,13 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 			rp.itemChan <- item
 		}
-	})
+	}))
 
 	if err != nil {
 		return err
 	}
 
-	rp.errorSub, err = natsConnection.Subscribe(rp.Request.ErrorSubject, func(err *ItemRequestError) {
+	rp.errorSub, err = ec.Subscribe(rp.Request.ErrorSubject, NewMsgHandler("Request.ErrorSubject", func(ctx context.Context, err *ItemRequestError) {
 		defer atomic.AddInt64(rp.errorsProcessed, 1)
 
 		if err != nil {
@@ -452,22 +452,20 @@ func (rp *RequestProgress) Start(natsConnection EncodedConnection, itemChannel c
 
 			rp.errorChan <- err
 		}
-	})
+	}))
 
 	if err != nil {
 		return err
 	}
 
-	rp.responseSub, err = natsConnection.Subscribe(rp.Request.ResponseSubject, func(response *Response) {
-		rp.ProcessResponse(response)
-	})
+	rp.responseSub, err = ec.Subscribe(rp.Request.ResponseSubject, NewMsgHandler("ProcessResponse", rp.ProcessResponse))
 
 	if err != nil {
 		rp.itemSub.Unsubscribe()
 		return err
 	}
 
-	err = natsConnection.Publish(requestSubject, rp.Request)
+	err = ec.Publish(ctx, requestSubject, rp.Request)
 
 	rp.MarkStarted()
 
@@ -561,8 +559,8 @@ func (rp *RequestProgress) Done() <-chan struct{} {
 // cancellation is complete
 //
 // Returns a boolean indicating whether the cancellation needed to be forced
-func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedConnection) bool {
-	rp.AsyncCancel(natsConnection)
+func (rp *RequestProgress) Cancel(ctx context.Context, ec EncodedConnection) bool {
+	rp.AsyncCancel(ec)
 
 	select {
 	case <-rp.Done():
@@ -576,8 +574,8 @@ func (rp *RequestProgress) Cancel(ctx context.Context, natsConnection EncodedCon
 }
 
 // Cancel Sends a cancellation request for a given request
-func (rp *RequestProgress) AsyncCancel(natsConnection EncodedConnection) error {
-	if natsConnection == nil {
+func (rp *RequestProgress) AsyncCancel(ec EncodedConnection) error {
+	if ec == nil {
 		return errors.New("nil NATS connection")
 	}
 
@@ -595,7 +593,7 @@ func (rp *RequestProgress) AsyncCancel(natsConnection EncodedConnection) error {
 
 	rp.cancelled = true
 
-	err := natsConnection.Publish(cancelSubject, &cancelRequest)
+	err := ec.Publish(rp.requestCtx, cancelSubject, &cancelRequest)
 
 	if err != nil {
 		return err
@@ -614,17 +612,17 @@ func (rp *RequestProgress) AsyncCancel(natsConnection EncodedConnection) error {
 // be returned only if there is a problem making the request. Details of which
 // responders have failed etc. should be determined using the typical methods
 // like `NumError()`.
-func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, []*ItemRequestError, error) {
+func (rp *RequestProgress) Execute(ctx context.Context, ec EncodedConnection) ([]*Item, []*ItemRequestError, error) {
 	items := make([]*Item, 0)
 	errs := make([]*ItemRequestError, 0)
 	i := make(chan *Item)
 	e := make(chan *ItemRequestError)
 
-	if natsConnection == nil {
+	if ec == nil {
 		return items, errs, errors.New("nil NATS connection")
 	}
 
-	err := rp.Start(natsConnection, i, e)
+	err := rp.Start(ctx, ec, i, e)
 
 	if err != nil {
 		return items, errs, err
@@ -660,7 +658,7 @@ func (rp *RequestProgress) Execute(natsConnection EncodedConnection) ([]*Item, [
 
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
-func (rp *RequestProgress) ProcessResponse(response *Response) {
+func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Response) {
 	// Update the stored data
 	rp.respondersMutex.Lock()
 

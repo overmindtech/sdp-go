@@ -67,13 +67,13 @@ func (e *SDPEncoder) Decode(subject string, data []byte, vPtr interface{}) error
 	return fmt.Errorf("cannot decode SDP message into variable of type %T, must be a proto.Message", vPtr)
 }
 
-func Marshal(subject string, in proto.Message) (nats.Msg, error) {
+func MarshalMsg(subj string, in proto.Message) (nats.Msg, error) {
 	data, err := proto.Marshal(in)
 	if err != nil {
 		return nats.Msg{}, err
 	}
 	return nats.Msg{
-		Subject: subject,
+		Subject: subj,
 		Data:    data,
 	}, nil
 }
