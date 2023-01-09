@@ -11,8 +11,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var Encoder = SDPEncoder{}
-
 var _u = uuid.New()
 
 var itemRequest = ItemRequest{
@@ -103,29 +101,20 @@ var messages = []proto.Message{
 	&response,
 }
 
-// TestEncode Make sure that we can incode all of the message types without
+// TestEncode Make sure that we can encode all of the message types without
 // raising any errors
 func TestEncode(t *testing.T) {
 	for _, message := range messages {
-		_, err := Encoder.Encode("testSubject", message)
-
+		_, err := proto.Marshal(message)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 }
 
-func TestResponse(t *testing.T) {
-	_, err := Encoder.Encode("testSubject", &response)
-
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 var decodeTests = []struct {
 	Message proto.Message
-	Target  interface{}
+	Target  proto.Message
 }{
 	{
 		Message: &itemRequest,
@@ -171,7 +160,7 @@ func TestDecode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = Encoder.Decode("testSubject", b, decTest.Target)
+		err = Unmarshal(b, decTest.Target)
 
 		if err != nil {
 			t.Error(err)

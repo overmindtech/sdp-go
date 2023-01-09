@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/nats-io/nats.go"
+	"google.golang.org/protobuf/proto"
 )
 
-func TestRequestWithContext(t *testing.T) {
+func TestRequest(t *testing.T) {
 	tc := TestConnection{}
 
 	// Create the responder
@@ -16,13 +17,25 @@ func TestRequestWithContext(t *testing.T) {
 			LinkedItemRequests: []*ItemRequest{},
 			Error:              "testing",
 		})
-	}))
+	}, func() *ReverseLinksRequest { return &ReverseLinksRequest{} }))
 
 	request := ReverseLinksRequest{}
 
-	response := ReverseLinksResponse{}
+	data, err := proto.Marshal(&request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := nats.Msg{
+		Subject: "test",
+		Data:    data,
+	}
+	replyMsg, err := tc.RequestMsg(context.Background(), &msg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := tc.Request(context.Background(), "test", &request, &response)
+	response := ReverseLinksResponse{}
+	err = proto.Unmarshal(replyMsg.Data, &response)
 
 	if err != nil {
 		t.Error(err)

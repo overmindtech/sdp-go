@@ -19,7 +19,6 @@ type EncodedConnection interface {
 	PublishMsg(ctx context.Context, msg *nats.Msg) error
 	Subscribe(subj string, cb nats.MsgHandler) (*nats.Subscription, error)
 	QueueSubscribe(subj, queue string, cb nats.MsgHandler) (*nats.Subscription, error)
-	Request(ctx context.Context, subj string, in proto.Message, out proto.Message) error
 	RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.Msg, error)
 
 	Status() nats.Status
@@ -68,29 +67,6 @@ func (ec *EncodedConnectionImpl) QueueSubscribe(subj, queue string, cb nats.MsgH
 	return ec.Conn.QueueSubscribe(subj, queue, cb)
 }
 
-func (ec *EncodedConnectionImpl) Request(ctx context.Context, subj string, in proto.Message, out proto.Message) error {
-	data, err := proto.Marshal(in)
-	if err != nil {
-		return err
-	}
-
-	msg := &nats.Msg{
-		Subject: subj,
-		Data:    data,
-	}
-	reply, err := ec.RequestMsg(ctx, msg)
-	if err != nil {
-		return fmt.Errorf("error receiving reply: %v", err)
-	}
-
-	err = proto.Unmarshal(reply.Data, out)
-	if err != nil {
-		return fmt.Errorf("error unmarshaling reply: %v", err)
-	}
-
-	return nil
-}
-
 func (ec *EncodedConnectionImpl) RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
 	InjectOtelTraceContext(ctx, msg)
 	return ec.Conn.RequestMsgWithContext(ctx, msg)
@@ -127,14 +103,14 @@ func (ec *EncodedConnectionImpl) Drop() {
 type ProtoMsgHandler[M proto.Message] func(ctx context.Context, m M)
 
 // NewMsgHandler Create a new nats.MsgHandler from a ProtoMsgHandler[M] with a specified proto.Message that takes care of Otel Propagation and Protobuf marshaling
-func NewMsgHandler[M proto.Message](spanName string, h ProtoMsgHandler[M], spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+func NewMsgHandler[M proto.Message](spanName string, h ProtoMsgHandler[M], alloc func() M, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
 	if h == nil {
 		return nil
 	}
 
 	return NewOtelExtractingHandler(spanName, func(ctx context.Context, msg *nats.Msg) {
-		var payload M
-		err := Unmarshal(msg, payload)
+		var payload M = alloc()
+		err := proto.Unmarshal(msg.Data, payload)
 		if err != nil {
 			log.WithContext(ctx).Errorf("Error parsing message: %v", err)
 			trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
@@ -147,14 +123,14 @@ func NewMsgHandler[M proto.Message](spanName string, h ProtoMsgHandler[M], spanO
 type ProtoRawMsgHandler[M proto.Message] func(ctx context.Context, msg *nats.Msg, m M)
 
 // NewMsgHandler Create a new nats.MsgHandler from a ProtoMsgHandler[M] with a specified proto.Message that takes care of Otel Propagation and Protobuf marshaling
-func NewRawMsgHandler[M proto.Message](spanName string, h ProtoRawMsgHandler[M], spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+func NewRawMsgHandler[M proto.Message](spanName string, h ProtoRawMsgHandler[M], alloc func() M, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
 	if h == nil {
 		return nil
 	}
 
 	return NewOtelExtractingHandler(spanName, func(ctx context.Context, msg *nats.Msg) {
-		var payload M
-		err := Unmarshal(msg, payload)
+		var payload M = alloc()
+		err := proto.Unmarshal(msg.Data, payload)
 		if err != nil {
 			log.WithContext(ctx).Errorf("Error parsing message: %v", err)
 			trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))

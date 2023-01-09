@@ -420,7 +420,7 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 			rp.itemChan <- item
 		}
-	}))
+	}, func() *Item { return &Item{} }))
 
 	if err != nil {
 		return err
@@ -452,13 +452,13 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 			rp.errorChan <- err
 		}
-	}))
+	}, func() *ItemRequestError { return &ItemRequestError{} }))
 
 	if err != nil {
 		return err
 	}
 
-	rp.responseSub, err = ec.Subscribe(rp.Request.ResponseSubject, NewMsgHandler("ProcessResponse", rp.ProcessResponse))
+	rp.responseSub, err = ec.Subscribe(rp.Request.ResponseSubject, NewMsgHandler("ProcessResponse", rp.ProcessResponse, func() *Response { return &Response{} }))
 
 	if err != nil {
 		rp.itemSub.Unsubscribe()

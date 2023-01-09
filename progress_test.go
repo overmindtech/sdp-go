@@ -819,7 +819,7 @@ func TestRealNats(t *testing.T) {
 				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
-		}))
+		}, func() *ItemRequest { return &ItemRequest{} }))
 		ready <- true
 	}()
 

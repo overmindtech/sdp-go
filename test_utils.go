@@ -18,9 +18,10 @@ type ResponseMessage struct {
 
 // TestConnection Used to mock a NATS connection for testing
 type TestConnection struct {
-	Messages           []ResponseMessage
+	Messages      []ResponseMessage
+	messagesMutex sync.Mutex
+
 	Subscriptions      map[string][]nats.MsgHandler
-	messagesMutex      sync.Mutex
 	subscriptionsMutex sync.Mutex
 }
 
@@ -36,7 +37,15 @@ func (t *TestConnection) Publish(ctx context.Context, subj string, m proto.Messa
 	})
 	t.messagesMutex.Unlock()
 
-	t.runHandlers(subj, m)
+	data, err := proto.Marshal(m)
+	if err != nil {
+		return err
+	}
+	msg := nats.Msg{
+		Subject: subj,
+		Data:    data,
+	}
+	t.runHandlers(&msg)
 
 	return nil
 }
@@ -50,7 +59,7 @@ func (t *TestConnection) PublishMsg(ctx context.Context, msg *nats.Msg) error {
 	})
 	t.messagesMutex.Unlock()
 
-	t.runHandlers(msg.Subject, msg.Data)
+	t.runHandlers(msg)
 
 	return nil
 }
@@ -72,78 +81,7 @@ func (t *TestConnection) QueueSubscribe(subj, queue string, cb nats.MsgHandler) 
 	panic("TODO")
 }
 
-// RequestWithContext Simulates a request on the given subject, assigns a random
-// response subject then calls the handler on the given subject, we are
-// expecting the handler to be in the format: func(subject, reply string, o *obj)
-func (t *TestConnection) Request(ctx context.Context, subj string, in proto.Message, out proto.Message) error {
-	panic("TODO")
-	// reply := randSeq(10)
-	// replies := make(chan *nats.Msg, 128)
-
-	// handlers, ok := func() ([]nats.MsgHandler, bool) {
-	// 	t.subscriptionsMutex.Lock()
-	// 	defer t.subscriptionsMutex.Unlock()
-	// 	handlers, ok := t.Subscriptions[subj]
-	// 	return handlers, ok
-	// }()
-
-	// if ok {
-	// 	// Subscribe to the reply subject
-	// 	t.Subscribe(reply, func(msg *nats.Msg) {
-	// 		replies <- msg
-	// 	})
-
-	// 	// Run the handlers
-
-	// 	data, err := proto.Marshal(in)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	for _, handler := range handlers {
-	// 		// create a new Msg for each handler
-	// 		inMsg := nats.Msg{
-	// 			Subject: subj,
-	// 			Data:    data,
-	// 		}
-	// 		handler(&inMsg)
-	// 	}
-	// } else {
-	// 	return fmt.Errorf("no responders on subject %v", subj)
-	// }
-
-	// // Assign the first result to vPtr
-	// select {
-	// case reply, ok := <-replies:
-	// 	if ok {
-	// 		// Encode and decode again into the pointer given
-	// 		if m, ok := proto.Unmarshal(reply.Data); ok {
-	// 			b, err := proto.Marshal(m)
-
-	// 			if err != nil {
-	// 				return err
-	// 			}
-
-	// 			if vMsg, ok := vPtr.(proto.Message); ok {
-	// 				err = proto.Unmarshal(b, vMsg)
-
-	// 				if err != nil {
-	// 					return err
-	// 				}
-	// 			} else {
-	// 				return errors.New("vPtr was not a protobuf message type")
-	// 			}
-	// 		} else {
-	// 			return errors.New("response was not a protobuf type")
-	// 		}
-	// 	}
-	// case <-ctx.Done():
-	// 	return ctx.Err()
-	// }
-
-	// return nil
-}
-
-// RequestWithContext Simulates a request on the given subject, assigns a random
+// RequestMsg Simulates a request on the given subject, assigns a random
 // response subject then calls the handler on the given subject, we are
 // expecting the handler to be in the format: func(msg *nats.Msg)
 func (t *TestConnection) RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.Msg, error) {
@@ -214,57 +152,24 @@ func (n *TestConnection) Close() {}
 
 // Underlying Always returns nil
 func (n *TestConnection) Underlying() *nats.Conn {
-	return nil
+	return &nats.Conn{}
 }
 
 // Drop Does nothing
 func (n *TestConnection) Drop() {}
 
 // runHandlers Runs the handlers for a given subject
-func (t *TestConnection) runHandlers(subject string, object interface{}) {
-	panic("TODO")
-	// t.subscriptionsMutex.Lock()
-	// defer t.subscriptionsMutex.Unlock()
+func (t *TestConnection) runHandlers(msg *nats.Msg) {
+	t.subscriptionsMutex.Lock()
+	defer t.subscriptionsMutex.Unlock()
 
-	// handlers, ok := t.Subscriptions[subject]
+	handlers, ok := t.Subscriptions[msg.Subject]
 
-	// if ok {
-	// 	for _, handler := range handlers {
-	// 		switch v := handler.(type) {
-	// 		case func(*Item):
-	// 			i := object.(*Item)
-	// 			go v(i)
-	// 		case func(*Response):
-	// 			r := object.(*Response)
-	// 			go v(r)
-	// 		case func(*ItemRequest):
-	// 			r := object.(*ItemRequest)
-	// 			go v(r)
-	// 		case func(*CancelItemRequest):
-	// 			r := object.(*CancelItemRequest)
-	// 			go v(r)
-	// 		case func(*Reference):
-	// 			r := object.(*Reference)
-	// 			go v(r)
-	// 		case func(*ReverseLinksRequest):
-	// 			r := object.(*ReverseLinksRequest)
-	// 			go v(r)
-	// 		case func(*ReverseLinksResponse):
-	// 			r := object.(*ReverseLinksResponse)
-	// 			go v(r)
-	// 		case func(*GatewayRequest):
-	// 			r := object.(*GatewayRequest)
-	// 			go v(r)
-	// 		case func(*GatewayResponse):
-	// 			r := object.(*GatewayResponse)
-	// 			go v(r)
-	// 		case func(interface{}):
-	// 			go v(object)
-	// 		default:
-	// 			panic(fmt.Sprintf("unknown handler type: %v", v))
-	// 		}
-	// 	}
-	// }
+	if ok {
+		for _, handler := range handlers {
+			handler(msg)
+		}
+	}
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
