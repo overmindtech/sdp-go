@@ -131,6 +131,9 @@ func TestResponseSenderCancel(t *testing.T) {
 	// Stop
 	rs.Cancel()
 
+	// Let it drain down
+	time.Sleep(100 * time.Millisecond)
+
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
 	if len(tp.Messages) <= 10 {
