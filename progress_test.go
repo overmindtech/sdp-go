@@ -47,6 +47,9 @@ func TestResponseSenderDone(t *testing.T) {
 	// Stop
 	rs.Done()
 
+	// Let it drain down
+	time.Sleep(100 * time.Millisecond)
+
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
 	if len(tp.Messages) <= 10 {
@@ -84,6 +87,9 @@ func TestResponseSenderError(t *testing.T) {
 
 	// Stop
 	rs.Error()
+
+	// Let it drain down
+	time.Sleep(100 * time.Millisecond)
 
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
