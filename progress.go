@@ -60,7 +60,7 @@ type ResponseSender struct {
 // Note that the NATS connection must be an encoded connection that is able to
 // encode and decode SDP messages.
 func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string) {
-	rs.monitorKill = make(chan struct{})
+	rs.monitorKill = make(chan struct{}, 1)
 	rs.responseCtx = ctx
 
 	// Set the default if it's not set
