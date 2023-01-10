@@ -48,7 +48,7 @@ type ResponseSender struct {
 	// marked as stalled
 	ResponseInterval time.Duration
 	ResponseSubject  string
-	monitorKill      chan struct{} // Sending to this channel will kill the response sender goroutine
+	monitorKill      chan *Response // Sending to this channel will kill the response sender goroutine and publish the sent message as last msg on the subject
 	responderName    string
 	connection       EncodedConnection
 	responseCtx      context.Context
@@ -61,7 +61,7 @@ type ResponseSender struct {
 // Note that the NATS connection must be an encoded connection that is able to
 // encode and decode SDP messages.
 func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string) {
-	rs.monitorKill = make(chan struct{}, 1)
+	rs.monitorKill = make(chan *Response)
 	rs.responseCtx = ctx
 
 	// Set the default if it's not set
@@ -95,7 +95,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 	}
 
 	// Start a goroutine to send further responses
-	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan struct{}) {
+	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
 		if ec == nil {
 			return
 		}
@@ -103,13 +103,20 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 		for {
 			select {
-			case <-kill:
+			case r := <-kill:
 				// If the context is cancelled then we don't want to do anything
 				// other than exit
 				tick.Stop()
 
 				log.Error("Received kill")
-
+				if r != nil {
+					log.Error("Sending death msg")
+					ec.Publish(
+						ctx,
+						rs.ResponseSubject,
+						r,
+					)
+				}
 				return
 			case <-ctx.Done():
 				// If the context is cancelled then we don't want to do anything
@@ -117,8 +124,10 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				tick.Stop()
 
 				log.Error("Received ctx.Done")
+				log.Error("Sending no msg")
 				return
 			case <-tick.C:
+				log.Info("Sending heartbeat")
 				ec.Publish(
 					ctx,
 					rs.ResponseSubject,
@@ -132,71 +141,40 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 // Kill Kills the response sender immediately. This should be used if something
 // has failed and you don't want to send a completed response
 func (rs *ResponseSender) Kill() {
-	// This will block until the channel has been read from, meaning that we can
-	// be sure that the goroutine is actually closing down and won't send any
-	// more messages
-	rs.monitorKill <- struct{}{}
+	rs.killWithResponse(nil)
+}
+
+func (rs *ResponseSender) killWithResponse(r *Response) {
+	// send the stop signal to the goroutine from Start()
+	rs.monitorKill <- r
 }
 
 // Done kills the responder but sends a final completion message
 func (rs *ResponseSender) Done() {
-	rs.Kill()
-
-	if rs.connection != nil {
-		// Create the response before starting the goroutine since it only needs to
-		// be done once
-		resp := Response{
-			Responder: rs.responderName,
-			State:     ResponderState_COMPLETE,
-		}
-
-		// Send the final completion message
-		rs.connection.Publish(
-			context.Background(),
-			rs.ResponseSubject,
-			&resp,
-		)
+	resp := Response{
+		Responder: rs.responderName,
+		State:     ResponderState_COMPLETE,
 	}
+	rs.killWithResponse(&resp)
 }
 
 // Error marks the request and completed with error, and sends the final error
 // response
 func (rs *ResponseSender) Error() {
-	rs.Kill()
-
-	// Create the response before starting the goroutine since it only needs to
-	// be done once
 	resp := Response{
 		Responder: rs.responderName,
 		State:     ResponderState_ERROR,
 	}
-
-	if rs.connection != nil {
-		// Send the final status message
-		rs.connection.Publish(
-			rs.responseCtx,
-			rs.ResponseSubject,
-			&resp,
-		)
-	}
+	rs.killWithResponse(&resp)
 }
 
 // Cancel Marks the request as CANCELLED and sends the final response
 func (rs *ResponseSender) Cancel() {
-	rs.Kill()
-
 	resp := Response{
 		Responder: rs.responderName,
 		State:     ResponderState_CANCELLED,
 	}
-
-	if rs.connection != nil {
-		rs.connection.Publish(
-			rs.responseCtx,
-			rs.ResponseSubject,
-			&resp,
-		)
-	}
+	rs.killWithResponse(&resp)
 }
 
 // Responder represents the status of a responder
