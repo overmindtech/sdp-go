@@ -793,7 +793,7 @@ func TestRealNats(t *testing.T) {
 	ready := make(chan bool)
 
 	go func() {
-		enc.Subscribe("request.scope.global", NewMsgHandler("test", func(ctx context.Context, r *ItemRequest) {
+		enc.Subscribe("request.scope.global", NewItemRequestHandler("test", func(ctx context.Context, r *ItemRequest) {
 			delay := 100 * time.Millisecond
 
 			time.Sleep(delay)
@@ -819,7 +819,7 @@ func TestRealNats(t *testing.T) {
 				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
-		}, func() *ItemRequest { return &ItemRequest{} }))
+		}))
 		ready <- true
 	}()
 

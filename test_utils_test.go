@@ -12,12 +12,12 @@ func TestRequest(t *testing.T) {
 	tc := TestConnection{}
 
 	// Create the responder
-	tc.Subscribe("test", NewRawMsgHandler("test", func(ctx context.Context, msg *nats.Msg, req *ReverseLinksRequest) {
-		tc.Publish(ctx, msg.Reply, &ReverseLinksResponse{
+	tc.Subscribe("test", func(msg *nats.Msg) {
+		tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
 			LinkedItemRequests: []*ItemRequest{},
 			Error:              "testing",
 		})
-	}, func() *ReverseLinksRequest { return &ReverseLinksRequest{} }))
+	})
 
 	request := ReverseLinksRequest{}
 

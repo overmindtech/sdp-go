@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -160,7 +161,7 @@ func TestDecode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = Unmarshal(b, decTest.Target)
+		err = Unmarshal(context.Background(), b, decTest.Target)
 
 		if err != nil {
 			t.Error(err)

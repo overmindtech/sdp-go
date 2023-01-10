@@ -390,7 +390,7 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 	var err error
 
-	rp.itemSub, err = ec.Subscribe(rp.Request.ItemSubject, NewMsgHandler("Request.ItemSubject", func(ctx context.Context, item *Item) {
+	rp.itemSub, err = ec.Subscribe(rp.Request.ItemSubject, NewItemHandler("Request.ItemSubject", func(ctx context.Context, item *Item) {
 		defer atomic.AddInt64(rp.itemsProcessed, 1)
 
 		if item != nil {
@@ -420,13 +420,13 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 			rp.itemChan <- item
 		}
-	}, func() *Item { return &Item{} }))
+	}))
 
 	if err != nil {
 		return err
 	}
 
-	rp.errorSub, err = ec.Subscribe(rp.Request.ErrorSubject, NewMsgHandler("Request.ErrorSubject", func(ctx context.Context, err *ItemRequestError) {
+	rp.errorSub, err = ec.Subscribe(rp.Request.ErrorSubject, NewItemRequestErrorHandler("Request.ErrorSubject", func(ctx context.Context, err *ItemRequestError) {
 		defer atomic.AddInt64(rp.errorsProcessed, 1)
 
 		if err != nil {
@@ -452,13 +452,13 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 			rp.errorChan <- err
 		}
-	}, func() *ItemRequestError { return &ItemRequestError{} }))
+	}))
 
 	if err != nil {
 		return err
 	}
 
-	rp.responseSub, err = ec.Subscribe(rp.Request.ResponseSubject, NewMsgHandler("ProcessResponse", rp.ProcessResponse, func() *Response { return &Response{} }))
+	rp.responseSub, err = ec.Subscribe(rp.Request.ResponseSubject, NewResponseHandler("ProcessResponse", rp.ProcessResponse))
 
 	if err != nil {
 		rp.itemSub.Unsubscribe()

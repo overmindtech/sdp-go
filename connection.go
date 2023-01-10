@@ -100,42 +100,31 @@ func (ec *EncodedConnectionImpl) Drop() {
 	ec.Conn = nil
 }
 
-type ProtoMsgHandler[M proto.Message] func(ctx context.Context, m M)
-
-// NewMsgHandler Create a new nats.MsgHandler from a ProtoMsgHandler[M] with a specified proto.Message that takes care of Otel Propagation and Protobuf marshaling
-func NewMsgHandler[M proto.Message](spanName string, h ProtoMsgHandler[M], alloc func() M, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	if h == nil {
-		return nil
+// Unmarshal Does a proto.Unmarshal and logs errors in a consistent way
+func Unmarshal(ctx context.Context, b []byte, m proto.Message) error {
+	err := proto.Unmarshal(b, m)
+	if err != nil {
+		log.WithContext(ctx).Errorf("Error parsing message: %v", err)
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
+		return err
 	}
 
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, msg *nats.Msg) {
-		var payload M = alloc()
-		err := proto.Unmarshal(msg.Data, payload)
-		if err != nil {
-			log.WithContext(ctx).Errorf("Error parsing message: %v", err)
-			trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
-			return
-		}
-		h(ctx, payload)
-	}, spanOpts...)
-}
-
-type ProtoRawMsgHandler[M proto.Message] func(ctx context.Context, msg *nats.Msg, m M)
-
-// NewMsgHandler Create a new nats.MsgHandler from a ProtoMsgHandler[M] with a specified proto.Message that takes care of Otel Propagation and Protobuf marshaling
-func NewRawMsgHandler[M proto.Message](spanName string, h ProtoRawMsgHandler[M], alloc func() M, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	if h == nil {
-		return nil
+	// Check for possible type mismatch. If the wong type was provided it
+	// may have been able to partially decode the message, but there will be
+	// some remaining unknown fields. If there are some, fail.
+	if unk := m.ProtoReflect().GetUnknown(); unk != nil {
+		err = fmt.Errorf("unmarshal to %T had unknown fields, likely a type mismatch. Unknowns: %v", m, unk)
+		log.WithContext(ctx).Errorf("Error parsing message: %v", err)
+		trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
+		return err
 	}
-
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, msg *nats.Msg) {
-		var payload M = alloc()
-		err := proto.Unmarshal(msg.Data, payload)
-		if err != nil {
-			log.WithContext(ctx).Errorf("Error parsing message: %v", err)
-			trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
-			return
-		}
-		h(ctx, msg, payload)
-	}, spanOpts...)
+	return nil
 }
+
+//go:generate go run genhandler.go Item
+//go:generate go run genhandler.go ItemRequest
+//go:generate go run genhandler.go ItemRequestError
+//go:generate go run genhandler.go Response
+//go:generate go run genhandler.go GatewayResponse
+//go:generate go run genhandler.go ReverseLinksRequest
+//go:generate go run genhandler.go CancelItemRequest
