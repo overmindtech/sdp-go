@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -108,9 +107,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				// other than exit
 				tick.Stop()
 
-				log.Error("Received kill")
 				if r != nil {
-					log.Error("Sending death msg")
 					ec.Publish(
 						ctx,
 						rs.ResponseSubject,
@@ -123,11 +120,8 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				// other than exit
 				tick.Stop()
 
-				log.Error("Received ctx.Done")
-				log.Error("Sending no msg")
 				return
 			case <-tick.C:
-				log.Info("Sending heartbeat")
 				ec.Publish(
 					ctx,
 					rs.ResponseSubject,

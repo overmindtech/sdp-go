@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -51,7 +50,6 @@ func TestResponseSenderDone(t *testing.T) {
 	// Let it drain down
 	time.Sleep(100 * time.Millisecond)
 
-	log.Info("Checking results")
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
 	if len(tp.Messages) <= 10 {
