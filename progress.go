@@ -148,7 +148,7 @@ func (rs *ResponseSender) Done() {
 
 		// Send the final completion message
 		rs.connection.Publish(
-			context.TODO(),
+			context.Background(),
 			rs.ResponseSubject,
 			&resp,
 		)
