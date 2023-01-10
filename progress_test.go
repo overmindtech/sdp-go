@@ -19,7 +19,7 @@ func TestResponseNilPublisher(t *testing.T) {
 	}
 
 	// Start sending responses with a nil connection, should not panic
-	rs.Start(nil, "test")
+	rs.Start(context.Background(), nil, "test")
 
 	// Give it enough time for ~10 responses
 	time.Sleep(100 * time.Millisecond)
@@ -39,13 +39,16 @@ func TestResponseSenderDone(t *testing.T) {
 	}
 
 	// Start sending responses
-	rs.Start(&tp, "test")
+	rs.Start(context.Background(), &tp, "test")
 
 	// Give it enough time for ~10 responses
 	time.Sleep(100 * time.Millisecond)
 
 	// Stop
 	rs.Done()
+
+	// Let it drain down
+	time.Sleep(100 * time.Millisecond)
 
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
@@ -77,13 +80,16 @@ func TestResponseSenderError(t *testing.T) {
 	}
 
 	// Start sending responses
-	rs.Start(&tp, "test")
+	rs.Start(context.Background(), &tp, "test")
 
 	// Give it enough time for >10 responses
 	time.Sleep(120 * time.Millisecond)
 
 	// Stop
 	rs.Error()
+
+	// Let it drain down
+	time.Sleep(100 * time.Millisecond)
 
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
@@ -115,13 +121,16 @@ func TestResponseSenderCancel(t *testing.T) {
 	}
 
 	// Start sending responses
-	rs.Start(&tp, "test")
+	rs.Start(context.Background(), &tp, "test")
 
 	// Give it enough time for >10 responses
 	time.Sleep(120 * time.Millisecond)
 
 	// Stop
 	rs.Cancel()
+
+	// Let it drain down
+	time.Sleep(100 * time.Millisecond)
 
 	// Inspect what was sent
 	tp.messagesMutex.Lock()
@@ -145,7 +154,7 @@ func TestResponseSenderCancel(t *testing.T) {
 func TestDefaultResponseInterval(t *testing.T) {
 	rs := ResponseSender{}
 
-	rs.Start(&TestConnection{}, "")
+	rs.Start(context.Background(), &TestConnection{}, "")
 	rs.Kill()
 
 	if rs.ResponseInterval != DEFAULTRESPONSEINTERVAL {
@@ -213,7 +222,7 @@ func TestRequestProgressNormal(t *testing.T) {
 
 	t.Run("Processing initial response", func(t *testing.T) {
 		// Test the initial response
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -234,13 +243,13 @@ func TestRequestProgressNormal(t *testing.T) {
 
 	t.Run("Processing come other scopes also responding", func(t *testing.T) {
 		// Then another scope starts working
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test2",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test3",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -263,20 +272,20 @@ func TestRequestProgressNormal(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 
 		// test 1 still working
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 2 finishes
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder: "test2",
 			State:     ResponderState_COMPLETE,
 		})
 
 		// Test 3 still working
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test3",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -299,14 +308,14 @@ func TestRequestProgressNormal(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 
 		// test 1 still working
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
 		})
 
 		// Test 3 cancelled
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder: "test3",
 			State:     ResponderState_CANCELLED,
 		})
@@ -329,7 +338,7 @@ func TestRequestProgressNormal(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 
 		// Test 1 finishes
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -380,7 +389,7 @@ func TestRequestProgressParallel(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				// Test the initial response
-				rp.ProcessResponse(&Response{
+				rp.ProcessResponse(context.Background(), &Response{
 					Responder:    "test1",
 					State:        ResponderState_WORKING,
 					NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -412,7 +421,7 @@ func TestRequestProgressStalled(t *testing.T) {
 
 	t.Run("Processing the initial response", func(t *testing.T) {
 		// Test the initial response
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -454,7 +463,7 @@ func TestRequestProgressStalled(t *testing.T) {
 
 	t.Run("After a responder recovers from a stall", func(t *testing.T) {
 		// See if it will un-stall itself
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_COMPLETE,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -492,7 +501,7 @@ func TestRogueResponder(t *testing.T) {
 		for {
 			select {
 			case <-ticker.C:
-				rp.ProcessResponse(&Response{
+				rp.ProcessResponse(context.Background(), &Response{
 					Responder:    "testRogue",
 					State:        ResponderState_WORKING,
 					NextUpdateIn: durationpb.New(5 * time.Second),
@@ -530,7 +539,7 @@ func TestRequestProgressError(t *testing.T) {
 
 	t.Run("Processing the initial response", func(t *testing.T) {
 		// Test the initial response
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder:    "test1",
 			State:        ResponderState_WORKING,
 			NextUpdateIn: durationpb.New(10 * time.Millisecond),
@@ -550,7 +559,7 @@ func TestRequestProgressError(t *testing.T) {
 	})
 
 	t.Run("After a responder has failed", func(t *testing.T) {
-		rp.ProcessResponse(&Response{
+		rp.ProcessResponse(context.Background(), &Response{
 			Responder: "test1",
 			State:     ResponderState_ERROR,
 		})
@@ -593,10 +602,10 @@ func TestStart(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
 
 	conn := TestConnection{}
-	items := make(chan *Item)
-	errs := make(chan *ItemRequestError)
+	items := make(chan *Item, 128)
+	errs := make(chan *ItemRequestError, 128)
 
-	err := rp.Start(&conn, items, errs)
+	err := rp.Start(context.Background(), &conn, items, errs)
 
 	if err != nil {
 		t.Fatal(err)
@@ -615,7 +624,7 @@ func TestStart(t *testing.T) {
 	}
 
 	// Test that the handlers work
-	conn.Publish(itemRequest.ItemSubject, &item)
+	conn.Publish(context.Background(), itemRequest.ItemSubject, &item)
 
 	receivedItem := <-items
 
@@ -630,10 +639,10 @@ func TestAsyncCancel(t *testing.T) {
 
 		rp := NewRequestProgress(&itemRequest)
 
-		itemChan := make(chan *Item)
-		errChan := make(chan *ItemRequestError)
+		itemChan := make(chan *Item, 128)
+		errChan := make(chan *ItemRequestError, 128)
 
-		err := rp.Start(&conn, itemChan, errChan)
+		err := rp.Start(context.Background(), &conn, itemChan, errChan)
 
 		if err != nil {
 			t.Fatal(err)
@@ -697,7 +706,7 @@ func TestExecute(t *testing.T) {
 		rp := NewRequestProgress(&req)
 		rp.StartTimeout = 100 * time.Millisecond
 
-		_, _, err := rp.Execute(&conn)
+		_, _, err := rp.Execute(context.Background(), &conn)
 
 		if err != nil {
 			t.Fatal(err)
@@ -725,7 +734,7 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.Publish(req.ResponseSubject, &Response{
+			conn.Publish(context.Background(), req.ResponseSubject, &Response{
 				Responder:       "test",
 				State:           ResponderState_WORKING,
 				ItemRequestUUID: req.UUID,
@@ -737,22 +746,22 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.Publish(req.ItemSubject, &item)
+			conn.Publish(context.Background(), req.ItemSubject, &item)
 
 			time.Sleep(delay)
 
-			conn.Publish(req.ItemSubject, &item)
+			conn.Publish(context.Background(), req.ItemSubject, &item)
 
 			time.Sleep(delay)
 
-			conn.Publish(req.ResponseSubject, &Response{
+			conn.Publish(context.Background(), req.ResponseSubject, &Response{
 				Responder:       "test",
 				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
 		}()
 
-		items, errs, err := rp.Execute(&conn)
+		items, errs, err := rp.Execute(context.Background(), &conn)
 
 		if err != nil {
 			t.Fatal(err)
@@ -774,16 +783,13 @@ func TestExecute(t *testing.T) {
 
 func TestRealNats(t *testing.T) {
 	nc, err := nats.Connect("nats://localhost,nats://nats")
-
 	if err != nil {
 		t.Skip("No NATS connection")
 	}
 
-	nats.RegisterEncoder("sdp", &ENCODER)
-	enc, _ := nats.NewEncodedConn(nc, "sdp")
+	enc := EncodedConnectionImpl{Conn: nc}
 
 	u := uuid.New()
-
 	req := ItemRequest{
 		Type:   "person",
 		Method: RequestMethod_GET,
@@ -796,12 +802,12 @@ func TestRealNats(t *testing.T) {
 	ready := make(chan bool)
 
 	go func() {
-		enc.Subscribe("request.scope.global", func(r *ItemRequest) {
+		enc.Subscribe("request.scope.global", NewItemRequestHandler("test", func(ctx context.Context, r *ItemRequest) {
 			delay := 100 * time.Millisecond
 
 			time.Sleep(delay)
 
-			enc.Publish(req.ResponseSubject, &Response{
+			enc.Publish(ctx, req.ResponseSubject, &Response{
 				Responder:       "test",
 				State:           ResponderState_WORKING,
 				ItemRequestUUID: req.UUID,
@@ -813,16 +819,16 @@ func TestRealNats(t *testing.T) {
 
 			time.Sleep(delay)
 
-			enc.Publish(req.ItemSubject, &item)
+			enc.Publish(ctx, req.ItemSubject, &item)
 
-			enc.Publish(req.ItemSubject, &item)
+			enc.Publish(ctx, req.ItemSubject, &item)
 
-			enc.Publish(req.ResponseSubject, &Response{
+			enc.Publish(ctx, req.ResponseSubject, &Response{
 				Responder:       "test",
 				State:           ResponderState_COMPLETE,
 				ItemRequestUUID: req.UUID,
 			})
-		})
+		}))
 		ready <- true
 	}()
 
@@ -831,7 +837,7 @@ func TestRealNats(t *testing.T) {
 
 	<-ready
 
-	err = rp.Start(enc, slowChan, nilChan)
+	err = rp.Start(context.Background(), &enc, slowChan, nilChan)
 
 	if err != nil {
 		t.Fatal(err)

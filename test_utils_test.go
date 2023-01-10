@@ -3,14 +3,17 @@ package sdp
 import (
 	"context"
 	"testing"
+
+	"github.com/nats-io/nats.go"
+	"google.golang.org/protobuf/proto"
 )
 
-func TestRequestWithContext(t *testing.T) {
+func TestRequest(t *testing.T) {
 	tc := TestConnection{}
 
 	// Create the responder
-	tc.Subscribe("test", func(subject, reply string, req *ReverseLinksRequest) {
-		tc.Publish(reply, &ReverseLinksResponse{
+	tc.Subscribe("test", func(msg *nats.Msg) {
+		tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
 			LinkedItemRequests: []*ItemRequest{},
 			Error:              "testing",
 		})
@@ -18,9 +21,21 @@ func TestRequestWithContext(t *testing.T) {
 
 	request := ReverseLinksRequest{}
 
-	response := ReverseLinksResponse{}
+	data, err := proto.Marshal(&request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := nats.Msg{
+		Subject: "test",
+		Data:    data,
+	}
+	replyMsg, err := tc.RequestMsg(context.Background(), &msg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := tc.RequestWithContext(context.Background(), "test", &request, &response)
+	response := ReverseLinksResponse{}
+	err = proto.Unmarshal(replyMsg.Data, &response)
 
 	if err != nil {
 		t.Error(err)
