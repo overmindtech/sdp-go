@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -107,12 +108,15 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				// other than exit
 				tick.Stop()
 
+				log.Error("Received kill")
+
 				return
 			case <-ctx.Done():
 				// If the context is cancelled then we don't want to do anything
 				// other than exit
 				tick.Stop()
 
+				log.Error("Received ctx.Done")
 				return
 			case <-tick.C:
 				ec.Publish(
@@ -168,7 +172,7 @@ func (rs *ResponseSender) Error() {
 	}
 
 	if rs.connection != nil {
-		// Send the initial response
+		// Send the final status message
 		rs.connection.Publish(
 			rs.responseCtx,
 			rs.ResponseSubject,
