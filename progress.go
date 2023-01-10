@@ -94,7 +94,10 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 	}
 
 	// Start a goroutine to send further responses
-	go func(respInterval time.Duration, ec EncodedConnection, r *Response, kill chan struct{}) {
+	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan struct{}) {
+		if ec == nil {
+			return
+		}
 		tick := time.NewTicker(respInterval)
 
 		for {
@@ -105,17 +108,21 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				tick.Stop()
 
 				return
+			case <-ctx.Done():
+				// If the context is cancelled then we don't want to do anything
+				// other than exit
+				tick.Stop()
+
+				return
 			case <-tick.C:
-				if ec != nil {
-					ec.Publish(
-						ctx,
-						rs.ResponseSubject,
-						r,
-					)
-				}
+				ec.Publish(
+					ctx,
+					rs.ResponseSubject,
+					r,
+				)
 			}
 		}
-	}(rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
+	}(ctx, rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
 }
 
 // Kill Kills the response sender immediately. This should be used if something
