@@ -526,6 +526,8 @@ func (rp *RequestProgress) Drain() {
 
 		// Only if the drain is fully complete should we close the doneChan
 		close(rp.doneChan)
+
+		// rp.channelsClosed = true
 	})
 }
 
