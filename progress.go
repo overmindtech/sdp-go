@@ -690,6 +690,15 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 	// Finally check to see if this was the final request and if so update the
 	// chan
 	if rp.allDone() {
+		// at this point I need to add some slack in case the we have received
+		// the completion response before the final item. The sources are
+		// supposed to wait until all items have been sent in order to send
+		// this, but NATS doesn't guarantee ordering so there's still a
+		// reasonable chance that things will arrive in a weird order. This is a
+		// pretty bad solution and realistically this should be addressed in the
+		// protocol itself, but for now this will do
+		time.Sleep(1 * time.Second)
+
 		rp.Drain()
 	}
 }
