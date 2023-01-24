@@ -13,9 +13,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-// DEFAULTRESPONSEINTERVAL is the default period of time within which responses
+// DefaultResponseInterval is the default period of time within which responses
 // are sent (5 seconds)
-const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
+const DefaultResponseInterval = (5 * time.Second)
+
+// DefaultDrainDelay How long to wait after all is complete before draining all
+// NATS connections
+const DefaultDrainDelay = (100 * time.Millisecond)
 
 const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
 	Type: %v
@@ -65,7 +69,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	// Set the default if it's not set
 	if rs.ResponseInterval == 0 {
-		rs.ResponseInterval = DEFAULTRESPONSEINTERVAL
+		rs.ResponseInterval = DefaultResponseInterval
 	}
 
 	// Tell it to expect the next update in 230% of the expected time. This
@@ -235,6 +239,10 @@ type RequestProgress struct {
 	Request      *ItemRequest
 	requestCtx   context.Context
 
+	// How long to wait before draining NATS connections after all have
+	// completed
+	DrainDelay time.Duration
+
 	responders      map[string]*Responder
 	respondersMutex sync.RWMutex
 
@@ -270,6 +278,7 @@ type RequestProgress struct {
 func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:         request,
+		DrainDelay:      DefaultDrainDelay,
 		responders:      make(map[string]*Responder),
 		doneChan:        make(chan struct{}),
 		itemsProcessed:  new(int64),
@@ -526,6 +535,8 @@ func (rp *RequestProgress) Drain() {
 
 		// Only if the drain is fully complete should we close the doneChan
 		close(rp.doneChan)
+
+		rp.channelsClosed = true
 	})
 }
 
@@ -667,7 +678,7 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 	rp.respondersMutex.Unlock()
 
 	// Check if we should expect another response
-	expectFollowUp := (response.GetNextUpdateIn() != nil)
+	expectFollowUp := (response.GetNextUpdateIn() != nil && response.State != ResponderState_COMPLETE)
 
 	// If we are told to expect a new response, set up context for it
 	if expectFollowUp {
@@ -688,6 +699,17 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 	// Finally check to see if this was the final request and if so update the
 	// chan
 	if rp.allDone() {
+		// at this point I need to add some slack in case the we have received
+		// the completion response before the final item. The sources are
+		// supposed to wait until all items have been sent in order to send
+		// this, but NATS doesn't guarantee ordering so there's still a
+		// reasonable chance that things will arrive in a weird order. This is a
+		// pretty bad solution and realistically this should be addressed in the
+		// protocol itself, but for now this will do. Especially since it
+		// doesn't actually block anything that the client sees, it's just
+		// delaying cleanup for a little longer than we need
+		time.Sleep(rp.DrainDelay)
+
 		rp.Drain()
 	}
 }
