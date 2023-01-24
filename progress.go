@@ -696,8 +696,10 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 		// this, but NATS doesn't guarantee ordering so there's still a
 		// reasonable chance that things will arrive in a weird order. This is a
 		// pretty bad solution and realistically this should be addressed in the
-		// protocol itself, but for now this will do
-		time.Sleep(1 * time.Second)
+		// protocol itself, but for now this will do. Especially since it
+		// doesn't actually block anything that the client sees, it's just
+		// delaying cleanup for a little longer than we need
+		time.Sleep(5 * time.Second)
 
 		rp.Drain()
 	}
