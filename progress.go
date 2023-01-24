@@ -19,7 +19,7 @@ const DefaultResponseInterval = (5 * time.Second)
 
 // DefaultDrainDelay How long to wait after all is complete before draining all
 // NATS connections
-const DefaultDrainDelay = (5 * time.Second)
+const DefaultDrainDelay = (250 * time.Millisecond)
 
 const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
 	Type: %v
