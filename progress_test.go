@@ -157,7 +157,7 @@ func TestDefaultResponseInterval(t *testing.T) {
 	rs.Start(context.Background(), &TestConnection{}, "")
 	rs.Kill()
 
-	if rs.ResponseInterval != DEFAULTRESPONSEINTERVAL {
+	if rs.ResponseInterval != DefaultResponseInterval {
 		t.Fatal("Response sender interval failed to default")
 	}
 }
@@ -204,6 +204,7 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 
 func TestRequestProgressNormal(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
+	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -365,6 +366,7 @@ func TestRequestProgressNormal(t *testing.T) {
 
 func TestRequestProgressParallel(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
+	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -415,6 +417,7 @@ func TestRequestProgressParallel(t *testing.T) {
 
 func TestRequestProgressStalled(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
+	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -490,6 +493,7 @@ func TestRequestProgressStalled(t *testing.T) {
 func TestRogueResponder(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
 	rp.StartTimeout = 100 * time.Millisecond
+	rp.DrainDelay = 0
 
 	// Create our rogue responder that doesn't cancel when it should
 	ticker := time.NewTicker(5 * time.Second)
@@ -533,6 +537,7 @@ func TestRogueResponder(t *testing.T) {
 
 func TestRequestProgressError(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
+	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
 	var expected ExpectedMetrics
@@ -600,6 +605,7 @@ func TestRequestProgressError(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	rp := NewRequestProgress(&itemRequest)
+	rp.DrainDelay = 0
 
 	conn := TestConnection{}
 	items := make(chan *Item, 128)
@@ -638,6 +644,7 @@ func TestAsyncCancel(t *testing.T) {
 		conn := TestConnection{}
 
 		rp := NewRequestProgress(&itemRequest)
+		rp.DrainDelay = 0
 
 		itemChan := make(chan *Item, 128)
 		errChan := make(chan *ItemRequestError, 128)
@@ -705,6 +712,7 @@ func TestExecute(t *testing.T) {
 
 		rp := NewRequestProgress(&req)
 		rp.StartTimeout = 100 * time.Millisecond
+		rp.DrainDelay = 0
 
 		_, _, err := rp.Execute(context.Background(), &conn)
 
@@ -728,6 +736,7 @@ func TestExecute(t *testing.T) {
 		}
 
 		rp := NewRequestProgress(&req)
+		rp.DrainDelay = 0
 
 		go func() {
 			delay := 100 * time.Millisecond
@@ -799,6 +808,7 @@ func TestRealNats(t *testing.T) {
 	}
 
 	rp := NewRequestProgress(&req)
+	rp.DrainDelay = 0
 	ready := make(chan bool)
 
 	go func() {

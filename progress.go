@@ -13,9 +13,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-// DEFAULTRESPONSEINTERVAL is the default period of time within which responses
+// DefaultResponseInterval is the default period of time within which responses
 // are sent (5 seconds)
-const DEFAULTRESPONSEINTERVAL = (5 * time.Second)
+const DefaultResponseInterval = (5 * time.Second)
+
+// DefaultDrainDelay How long to wait after all is complete before draining all
+// NATS connections
+const DefaultDrainDelay = (5 * time.Second)
 
 const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
 	Type: %v
@@ -65,7 +69,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	// Set the default if it's not set
 	if rs.ResponseInterval == 0 {
-		rs.ResponseInterval = DEFAULTRESPONSEINTERVAL
+		rs.ResponseInterval = DefaultResponseInterval
 	}
 
 	// Tell it to expect the next update in 230% of the expected time. This
@@ -235,6 +239,10 @@ type RequestProgress struct {
 	Request      *ItemRequest
 	requestCtx   context.Context
 
+	// How long to wait before draining NATS connections after all have
+	// completed
+	DrainDelay time.Duration
+
 	responders      map[string]*Responder
 	respondersMutex sync.RWMutex
 
@@ -270,6 +278,7 @@ type RequestProgress struct {
 func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:         request,
+		DrainDelay:      DefaultDrainDelay,
 		responders:      make(map[string]*Responder),
 		doneChan:        make(chan struct{}),
 		itemsProcessed:  new(int64),
@@ -669,7 +678,7 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 	rp.respondersMutex.Unlock()
 
 	// Check if we should expect another response
-	expectFollowUp := (response.GetNextUpdateIn() != nil)
+	expectFollowUp := (response.GetNextUpdateIn() != nil && response.State != ResponderState_COMPLETE)
 
 	// If we are told to expect a new response, set up context for it
 	if expectFollowUp {
@@ -699,7 +708,7 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 		// protocol itself, but for now this will do. Especially since it
 		// doesn't actually block anything that the client sees, it's just
 		// delaying cleanup for a little longer than we need
-		time.Sleep(5 * time.Second)
+		time.Sleep(rp.DrainDelay)
 
 		rp.Drain()
 	}
