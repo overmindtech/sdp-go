@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -99,6 +100,8 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	// Start a goroutine to send further responses
 	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
+		defer sentry.Recover()
+
 		if ec == nil {
 			return
 		}
@@ -298,6 +301,7 @@ func (rp *RequestProgress) MarkStarted() {
 
 	if rp.StartTimeout != 0 {
 		go func(ctx context.Context) {
+			defer sentry.Recover()
 			startTimeout := time.NewTimer(rp.StartTimeout)
 			select {
 			case <-startTimeout.C:
@@ -845,6 +849,7 @@ func (rp *RequestProgress) allDone() bool {
 // stall monitor from another thread in the case that another message is
 // received.
 func StallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
+	defer sentry.Recover()
 	select {
 	case <-context.Done():
 		// If the context is cancelled then we don't want to do anything
