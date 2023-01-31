@@ -34,6 +34,8 @@ func NewOtelExtractingHandler(spanName string, h CtxMsgHandler, spanOpts ...trac
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
+		otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(msg.Header))
+
 		ctx, span := tracer.Start(ctx, spanName, spanOpts...)
 		defer span.End()
 
