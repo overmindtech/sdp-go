@@ -10,23 +10,31 @@ import (
 )
 
 func NewItemRequestErrorHandler(spanName string, h func(ctx context.Context, i *ItemRequestError), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, m *nats.Msg) {
-		var i ItemRequestError
-		err := Unmarshal(ctx, m.Data, &i)
-		if err != nil {
-			return
-		}
-		h(ctx, &i)
-	})
+	return NewOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i ItemRequestError
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, &i)
+		},
+		tracer,
+	)
 }
 
 func NewRawItemRequestErrorHandler(spanName string, h func(ctx context.Context, m *nats.Msg, i *ItemRequestError), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, m *nats.Msg) {
-		var i ItemRequestError
-		err := Unmarshal(ctx, m.Data, &i)
-		if err != nil {
-			return
-		}
-		h(ctx, m, &i)
-	})
+	return NewOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i ItemRequestError
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
 }
