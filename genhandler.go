@@ -45,25 +45,33 @@ import (
 )
 
 func New{{.Type}}Handler(spanName string, h func(ctx context.Context, i *{{.Type}}), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, m *nats.Msg) {
-		var i {{.Type}}
-		err := Unmarshal(ctx, m.Data, &i)
-		if err != nil {
-			return
-		}
-		h(ctx, &i)
-	})
+	return NewOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i {{.Type}}
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, &i)
+		},
+		tracer,
+	)
 }
 
 func NewRaw{{.Type}}Handler(spanName string, h func(ctx context.Context, m *nats.Msg, i *{{.Type}}), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, m *nats.Msg) {
-		var i {{.Type}}
-		err := Unmarshal(ctx, m.Data, &i)
-		if err != nil {
-			return
-		}
-		h(ctx, m, &i)
-	})
+	return NewOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i {{.Type}}
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
 }
 `)
 	if err != nil {

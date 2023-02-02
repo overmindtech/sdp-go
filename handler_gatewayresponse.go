@@ -10,23 +10,31 @@ import (
 )
 
 func NewGatewayResponseHandler(spanName string, h func(ctx context.Context, i *GatewayResponse), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, m *nats.Msg) {
-		var i GatewayResponse
-		err := Unmarshal(ctx, m.Data, &i)
-		if err != nil {
-			return
-		}
-		h(ctx, &i)
-	})
+	return NewOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i GatewayResponse
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, &i)
+		},
+		tracer,
+	)
 }
 
 func NewRawGatewayResponseHandler(spanName string, h func(ctx context.Context, m *nats.Msg, i *GatewayResponse), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
-	return NewOtelExtractingHandler(spanName, func(ctx context.Context, m *nats.Msg) {
-		var i GatewayResponse
-		err := Unmarshal(ctx, m.Data, &i)
-		if err != nil {
-			return
-		}
-		h(ctx, m, &i)
-	})
+	return NewOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i GatewayResponse
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
 }
