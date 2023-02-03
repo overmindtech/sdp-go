@@ -657,29 +657,30 @@ func (rp *RequestProgress) Execute(ctx context.Context, ec EncodedConnection) ([
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Response) {
-	// Update the stored data
-	rp.respondersMutex.Lock()
+	func() {
+		// Update the stored data
+		rp.respondersMutex.Lock()
+		defer rp.respondersMutex.Unlock()
 
-	// As soon as we get a response, we can cancel the "no responders" goroutine
-	if rp.noRespondersCancel != nil {
-		rp.noRespondersCancel()
-	}
-
-	responder, exists := rp.responders[response.Responder]
-
-	if exists {
-		responder.CancelMonitor()
-	} else {
-		// If the responder is new, add it to the list
-		responder = &Responder{
-			Name: response.GetResponder(),
+		// As soon as we get a response, we can cancel the "no responders" goroutine
+		if rp.noRespondersCancel != nil {
+			rp.noRespondersCancel()
 		}
-		rp.responders[response.Responder] = responder
-	}
 
-	responder.SetState(response.State)
+		responder, exists := rp.responders[response.Responder]
 
-	rp.respondersMutex.Unlock()
+		if exists {
+			responder.CancelMonitor()
+		} else {
+			// If the responder is new, add it to the list
+			responder = &Responder{
+				Name: response.GetResponder(),
+			}
+			rp.responders[response.Responder] = responder
+		}
+
+		responder.SetState(response.State)
+	}()
 
 	// Check if we should expect another response
 	expectFollowUp := (response.GetNextUpdateIn() != nil && response.State != ResponderState_COMPLETE)
@@ -690,9 +691,11 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 
 		monitorContext, monitorCancel := context.WithCancel(context.Background())
 
-		rp.respondersMutex.RLock()
-		responder = rp.responders[response.Responder]
-		rp.respondersMutex.RUnlock()
+		responder := func() *Responder {
+			rp.respondersMutex.RLock()
+			defer rp.respondersMutex.RUnlock()
+			return rp.responders[response.Responder]
+		}()
 
 		responder.SetMonitorContext(monitorContext, monitorCancel)
 
