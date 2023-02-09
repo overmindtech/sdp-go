@@ -12,6 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -405,6 +408,18 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 		defer atomic.AddInt64(rp.errorsProcessed, 1)
 
 		if err != nil {
+			span := trace.SpanFromContext(ctx)
+			span.SetStatus(codes.Error, err.Error())
+			span.SetAttributes(
+				attribute.Int64("om.sdp.errorsProcessed", *rp.errorsProcessed),
+				attribute.String("om.sdp.errorString", err.ErrorString),
+				attribute.String("om.sdp.ErrorType", err.ErrorType.String()),
+				attribute.String("om.scope", err.Scope),
+				attribute.String("om.type", err.ItemType),
+				attribute.String("om.sdp.SourceName", err.SourceName),
+				attribute.String("om.sdp.ResponderName", err.ResponderName),
+			)
+
 			rp.chanMutex.RLock()
 			defer rp.chanMutex.RUnlock()
 			if rp.channelsClosed {
