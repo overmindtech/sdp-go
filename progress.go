@@ -11,6 +11,10 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -21,27 +25,6 @@ const DefaultResponseInterval = (5 * time.Second)
 // DefaultDrainDelay How long to wait after all is complete before draining all
 // NATS connections
 const DefaultDrainDelay = (100 * time.Millisecond)
-
-const ClosedChannelItemError = `SDP-GO ERROR: An Item was processed after Drain() was called. Item details:
-	Type: %v
-	Scope: %v
-	Unique Attribute Value: %v
-	Timestamp: %v
-	Current Time: %v
-
-	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
-
-const ClosedChannelError = `SDP-GO ERROR: An ItemRequestError was processed after Drain() was called. Error details:
-	ItemRequestUUID: %v
-	ErrorType: %v
-	ErrorString: %v
-	Scope: %v
-	SourceName: %v
-	ItemType: %v
-	ResponderName: %v
-
-
-	Please add these details to: https://github.com/overmindtech/sdp-go/issues/15`
 
 // ResponseSender is a struct responsible for sending responses out on behalf of
 // agents that are working on that request. Think of it as the agent side
@@ -402,14 +385,13 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 				// This *should* never happen but I am seeing it happen
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
-				fmt.Printf(
-					ClosedChannelItemError,
-					item.Type,
-					item.Scope,
-					item.UniqueAttributeValue(),
-					itemTime.String(),
-					time.Now().String(),
-				)
+				log.WithFields(log.Fields{
+					"Type":                 item.Type,
+					"Scope":                item.Scope,
+					"UniqueAttributeValue": item.UniqueAttributeValue(),
+					"Item Timestamp":       itemTime.String(),
+					"Current Time":         time.Now().String(),
+				}).Error("SDP-GO ERROR: An Item was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
 
 				return
 			}
@@ -426,23 +408,33 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 		defer atomic.AddInt64(rp.errorsProcessed, 1)
 
 		if err != nil {
+			span := trace.SpanFromContext(ctx)
+			span.SetStatus(codes.Error, err.Error())
+			span.SetAttributes(
+				attribute.Int64("om.sdp.errorsProcessed", *rp.errorsProcessed),
+				attribute.String("om.sdp.errorString", err.ErrorString),
+				attribute.String("om.sdp.ErrorType", err.ErrorType.String()),
+				attribute.String("om.scope", err.Scope),
+				attribute.String("om.type", err.ItemType),
+				attribute.String("om.sdp.SourceName", err.SourceName),
+				attribute.String("om.sdp.ResponderName", err.ResponderName),
+			)
+
 			rp.chanMutex.RLock()
 			defer rp.chanMutex.RUnlock()
 			if rp.channelsClosed {
 				// This *should* never happen but I am seeing it happen
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
-				fmt.Printf(
-					ClosedChannelError,
-					err.ItemRequestUUID,
-					err.ErrorType,
-					err.ErrorString,
-					err.Scope,
-					err.SourceName,
-					err.ItemType,
-					err.ResponderName,
-				)
-
+				log.WithFields(log.Fields{
+					"ItemRequestUUID": err.ItemRequestUUID,
+					"ErrorType":       err.ErrorType,
+					"ErrorString":     err.ErrorString,
+					"Scope":           err.Scope,
+					"SourceName":      err.SourceName,
+					"ItemType":        err.ItemType,
+					"ResponderName":   err.ResponderName,
+				}).Error("SDP-GO ERROR: An ItemRequestError was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
 				return
 			}
 
