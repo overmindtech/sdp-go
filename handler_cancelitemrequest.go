@@ -38,3 +38,18 @@ func NewRawCancelItemRequestHandler(spanName string, h func(ctx context.Context,
 		tracer,
 	)
 }
+
+func NewAsyncRawCancelItemRequestHandler(spanName string, h func(ctx context.Context, m *nats.Msg, i *CancelItemRequest), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+	return NewAsyncOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i CancelItemRequest
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
+}
