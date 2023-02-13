@@ -38,3 +38,18 @@ func NewRawItemRequestErrorHandler(spanName string, h func(ctx context.Context, 
 		tracer,
 	)
 }
+
+func NewAsyncRawItemRequestErrorHandler(spanName string, h func(ctx context.Context, m *nats.Msg, i *ItemRequestError), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+	return NewAsyncOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i ItemRequestError
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
+}

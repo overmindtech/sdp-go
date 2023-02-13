@@ -38,3 +38,18 @@ func NewRawReverseLinksRequestHandler(spanName string, h func(ctx context.Contex
 		tracer,
 	)
 }
+
+func NewAsyncRawReverseLinksRequestHandler(spanName string, h func(ctx context.Context, m *nats.Msg, i *ReverseLinksRequest), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+	return NewAsyncOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i ReverseLinksRequest
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
+}

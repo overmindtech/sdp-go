@@ -38,3 +38,18 @@ func NewRawResponseHandler(spanName string, h func(ctx context.Context, m *nats.
 		tracer,
 	)
 }
+
+func NewAsyncRawResponseHandler(spanName string, h func(ctx context.Context, m *nats.Msg, i *Response), spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+	return NewAsyncOtelExtractingHandler(
+		spanName,
+		func(ctx context.Context, m *nats.Msg) {
+			var i Response
+			err := Unmarshal(ctx, m.Data, &i)
+			if err != nil {
+				return
+			}
+			h(ctx, m, &i)
+		},
+		tracer,
+	)
+}

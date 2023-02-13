@@ -42,6 +42,25 @@ func NewOtelExtractingHandler(spanName string, h CtxMsgHandler, t trace.Tracer, 
 	}
 }
 
+func NewAsyncOtelExtractingHandler(spanName string, h CtxMsgHandler, t trace.Tracer, spanOpts ...trace.SpanStartOption) nats.MsgHandler {
+	if h == nil {
+		return nil
+	}
+
+	return func(msg *nats.Msg) {
+		go func() {
+			ctx := context.Background()
+
+			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(msg.Header))
+
+			ctx, span := t.Start(ctx, spanName, spanOpts...)
+			defer span.End()
+
+			h(ctx, msg)
+		}()
+	}
+}
+
 func InjectOtelTraceContext(ctx context.Context, msg *nats.Msg) {
 	if msg.Header == nil {
 		msg.Header = make(nats.Header)
