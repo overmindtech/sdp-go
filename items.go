@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -271,6 +272,17 @@ func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, cont
 	}
 
 	return context.WithTimeout(ctx, r.Timeout.AsDuration())
+}
+
+// ParseUuid returns this request's UUID. If there's an error parsing it, generates and stores a fresh one
+func (r *ItemRequest) ParseUuid() uuid.UUID {
+	// Extract and parse the UUID
+	reqUUID, uuidErr := uuid.FromBytes(r.UUID)
+	if uuidErr != nil {
+		reqUUID = uuid.New()
+		r.UUID = reqUUID[:]
+	}
+	return reqUUID
 }
 
 // ToAttributes Converts a map[string]interface{} to an ItemAttributes object
