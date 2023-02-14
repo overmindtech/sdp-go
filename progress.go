@@ -260,7 +260,7 @@ type RequestProgress struct {
 }
 
 // NewRequestProgress returns a pointer to a RequestProgress object with the
-// responders map initialised
+// responders map initialized
 func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	return &RequestProgress{
 		Request:         request,

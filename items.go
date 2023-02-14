@@ -259,7 +259,7 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 	}
 }
 
-// Context returns a context and cancel function representing the timeout for this request
+// TimeoutContext returns a context and cancel function representing the timeout for this request
 func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if r == nil || r.Timeout == nil {
 		return context.WithCancel(ctx)
@@ -273,7 +273,7 @@ func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, cont
 	return context.WithTimeout(ctx, r.Timeout.AsDuration())
 }
 
-// ToAttributes Convers a map[string]interface{} to an ItemAttributes object
+// ToAttributes Converts a map[string]interface{} to an ItemAttributes object
 func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
 	if m == nil {
 		return nil, nil
