@@ -44,9 +44,6 @@ type ResponseSender struct {
 // Start sends the first response on the given subject and connection to say
 // that the request is being worked on. It also starts a go routine to continue
 // sending responses until it is cancelled
-//
-// Note that the NATS connection must be an encoded connection that is able to
-// encode and decode SDP messages.
 func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string) {
 	rs.monitorKill = make(chan *Response, 1)
 	rs.responseCtx = ctx
