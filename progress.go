@@ -269,32 +269,6 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 	}
 }
 
-// MarkStarted Marks the request as started and will cause it to be marked as
-// done if there are no responders after StartTimeout duration
-func (rp *RequestProgress) MarkStarted() {
-	// We're using this mutex to also lock access to the context and cancel
-	rp.respondersMutex.Lock()
-	defer rp.respondersMutex.Unlock()
-
-	rp.started = true
-	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
-
-	if rp.StartTimeout != 0 {
-		go func(ctx context.Context) {
-			defer sentry.Recover()
-			startTimeout := time.NewTimer(rp.StartTimeout)
-			select {
-			case <-startTimeout.C:
-				if rp.NumResponders() == 0 {
-					rp.Drain()
-				}
-			case <-ctx.Done():
-				startTimeout.Stop()
-			}
-		}(rp.noResponderContext)
-	}
-}
-
 // Start Starts a given request, sending items to the supplied itemChannel. It
 // is up to the user to watch for completion. When the request does complete,
 // the NATS subscriptions will automatically drain and the itemChannel will be
@@ -452,13 +426,39 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 	err = ec.Publish(ctx, requestSubject, rp.Request)
 
-	rp.MarkStarted()
+	rp.markStarted()
 
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// markStarted Marks the request as started and will cause it to be marked as
+// done if there are no responders after StartTimeout duration
+func (rp *RequestProgress) markStarted() {
+	// We're using this mutex to also lock access to the context and cancel
+	rp.respondersMutex.Lock()
+	defer rp.respondersMutex.Unlock()
+
+	rp.started = true
+	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
+
+	if rp.StartTimeout != 0 {
+		go func(ctx context.Context) {
+			defer sentry.Recover()
+			startTimeout := time.NewTimer(rp.StartTimeout)
+			select {
+			case <-startTimeout.C:
+				if rp.NumResponders() == 0 {
+					rp.Drain()
+				}
+			case <-ctx.Done():
+				startTimeout.Stop()
+			}
+		}(rp.noResponderContext)
+	}
 }
 
 // Drain Tries to drain connections gracefully. If not though, connections are
@@ -689,7 +689,7 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 		responder.SetMonitorContext(monitorContext, monitorCancel)
 
 		// Create a goroutine to watch for a stalled connection
-		go StallMonitor(monitorContext, timeout, responder, rp)
+		go stallMonitor(monitorContext, timeout, responder, rp)
 	}
 
 	// Finally check to see if this was the final request and if so update the
@@ -835,12 +835,12 @@ func (rp *RequestProgress) allDone() bool {
 	return false
 }
 
-// StallMonitor watches for stalled connections. It should be passed the
+// stallMonitor watches for stalled connections. It should be passed the
 // responder to monitor, the time to wait before marking the connection as
 // stalled, and a context. The context is used to allow cancellation of the
 // stall monitor from another thread in the case that another message is
 // received.
-func StallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
+func stallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
 	defer sentry.Recover()
 	select {
 	case <-context.Done():
