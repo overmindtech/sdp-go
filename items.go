@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -259,7 +260,7 @@ func (r *ItemRequest) Copy(dest *ItemRequest) {
 	}
 }
 
-// Context returns a context and cancel function representing the timeout for this request
+// TimeoutContext returns a context and cancel function representing the timeout for this request
 func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if r == nil || r.Timeout == nil {
 		return context.WithCancel(ctx)
@@ -273,7 +274,18 @@ func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, cont
 	return context.WithTimeout(ctx, r.Timeout.AsDuration())
 }
 
-// ToAttributes Convers a map[string]interface{} to an ItemAttributes object
+// ParseUuid returns this request's UUID. If there's an error parsing it, generates and stores a fresh one
+func (r *ItemRequest) ParseUuid() uuid.UUID {
+	// Extract and parse the UUID
+	reqUUID, uuidErr := uuid.FromBytes(r.UUID)
+	if uuidErr != nil {
+		reqUUID = uuid.New()
+		r.UUID = reqUUID[:]
+	}
+	return reqUUID
+}
+
+// ToAttributes Converts a map[string]interface{} to an ItemAttributes object
 func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
 	if m == nil {
 		return nil, nil
