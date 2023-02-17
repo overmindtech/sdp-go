@@ -3,6 +3,7 @@ package sdp
 import (
 	"context"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -49,8 +50,9 @@ func NewAsyncOtelExtractingHandler(spanName string, h CtxMsgHandler, t trace.Tra
 
 	return func(msg *nats.Msg) {
 		go func() {
-			ctx := context.Background()
+			defer sentry.Recover()
 
+			ctx := context.Background()
 			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(msg.Header))
 
 			ctx, span := t.Start(ctx, spanName, spanOpts...)
