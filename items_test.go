@@ -162,7 +162,7 @@ func TestToAttributes(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// In order to compate these reliably I'm going to do the following:
+			// In order to compare these reliably I'm going to do the following:
 			//
 			// 1. Convert to JSON
 			// 2. Convert back again
