@@ -35,6 +35,7 @@ type ResponseSender struct {
 	// marked as stalled
 	ResponseInterval time.Duration
 	ResponseSubject  string
+	monitorRunning   sync.WaitGroup
 	monitorKill      chan *Response // Sending to this channel will kill the response sender goroutine and publish the sent message as last msg on the subject
 	responderName    string
 	connection       EncodedConnection
@@ -78,9 +79,13 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 		)
 	}
 
+	rs.monitorRunning.Add(1)
+
 	// Start a goroutine to send further responses
 	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
 		defer sentry.Recover()
+		// confirm closure on exit
+		defer rs.monitorRunning.Done()
 
 		if ec == nil {
 			return
@@ -128,6 +133,9 @@ func (rs *ResponseSender) Kill() {
 func (rs *ResponseSender) killWithResponse(r *Response) {
 	// send the stop signal to the goroutine from Start()
 	rs.monitorKill <- r
+
+	// wait for the sender to be actually done
+	rs.monitorRunning.Wait()
 }
 
 // Done kills the responder but sends a final completion message
@@ -266,32 +274,6 @@ func NewRequestProgress(request *ItemRequest) *RequestProgress {
 		doneChan:        make(chan struct{}),
 		itemsProcessed:  new(int64),
 		errorsProcessed: new(int64),
-	}
-}
-
-// MarkStarted Marks the request as started and will cause it to be marked as
-// done if there are no responders after StartTimeout duration
-func (rp *RequestProgress) MarkStarted() {
-	// We're using this mutex to also lock access to the context and cancel
-	rp.respondersMutex.Lock()
-	defer rp.respondersMutex.Unlock()
-
-	rp.started = true
-	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
-
-	if rp.StartTimeout != 0 {
-		go func(ctx context.Context) {
-			defer sentry.Recover()
-			startTimeout := time.NewTimer(rp.StartTimeout)
-			select {
-			case <-startTimeout.C:
-				if rp.NumResponders() == 0 {
-					rp.Drain()
-				}
-			case <-ctx.Done():
-				startTimeout.Stop()
-			}
-		}(rp.noResponderContext)
 	}
 }
 
@@ -452,13 +434,39 @@ func (rp *RequestProgress) Start(ctx context.Context, ec EncodedConnection, item
 
 	err = ec.Publish(ctx, requestSubject, rp.Request)
 
-	rp.MarkStarted()
+	rp.markStarted()
 
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// markStarted Marks the request as started and will cause it to be marked as
+// done if there are no responders after StartTimeout duration
+func (rp *RequestProgress) markStarted() {
+	// We're using this mutex to also lock access to the context and cancel
+	rp.respondersMutex.Lock()
+	defer rp.respondersMutex.Unlock()
+
+	rp.started = true
+	rp.noResponderContext, rp.noRespondersCancel = context.WithCancel(context.Background())
+
+	if rp.StartTimeout != 0 {
+		go func(ctx context.Context) {
+			defer sentry.Recover()
+			startTimeout := time.NewTimer(rp.StartTimeout)
+			select {
+			case <-startTimeout.C:
+				if rp.NumResponders() == 0 {
+					rp.Drain()
+				}
+			case <-ctx.Done():
+				startTimeout.Stop()
+			}
+		}(rp.noResponderContext)
+	}
 }
 
 // Drain Tries to drain connections gracefully. If not though, connections are
@@ -689,7 +697,7 @@ func (rp *RequestProgress) ProcessResponse(ctx context.Context, response *Respon
 		responder.SetMonitorContext(monitorContext, monitorCancel)
 
 		// Create a goroutine to watch for a stalled connection
-		go StallMonitor(monitorContext, timeout, responder, rp)
+		go stallMonitor(monitorContext, timeout, responder, rp)
 	}
 
 	// Finally check to see if this was the final request and if so update the
@@ -835,12 +843,12 @@ func (rp *RequestProgress) allDone() bool {
 	return false
 }
 
-// StallMonitor watches for stalled connections. It should be passed the
+// stallMonitor watches for stalled connections. It should be passed the
 // responder to monitor, the time to wait before marking the connection as
 // stalled, and a context. The context is used to allow cancellation of the
 // stall monitor from another thread in the case that another message is
 // received.
-func StallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
+func stallMonitor(context context.Context, timeout time.Duration, responder *Responder, rp *RequestProgress) {
 	defer sentry.Recover()
 	select {
 	case <-context.Done():
