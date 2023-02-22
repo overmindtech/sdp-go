@@ -35,6 +35,7 @@ type ResponseSender struct {
 	// marked as stalled
 	ResponseInterval time.Duration
 	ResponseSubject  string
+	monitorRunning   sync.WaitGroup
 	monitorKill      chan *Response // Sending to this channel will kill the response sender goroutine and publish the sent message as last msg on the subject
 	responderName    string
 	connection       EncodedConnection
@@ -78,9 +79,13 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 		)
 	}
 
+	rs.monitorRunning.Add(1)
+
 	// Start a goroutine to send further responses
 	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
 		defer sentry.Recover()
+		// confirm closure on exit
+		defer rs.monitorRunning.Done()
 
 		if ec == nil {
 			return
@@ -128,6 +133,9 @@ func (rs *ResponseSender) Kill() {
 func (rs *ResponseSender) killWithResponse(r *Response) {
 	// send the stop signal to the goroutine from Start()
 	rs.monitorKill <- r
+
+	// wait for the sender to be actually done
+	rs.monitorRunning.Wait()
 }
 
 // Done kills the responder but sends a final completion message
