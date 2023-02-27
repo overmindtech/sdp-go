@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/getsentry/sentry-go v0.18.0
 	github.com/google/uuid v1.3.0
-	github.com/nats-io/nats.go v1.23.0
+	github.com/nats-io/nats.go v1.24.0
 	github.com/sirupsen/logrus v1.9.0
 	go.opentelemetry.io/otel v1.13.0
 	go.opentelemetry.io/otel/sdk v1.13.0
