@@ -228,7 +228,7 @@ func TestCopy(t *testing.T) {
 			UniqueAttribute: "name",
 			Scope:           "test",
 			Attributes:      exampleAttributes,
-			LinkedItemRequests: []*ItemRequest{
+			LinkedItemQueries: []*Query{
 				{
 					Type:   "user",
 					Method: RequestMethod_GET,
@@ -238,13 +238,14 @@ func TestCopy(t *testing.T) {
 			LinkedItems: []*Reference{},
 			Metadata: &Metadata{
 				SourceName: "test",
-				SourceRequest: &ItemRequest{
+				SourceQuery: &Query{
 					Type:   "user",
 					Method: RequestMethod_GET,
 					Query:  "Dylan",
 					Scope:  "testScope",
 					UUID:   u[:],
 				},
+				SourceQueryUUID:       u[:],
 				Timestamp:             timestamppb.Now(),
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
 				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
@@ -266,7 +267,7 @@ func TestCopy(t *testing.T) {
 			UniqueAttribute: "name",
 			Scope:           "test",
 			Attributes:      exampleAttributes,
-			LinkedItemRequests: []*ItemRequest{
+			LinkedItemQueries: []*Query{
 				{
 					Type:   "user",
 					Method: RequestMethod_GET,
@@ -293,12 +294,12 @@ func TestCopy(t *testing.T) {
 
 	t.Run("With a minimal item", func(t *testing.T) {
 		itemA := Item{
-			Type:               "user",
-			UniqueAttribute:    "name",
-			Scope:              "test",
-			Attributes:         exampleAttributes,
-			LinkedItemRequests: []*ItemRequest{},
-			LinkedItems:        []*Reference{},
+			Type:              "user",
+			UniqueAttribute:   "name",
+			Scope:             "test",
+			Attributes:        exampleAttributes,
+			LinkedItemQueries: []*Query{},
+			LinkedItems:       []*Reference{},
 		}
 
 		itemB := Item{}
@@ -346,13 +347,13 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 
 	}
 
-	if len(itemA.LinkedItemRequests) != len(itemB.LinkedItemRequests) {
-		t.Error("LinkedItemRequests length did not match")
+	if len(itemA.LinkedItemQueries) != len(itemB.LinkedItemQueries) {
+		t.Error("LinkedItemQueries length did not match")
 	}
 
-	if len(itemA.LinkedItemRequests) > 0 {
-		if itemA.LinkedItemRequests[0].Type != itemB.LinkedItemRequests[0].Type {
-			t.Error("LinkedItemRequests[0].Type did not match")
+	if len(itemA.LinkedItemQueries) > 0 {
+		if itemA.LinkedItemQueries[0].Type != itemB.LinkedItemQueries[0].Type {
+			t.Error("LinkedItemQueries[0].Type did not match")
 		}
 	}
 
@@ -362,7 +363,7 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 
 	if len(itemA.LinkedItems) > 0 {
 		if itemA.LinkedItems[0].Type != itemB.LinkedItems[0].Type {
-			t.Error("LinkedItemRequests[0].Type did not match")
+			t.Error("LinkedItemQueries[0].Type did not match")
 		}
 	}
 
@@ -383,35 +384,35 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 			t.Error("Timestamp did not match")
 		}
 
-		if itemA.Metadata.SourceRequest != nil {
-			if itemA.Metadata.SourceRequest.Scope != itemB.Metadata.SourceRequest.Scope {
-				t.Error("Metadata.SourceRequest.Scope does not match")
+		if itemA.Metadata.SourceQuery != nil {
+			if itemA.Metadata.SourceQuery.Scope != itemB.Metadata.SourceQuery.Scope {
+				t.Error("Metadata.SourceQuery.Scope does not match")
 			}
 
-			if itemA.Metadata.SourceRequest.Method != itemB.Metadata.SourceRequest.Method {
-				t.Error("Metadata.SourceRequest.Method does not match")
+			if itemA.Metadata.SourceQuery.Method != itemB.Metadata.SourceQuery.Method {
+				t.Error("Metadata.SourceQuery.Method does not match")
 			}
 
-			if itemA.Metadata.SourceRequest.Query != itemB.Metadata.SourceRequest.Query {
-				t.Error("Metadata.SourceRequest.Query does not match")
+			if itemA.Metadata.SourceQuery.Query != itemB.Metadata.SourceQuery.Query {
+				t.Error("Metadata.SourceQuery.Query does not match")
 			}
 
-			if itemA.Metadata.SourceRequest.Type != itemB.Metadata.SourceRequest.Type {
-				t.Error("Metadata.SourceRequest.Type does not match")
+			if itemA.Metadata.SourceQuery.Type != itemB.Metadata.SourceQuery.Type {
+				t.Error("Metadata.SourceQuery.Type does not match")
 			}
 
-			uuidA, _ := uuid.FromBytes(itemA.Metadata.SourceRequest.UUID)
-			uuidB, _ := uuid.FromBytes(itemB.Metadata.SourceRequest.UUID)
+			uuidA, _ := uuid.FromBytes(itemA.Metadata.SourceQuery.UUID)
+			uuidB, _ := uuid.FromBytes(itemB.Metadata.SourceQuery.UUID)
 
 			if uuidA.String() != uuidB.String() {
-				t.Error("Metadata.SourceRequest.UUID does not match")
+				t.Error("Metadata.SourceQuery.UUID does not match")
 			}
 		}
 	}
 }
 
 func TestTimeoutContext(t *testing.T) {
-	r := ItemRequest{
+	r := Query{
 		Type:        "person",
 		Method:      RequestMethod_GET,
 		Query:       "foo",

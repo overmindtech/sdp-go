@@ -173,27 +173,27 @@ type ExpectedMetrics struct {
 }
 
 // Validate Checks that metrics are as expected and returns an error if not
-func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
-	if x := rp.NumWorking(); x != em.Working {
+func (em ExpectedMetrics) Validate(qp *QueryProgress) error {
+	if x := qp.NumWorking(); x != em.Working {
 		return fmt.Errorf("Expected NumWorking to be %v, got %v", em.Working, x)
 	}
-	if x := rp.NumStalled(); x != em.Stalled {
+	if x := qp.NumStalled(); x != em.Stalled {
 		return fmt.Errorf("Expected NumStalled to be %v, got %v", em.Stalled, x)
 	}
-	if x := rp.NumComplete(); x != em.Complete {
+	if x := qp.NumComplete(); x != em.Complete {
 		return fmt.Errorf("Expected NumComplete to be %v, got %v", em.Complete, x)
 	}
-	if x := rp.NumError(); x != em.Error {
+	if x := qp.NumError(); x != em.Error {
 		return fmt.Errorf("Expected NumError to be %v, got %v", em.Error, x)
 	}
-	if x := rp.NumResponders(); x != em.Responders {
+	if x := qp.NumResponders(); x != em.Responders {
 		return fmt.Errorf("Expected NumResponders to be %v, got %v", em.Responders, x)
 	}
-	if x := rp.NumCancelled(); x != em.Cancelled {
+	if x := qp.NumCancelled(); x != em.Cancelled {
 		return fmt.Errorf("Expected NumCancelled to be %v, got %v", em.Cancelled, x)
 	}
 
-	rStatus := rp.ResponderStates()
+	rStatus := qp.ResponderStates()
 
 	if len(rStatus) != em.Responders {
 		return fmt.Errorf("Expected ResponderStatuses to have %v responders, got %v", em.Responders, len(rStatus))
@@ -202,8 +202,8 @@ func (em ExpectedMetrics) Validate(rp *RequestProgress) error {
 	return nil
 }
 
-func TestRequestProgressNormal(t *testing.T) {
-	rp := NewRequestProgress(&itemRequest)
+func TestQueryProgressNormal(t *testing.T) {
+	rp := NewQueryProgress(&query)
 	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
@@ -364,8 +364,8 @@ func TestRequestProgressNormal(t *testing.T) {
 	}
 }
 
-func TestRequestProgressParallel(t *testing.T) {
-	rp := NewRequestProgress(&itemRequest)
+func TestQueryProgressParallel(t *testing.T) {
+	rp := NewQueryProgress(&query)
 	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
@@ -415,8 +415,8 @@ func TestRequestProgressParallel(t *testing.T) {
 	})
 }
 
-func TestRequestProgressStalled(t *testing.T) {
-	rp := NewRequestProgress(&itemRequest)
+func TestQueryProgressStalled(t *testing.T) {
+	rp := NewQueryProgress(&query)
 	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
@@ -491,7 +491,7 @@ func TestRequestProgressStalled(t *testing.T) {
 }
 
 func TestRogueResponder(t *testing.T) {
-	rp := NewRequestProgress(&itemRequest)
+	rp := NewQueryProgress(&query)
 	rp.StartTimeout = 100 * time.Millisecond
 	rp.DrainDelay = 0
 
@@ -535,8 +535,8 @@ func TestRogueResponder(t *testing.T) {
 	}
 }
 
-func TestRequestProgressError(t *testing.T) {
-	rp := NewRequestProgress(&itemRequest)
+func TestQueryProgressError(t *testing.T) {
+	rp := NewQueryProgress(&query)
 	rp.DrainDelay = 0
 
 	// Make sure that the details are correct initially
@@ -604,12 +604,12 @@ func TestRequestProgressError(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	rp := NewRequestProgress(&itemRequest)
+	rp := NewQueryProgress(&query)
 	rp.DrainDelay = 0
 
 	conn := TestConnection{}
 	items := make(chan *Item, 128)
-	errs := make(chan *ItemRequestError, 128)
+	errs := make(chan *QueryError, 128)
 
 	err := rp.Start(context.Background(), &conn, items, errs)
 
@@ -617,12 +617,12 @@ func TestStart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, ok := conn.Subscriptions[itemRequest.ItemSubject]; !ok {
-		t.Errorf("subscription %v not created", itemRequest.ItemSubject)
+	if _, ok := conn.Subscriptions[query.ItemSubject]; !ok {
+		t.Errorf("subscription %v not created", query.ItemSubject)
 	}
 
-	if _, ok := conn.Subscriptions[itemRequest.ResponseSubject]; !ok {
-		t.Errorf("subscription %v not created", itemRequest.ResponseSubject)
+	if _, ok := conn.Subscriptions[query.ResponseSubject]; !ok {
+		t.Errorf("subscription %v not created", query.ResponseSubject)
 	}
 
 	if len(conn.Messages) != 1 {
@@ -630,7 +630,7 @@ func TestStart(t *testing.T) {
 	}
 
 	// Test that the handlers work
-	conn.Publish(context.Background(), itemRequest.ItemSubject, &item)
+	conn.Publish(context.Background(), query.ItemSubject, &item)
 
 	receivedItem := <-items
 
@@ -643,11 +643,11 @@ func TestAsyncCancel(t *testing.T) {
 	t.Run("With no responders", func(t *testing.T) {
 		conn := TestConnection{}
 
-		rp := NewRequestProgress(&itemRequest)
+		rp := NewQueryProgress(&query)
 		rp.DrainDelay = 0
 
 		itemChan := make(chan *Item, 128)
-		errChan := make(chan *ItemRequestError, 128)
+		errChan := make(chan *QueryError, 128)
 
 		err := rp.Start(context.Background(), &conn, itemChan, errChan)
 
@@ -697,7 +697,7 @@ func TestExecute(t *testing.T) {
 	u := uuid.New()
 
 	t.Run("with no responders", func(t *testing.T) {
-		req := ItemRequest{
+		q := Query{
 			Type:            "user",
 			Method:          RequestMethod_GET,
 			Query:           "Dylan",
@@ -710,7 +710,7 @@ func TestExecute(t *testing.T) {
 			ResponseSubject: "responses",
 		}
 
-		rp := NewRequestProgress(&req)
+		rp := NewQueryProgress(&q)
 		rp.StartTimeout = 100 * time.Millisecond
 		rp.DrainDelay = 0
 
@@ -722,7 +722,7 @@ func TestExecute(t *testing.T) {
 	})
 
 	t.Run("with a full response set", func(t *testing.T) {
-		req := ItemRequest{
+		q := Query{
 			Type:            "user",
 			Method:          RequestMethod_GET,
 			Query:           "Dylan",
@@ -735,7 +735,7 @@ func TestExecute(t *testing.T) {
 			ResponseSubject: "responses1",
 		}
 
-		rp := NewRequestProgress(&req)
+		rp := NewQueryProgress(&q)
 		rp.DrainDelay = 0
 
 		go func() {
@@ -743,10 +743,10 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), req.ResponseSubject, &Response{
-				Responder:       "test",
-				State:           ResponderState_WORKING,
-				ItemRequestUUID: req.UUID,
+			conn.Publish(context.Background(), q.ResponseSubject, &Response{
+				Responder: "test",
+				State:     ResponderState_WORKING,
+				QueryUUID: q.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
 					Nanos:   0,
@@ -755,18 +755,18 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), req.ItemSubject, &item)
+			conn.Publish(context.Background(), q.ItemSubject, &item)
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), req.ItemSubject, &item)
+			conn.Publish(context.Background(), q.ItemSubject, &item)
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), req.ResponseSubject, &Response{
-				Responder:       "test",
-				State:           ResponderState_COMPLETE,
-				ItemRequestUUID: req.UUID,
+			conn.Publish(context.Background(), q.ResponseSubject, &Response{
+				Responder: "test",
+				State:     ResponderState_COMPLETE,
+				QueryUUID: q.UUID,
 			})
 		}()
 
@@ -799,7 +799,7 @@ func TestRealNats(t *testing.T) {
 	enc := EncodedConnectionImpl{Conn: nc}
 
 	u := uuid.New()
-	req := ItemRequest{
+	q := Query{
 		Type:   "person",
 		Method: RequestMethod_GET,
 		Query:  "dylan",
@@ -807,20 +807,20 @@ func TestRealNats(t *testing.T) {
 		UUID:   u[:],
 	}
 
-	rp := NewRequestProgress(&req)
+	rp := NewQueryProgress(&q)
 	rp.DrainDelay = 0
 	ready := make(chan bool)
 
 	go func() {
-		enc.Subscribe("request.scope.global", NewItemRequestHandler("test", func(ctx context.Context, r *ItemRequest) {
+		enc.Subscribe("request.scope.global", NewQueryHandler("test", func(ctx context.Context, handledQuery *Query) {
 			delay := 100 * time.Millisecond
 
 			time.Sleep(delay)
 
-			enc.Publish(ctx, req.ResponseSubject, &Response{
-				Responder:       "test",
-				State:           ResponderState_WORKING,
-				ItemRequestUUID: req.UUID,
+			enc.Publish(ctx, q.ResponseSubject, &Response{
+				Responder: "test",
+				State:     ResponderState_WORKING,
+				QueryUUID: q.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
 					Nanos:   0,
@@ -829,21 +829,21 @@ func TestRealNats(t *testing.T) {
 
 			time.Sleep(delay)
 
-			enc.Publish(ctx, req.ItemSubject, &item)
+			enc.Publish(ctx, q.ItemSubject, &item)
 
-			enc.Publish(ctx, req.ItemSubject, &item)
+			enc.Publish(ctx, q.ItemSubject, &item)
 
-			enc.Publish(ctx, req.ResponseSubject, &Response{
-				Responder:       "test",
-				State:           ResponderState_COMPLETE,
-				ItemRequestUUID: req.UUID,
+			enc.Publish(ctx, q.ResponseSubject, &Response{
+				Responder: "test",
+				State:     ResponderState_COMPLETE,
+				QueryUUID: q.UUID,
 			})
 		}))
 		ready <- true
 	}()
 
 	slowChan := make(chan *Item)
-	var nilChan chan *ItemRequestError
+	var nilChan chan *QueryError
 
 	<-ready
 

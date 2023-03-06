@@ -98,67 +98,67 @@ func (r *Response) Validate() error {
 		return errors.New("Response has empty Responder")
 	}
 
-	if len(r.ItemRequestUUID) == 0 {
-		return errors.New("Response has empty ItemRequestUUID")
+	if len(r.QueryUUID) == 0 {
+		return errors.New("Response has empty QueryUUID")
 	}
 
 	return nil
 }
 
-// Validate Ensures an ItemRequestError is valid
-func (e *ItemRequestError) Validate() error {
+// Validate Ensures a QueryError is valid
+func (e *QueryError) Validate() error {
 	if e == nil {
-		return errors.New("ItemRequestError is nil")
+		return errors.New("QueryError is nil")
 	}
 
-	if len(e.ItemRequestUUID) == 0 {
-		return errors.New("ItemRequestError has empty ItemRequestUUID")
+	if len(e.QueryUUID) == 0 {
+		return errors.New("QueryError has empty QueryUUID")
 	}
 
 	if e.ErrorString == "" {
-		return errors.New("ItemRequestError has empty ErrorString")
+		return errors.New("QueryError has empty ErrorString")
 	}
 
 	if e.Scope == "" {
-		return errors.New("ItemRequestError has empty Scope")
+		return errors.New("QueryError has empty Scope")
 	}
 
 	if e.SourceName == "" {
-		return errors.New("ItemRequestError has empty SourceName")
+		return errors.New("QueryError has empty SourceName")
 	}
 
 	if e.ItemType == "" {
-		return errors.New("ItemRequestError has empty ItemType")
+		return errors.New("QueryError has empty ItemType")
 	}
 
 	if e.ResponderName == "" {
-		return errors.New("ItemRequestError has empty ResponderName")
+		return errors.New("QueryError has empty ResponderName")
 	}
 
 	return nil
 }
 
-// Validate Ensures an ItemRequest is valid
-func (r *ItemRequest) Validate() error {
-	if r == nil {
-		return errors.New("ItemRequest is nil")
+// Validate Ensures a Query is valid
+func (q *Query) Validate() error {
+	if q == nil {
+		return errors.New("Query is nil")
 	}
 
-	if r.Type == "" {
-		return errors.New("ItemRequest has empty Type")
+	if q.Type == "" {
+		return errors.New("Query has empty Type")
 	}
 
-	if r.Scope == "" {
-		return errors.New("ItemRequest has empty Scope")
+	if q.Scope == "" {
+		return errors.New("Query has empty Scope")
 	}
 
-	if len(r.UUID) == 0 {
+	if len(q.UUID) == 0 {
 		return errors.New("Response has empty UUID")
 	}
 
-	if r.Method == RequestMethod_GET {
-		if r.Query == "" {
-			return errors.New("ItemRequest cannot have empty Query when method is Get")
+	if q.Method == RequestMethod_GET {
+		if q.Query == "" {
+			return errors.New("Query cannot have empty Query when method is Get")
 		}
 	}
 

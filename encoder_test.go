@@ -14,7 +14,7 @@ import (
 
 var _u = uuid.New()
 
-var itemRequest = ItemRequest{
+var query = Query{
 	Type:      "user",
 	Method:    RequestMethod_LIST,
 	LinkDepth: 10,
@@ -37,7 +37,7 @@ var itemAttributes = ItemAttributes{
 
 var metadata = Metadata{
 	SourceName: "users",
-	SourceRequest: &ItemRequest{
+	SourceQuery: &Query{
 		Type:            "user",
 		Method:          RequestMethod_LIST,
 		Query:           "*",
@@ -76,8 +76,8 @@ var reference = Reference{
 	Scope:                "test",
 }
 
-var itemRequestError = ItemRequestError{
-	ErrorType:   ItemRequestError_OTHER,
+var queryError = QueryError{
+	ErrorType:   QueryError_OTHER,
 	ErrorString: "uh oh",
 	Scope:       "test",
 }
@@ -92,13 +92,13 @@ var response = Response{
 }
 
 var messages = []proto.Message{
-	&itemRequest,
+	&query,
 	&itemAttributes,
 	&metadata,
 	&item,
 	&items,
 	&reference,
-	&itemRequestError,
+	&queryError,
 	&response,
 }
 
@@ -118,8 +118,8 @@ var decodeTests = []struct {
 	Target  proto.Message
 }{
 	{
-		Message: &itemRequest,
-		Target:  &ItemRequest{},
+		Message: &query,
+		Target:  &Query{},
 	},
 	{
 		Message: &itemAttributes,
@@ -142,8 +142,8 @@ var decodeTests = []struct {
 		Target:  &Reference{},
 	},
 	{
-		Message: &itemRequestError,
-		Target:  &ItemRequestError{},
+		Message: &queryError,
+		Target:  &QueryError{},
 	},
 	{
 		Message: &response,

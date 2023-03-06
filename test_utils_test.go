@@ -14,8 +14,8 @@ func TestRequest(t *testing.T) {
 	// Create the responder
 	tc.Subscribe("test", func(msg *nats.Msg) {
 		tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-			LinkedItemRequests: []*ItemRequest{},
-			Error:              "testing",
+			LinkedItemQueries: []*Query{},
+			Error:             "testing",
 		})
 	})
 

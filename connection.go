@@ -122,9 +122,12 @@ func Unmarshal(ctx context.Context, b []byte, m proto.Message) error {
 }
 
 //go:generate go run genhandler.go Item
-//go:generate go run genhandler.go ItemRequest
-//go:generate go run genhandler.go ItemRequestError
-//go:generate go run genhandler.go Response
+
+//go:generate go run genhandler.go Query
+//go:generate go run genhandler.go QueryError
+//go:generate go run genhandler.go CancelQuery
+//go:generate go run genhandler.go UndoQuery
+
 //go:generate go run genhandler.go GatewayResponse
+//go:generate go run genhandler.go Response
 //go:generate go run genhandler.go ReverseLinksRequest
-//go:generate go run genhandler.go CancelItemRequest

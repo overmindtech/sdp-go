@@ -82,15 +82,15 @@ func (i *Item) Copy(dest *Item) {
 	i.Metadata.Copy(dest.Metadata)
 	i.Attributes.Copy(dest.Attributes)
 
-	dest.LinkedItemRequests = make([]*ItemRequest, 0)
+	dest.LinkedItemQueries = make([]*Query, 0)
 	dest.LinkedItems = make([]*Reference, 0)
 
-	for _, r := range i.LinkedItemRequests {
-		newItemRequest := &ItemRequest{}
+	for _, r := range i.LinkedItemQueries {
+		query := &Query{}
 
-		r.Copy(newItemRequest)
+		r.Copy(query)
 
-		dest.LinkedItemRequests = append(dest.LinkedItemRequests, newItemRequest)
+		dest.LinkedItemQueries = append(dest.LinkedItemQueries, query)
 	}
 
 	for _, r := range i.LinkedItems {
@@ -148,9 +148,9 @@ func (m *Metadata) Copy(dest *Metadata) {
 
 	dest.SourceName = m.SourceName
 
-	if m.SourceRequest != nil {
-		dest.SourceRequest = &ItemRequest{}
-		m.SourceRequest.Copy(dest.SourceRequest)
+	if m.SourceQuery != nil {
+		dest.SourceQuery = &Query{}
+		m.SourceQuery.Copy(dest.SourceQuery)
 	}
 
 	dest.Timestamp = &timestamppb.Timestamp{
@@ -169,8 +169,8 @@ func (m *Metadata) Copy(dest *Metadata) {
 	}
 }
 
-// Copy copies all information from one CancelItemRequest pointer to another
-func (c *CancelItemRequest) Copy(dest *CancelItemRequest) {
+// Copy copies all information from one CancelQuery pointer to another
+func (c *CancelQuery) Copy(dest *CancelQuery) {
 	if c == nil {
 		return
 	}
@@ -240,42 +240,42 @@ func (a *ItemAttributes) Copy(dest *ItemAttributes) {
 	dest.AttrStruct, _ = structpb.NewStruct(m)
 }
 
-// Copy copies all information from one ItemRequest pointer to another
-func (r *ItemRequest) Copy(dest *ItemRequest) {
-	dest.Type = r.Type
-	dest.Method = r.Method
-	dest.Query = r.Query
-	dest.LinkDepth = r.LinkDepth
-	dest.Scope = r.Scope
-	dest.ItemSubject = r.ItemSubject
-	dest.ResponseSubject = r.ResponseSubject
-	dest.IgnoreCache = r.IgnoreCache
-	dest.UUID = r.UUID
+// Copy copies all information from one Query pointer to another
+func (q *Query) Copy(dest *Query) {
+	dest.Type = q.Type
+	dest.Method = q.Method
+	dest.Query = q.Query
+	dest.LinkDepth = q.LinkDepth
+	dest.Scope = q.Scope
+	dest.ItemSubject = q.ItemSubject
+	dest.ResponseSubject = q.ResponseSubject
+	dest.IgnoreCache = q.IgnoreCache
+	dest.UUID = q.UUID
 
-	if r.Timeout != nil {
+	if q.Timeout != nil {
 		dest.Timeout = &durationpb.Duration{
-			Seconds: r.Timeout.Seconds,
-			Nanos:   r.Timeout.Nanos,
+			Seconds: q.Timeout.Seconds,
+			Nanos:   q.Timeout.Nanos,
 		}
 	}
 }
 
 // TimeoutContext returns a context and cancel function representing the timeout for this request
-func (r *ItemRequest) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	if r == nil || r.Timeout == nil {
+func (q *Query) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	if q == nil || q.Timeout == nil {
 		return context.WithCancel(ctx)
 	}
 
 	// If the timeout is 0, treat that as infinite
-	if r.Timeout.Nanos == 0 && r.Timeout.Seconds == 0 {
+	if q.Timeout.Nanos == 0 && q.Timeout.Seconds == 0 {
 		return context.WithCancel(ctx)
 	}
 
-	return context.WithTimeout(ctx, r.Timeout.AsDuration())
+	return context.WithTimeout(ctx, q.Timeout.AsDuration())
 }
 
 // ParseUuid returns this request's UUID. If there's an error parsing it, generates and stores a fresh one
-func (r *ItemRequest) ParseUuid() uuid.UUID {
+func (r *Query) ParseUuid() uuid.UUID {
 	// Extract and parse the UUID
 	reqUUID, uuidErr := uuid.FromBytes(r.UUID)
 	if uuidErr != nil {

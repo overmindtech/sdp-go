@@ -10,8 +10,8 @@ SourceName: %v
 ItemType: %v
 ResponderName: %v`
 
-// Ensure that the ItemRequestError is seen as a valid error in golang
-func (e *ItemRequestError) Error() string {
+// Ensure that the QueryError is seen as a valid error in golang
+func (e *QueryError) Error() string {
 	return fmt.Sprintf(
 		ErrorTemplate,
 		e.ErrorString,
@@ -23,15 +23,15 @@ func (e *ItemRequestError) Error() string {
 	)
 }
 
-// NewItemRequestError converts a regular error to an ItemRequestError of type
-// OTHER. If the input error is already an ItemRequestError then it is preserved
-func NewItemRequestError(err error) *ItemRequestError {
-	if sdpErr, ok := err.(*ItemRequestError); ok {
+// NewQueryError converts a regular error to a QueryError of type
+// OTHER. If the input error is already a QueryError then it is preserved
+func NewQueryError(err error) *QueryError {
+	if sdpErr, ok := err.(*QueryError); ok {
 		return sdpErr
 	}
 
-	return &ItemRequestError{
-		ErrorType:   ItemRequestError_OTHER,
+	return &QueryError{
+		ErrorType:   QueryError_OTHER,
 		ErrorString: err.Error(),
 	}
 }
