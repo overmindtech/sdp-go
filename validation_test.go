@@ -285,9 +285,9 @@ func TestValidateResponse(t *testing.T) {
 		}
 	})
 
-	t.Run("Response has empty ItemRequestUUID", func(t *testing.T) {
+	t.Run("Response has empty QueryUUID", func(t *testing.T) {
 		r := newResponse()
-		r.ItemRequestUUID = nil
+		r.QueryUUID = nil
 
 		err := r.Validate()
 
@@ -297,9 +297,9 @@ func TestValidateResponse(t *testing.T) {
 	})
 }
 
-func TestValidateItemRequestError(t *testing.T) {
-	t.Run("ItemRequestError is fine", func(t *testing.T) {
-		e := newItemRequestError()
+func TestValidateQueryError(t *testing.T) {
+	t.Run("QueryError is fine", func(t *testing.T) {
+		e := newQueryError()
 
 		err := e.Validate()
 
@@ -308,13 +308,13 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError is nil", func(t *testing.T) {
+	t.Run("QueryError is nil", func(t *testing.T) {
 
 	})
 
-	t.Run("ItemRequestError has empty ItemRequestUUID", func(t *testing.T) {
-		e := newItemRequestError()
-		e.ItemRequestUUID = nil
+	t.Run("QueryError has empty QueryUUID", func(t *testing.T) {
+		e := newQueryError()
+		e.QueryUUID = nil
 		err := e.Validate()
 
 		if err == nil {
@@ -322,8 +322,8 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError has empty ErrorString", func(t *testing.T) {
-		e := newItemRequestError()
+	t.Run("QueryError has empty ErrorString", func(t *testing.T) {
+		e := newQueryError()
 		e.ErrorString = ""
 		err := e.Validate()
 
@@ -332,8 +332,8 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError has empty Scope", func(t *testing.T) {
-		e := newItemRequestError()
+	t.Run("QueryError has empty Scope", func(t *testing.T) {
+		e := newQueryError()
 		e.Scope = ""
 		err := e.Validate()
 
@@ -342,8 +342,8 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError has empty SourceName", func(t *testing.T) {
-		e := newItemRequestError()
+	t.Run("QueryError has empty SourceName", func(t *testing.T) {
+		e := newQueryError()
 		e.SourceName = ""
 		err := e.Validate()
 
@@ -352,8 +352,8 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError has empty ItemType", func(t *testing.T) {
-		e := newItemRequestError()
+	t.Run("QueryError has empty ItemType", func(t *testing.T) {
+		e := newQueryError()
 		e.ItemType = ""
 		err := e.Validate()
 
@@ -362,8 +362,8 @@ func TestValidateItemRequestError(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequestError has empty ResponderName", func(t *testing.T) {
-		e := newItemRequestError()
+	t.Run("QueryError has empty ResponderName", func(t *testing.T) {
+		e := newQueryError()
 		e.ResponderName = ""
 		err := e.Validate()
 
@@ -373,9 +373,9 @@ func TestValidateItemRequestError(t *testing.T) {
 	})
 }
 
-func TestValidateItemRequest(t *testing.T) {
-	t.Run("ItemRequest is fine", func(t *testing.T) {
-		r := newItemRequest()
+func TestValidateQuery(t *testing.T) {
+	t.Run("Query is fine", func(t *testing.T) {
+		r := newQuery()
 
 		err := r.Validate()
 
@@ -384,12 +384,12 @@ func TestValidateItemRequest(t *testing.T) {
 		}
 	})
 
-	t.Run("ItemRequest is nil", func(t *testing.T) {
+	t.Run("Query is nil", func(t *testing.T) {
 
 	})
 
-	t.Run("ItemRequest has empty Type", func(t *testing.T) {
-		r := newItemRequest()
+	t.Run("Query has empty Type", func(t *testing.T) {
+		r := newQuery()
 		r.Type = ""
 		err := r.Validate()
 
@@ -399,8 +399,8 @@ func TestValidateItemRequest(t *testing.T) {
 
 	})
 
-	t.Run("ItemRequest has empty Scope", func(t *testing.T) {
-		r := newItemRequest()
+	t.Run("Query has empty Scope", func(t *testing.T) {
+		r := newQuery()
 		r.Scope = ""
 		err := r.Validate()
 
@@ -411,7 +411,7 @@ func TestValidateItemRequest(t *testing.T) {
 	})
 
 	t.Run("Response has empty UUID", func(t *testing.T) {
-		r := newItemRequest()
+		r := newQuery()
 		r.UUID = nil
 		err := r.Validate()
 
@@ -421,8 +421,8 @@ func TestValidateItemRequest(t *testing.T) {
 
 	})
 
-	t.Run("ItemRequest cannot have empty Query when method is Get", func(t *testing.T) {
-		r := newItemRequest()
+	t.Run("Query cannot have empty Query when method is Get", func(t *testing.T) {
+		r := newQuery()
 		r.Method = RequestMethod_GET
 		r.Query = ""
 		err := r.Validate()
@@ -434,10 +434,10 @@ func TestValidateItemRequest(t *testing.T) {
 
 }
 
-func newItemRequest() *ItemRequest {
+func newQuery() *Query {
 	u := uuid.New()
 
-	return &ItemRequest{
+	return &Query{
 		Type:            "person",
 		Method:          RequestMethod_GET,
 		Query:           "Dylan",
@@ -452,17 +452,17 @@ func newItemRequest() *ItemRequest {
 	}
 }
 
-func newItemRequestError() *ItemRequestError {
+func newQueryError() *QueryError {
 	u := uuid.New()
 
-	return &ItemRequestError{
-		ItemRequestUUID: u[:],
-		ErrorType:       ItemRequestError_OTHER,
-		ErrorString:     "bad",
-		Scope:           "global",
-		SourceName:      "test-source",
-		ItemType:        "test",
-		ResponderName:   "test-responder",
+	return &QueryError{
+		QueryUUID:     u[:],
+		ErrorType:     QueryError_OTHER,
+		ErrorString:   "bad",
+		Scope:         "global",
+		SourceName:    "test-source",
+		ItemType:      "test",
+		ResponderName: "test-responder",
 	}
 }
 
@@ -470,10 +470,10 @@ func newResponse() *Response {
 	u := uuid.New()
 
 	return &Response{
-		Responder:       "foo",
-		State:           ResponderState_WORKING,
-		NextUpdateIn:    durationpb.New(time.Second),
-		ItemRequestUUID: u[:],
+		Responder:    "foo",
+		State:        ResponderState_WORKING,
+		NextUpdateIn: durationpb.New(time.Second),
+		QueryUUID:    u[:],
 	}
 }
 
@@ -501,11 +501,11 @@ func newReference() *Reference {
 
 func newItem() *Item {
 	return &Item{
-		Type:               "user",
-		UniqueAttribute:    "name",
-		Scope:              "test",
-		LinkedItemRequests: []*ItemRequest{},
-		LinkedItems:        []*Reference{},
+		Type:              "user",
+		UniqueAttribute:   "name",
+		Scope:             "test",
+		LinkedItemQueries: []*Query{},
+		LinkedItems:       []*Reference{},
 		Attributes: &ItemAttributes{
 			AttrStruct: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -519,7 +519,7 @@ func newItem() *Item {
 		},
 		Metadata: &Metadata{
 			SourceName: "users",
-			SourceRequest: &ItemRequest{
+			SourceQuery: &Query{
 				Type:            "user",
 				Method:          RequestMethod_LIST,
 				Query:           "*",

@@ -84,72 +84,6 @@ func (ResponderState) EnumDescriptor() ([]byte, []int) {
 	return file_responses_proto_rawDescGZIP(), []int{0}
 }
 
-// The error type. Any types in here will be gracefully handled unless the
-// type os "OTHER"
-type ItemRequestError_ErrorType int32
-
-const (
-	// This should be used of all other failure modes, such as timeouts,
-	// unexpected failures when querying state, permissions errors etc. Errors
-	// that return this type should not be cached as the error may be transient.
-	ItemRequestError_OTHER ItemRequestError_ErrorType = 0
-	// NOTFOUND means that the item was not found. This is only returned as the
-	// result of a GET request since all other requests would return an empty
-	// list instead
-	ItemRequestError_NOTFOUND ItemRequestError_ErrorType = 1
-	// NOSCOPE means that the item was not found because we don't have
-	// access to the requested scope. This should not be interpreted as "The
-	// item doesn't exist" (as with a NOTFOUND error) but rather as "We can't
-	// tell you whether or not the item exists"
-	ItemRequestError_NOSCOPE ItemRequestError_ErrorType = 2
-	// TIMEOUT means that the source times out when trying to query the item.
-	// The timeout is provided in the original request
-	ItemRequestError_TIMEOUT ItemRequestError_ErrorType = 3
-)
-
-// Enum value maps for ItemRequestError_ErrorType.
-var (
-	ItemRequestError_ErrorType_name = map[int32]string{
-		0: "OTHER",
-		1: "NOTFOUND",
-		2: "NOSCOPE",
-		3: "TIMEOUT",
-	}
-	ItemRequestError_ErrorType_value = map[string]int32{
-		"OTHER":    0,
-		"NOTFOUND": 1,
-		"NOSCOPE":  2,
-		"TIMEOUT":  3,
-	}
-)
-
-func (x ItemRequestError_ErrorType) Enum() *ItemRequestError_ErrorType {
-	p := new(ItemRequestError_ErrorType)
-	*p = x
-	return p
-}
-
-func (x ItemRequestError_ErrorType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ItemRequestError_ErrorType) Descriptor() protoreflect.EnumDescriptor {
-	return file_responses_proto_enumTypes[1].Descriptor()
-}
-
-func (ItemRequestError_ErrorType) Type() protoreflect.EnumType {
-	return &file_responses_proto_enumTypes[1]
-}
-
-func (x ItemRequestError_ErrorType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ItemRequestError_ErrorType.Descriptor instead.
-func (ItemRequestError_ErrorType) EnumDescriptor() ([]byte, []int) {
-	return file_responses_proto_rawDescGZIP(), []int{1, 0}
-}
-
 // Response is returned when a query is made
 type Response struct {
 	state         protoimpl.MessageState
@@ -167,7 +101,7 @@ type Response struct {
 	NextUpdateIn *durationpb.Duration `protobuf:"bytes,3,opt,name=nextUpdateIn,proto3" json:"nextUpdateIn,omitempty"`
 	// UUID if the item request that this response is in relation to (in binary
 	// format)
-	ItemRequestUUID []byte `protobuf:"bytes,4,opt,name=itemRequestUUID,proto3" json:"itemRequestUUID,omitempty"`
+	QueryUUID []byte `protobuf:"bytes,4,opt,name=queryUUID,proto3" json:"queryUUID,omitempty"`
 }
 
 func (x *Response) Reset() {
@@ -223,114 +157,11 @@ func (x *Response) GetNextUpdateIn() *durationpb.Duration {
 	return nil
 }
 
-func (x *Response) GetItemRequestUUID() []byte {
+func (x *Response) GetQueryUUID() []byte {
 	if x != nil {
-		return x.ItemRequestUUID
+		return x.QueryUUID
 	}
 	return nil
-}
-
-// ItemRequestError is sent back when an item request fails
-type ItemRequestError struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// UUID if the item request that this response is in relation to (in binary
-	// format)
-	ItemRequestUUID []byte                     `protobuf:"bytes,1,opt,name=itemRequestUUID,proto3" json:"itemRequestUUID,omitempty"`
-	ErrorType       ItemRequestError_ErrorType `protobuf:"varint,2,opt,name=errorType,proto3,enum=ItemRequestError_ErrorType" json:"errorType,omitempty"`
-	// The string contents of the error
-	ErrorString string `protobuf:"bytes,3,opt,name=errorString,proto3" json:"errorString,omitempty"`
-	// The scope from which the error was raised
-	Scope string `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
-	// The name of the source which raised the error (if relevant)
-	SourceName string `protobuf:"bytes,5,opt,name=sourceName,proto3" json:"sourceName,omitempty"`
-	// The type of item that we were looking for at the time of the error
-	ItemType string `protobuf:"bytes,6,opt,name=itemType,proto3" json:"itemType,omitempty"`
-	// The name of the responder that this error was raised from
-	ResponderName string `protobuf:"bytes,7,opt,name=responderName,proto3" json:"responderName,omitempty"`
-}
-
-func (x *ItemRequestError) Reset() {
-	*x = ItemRequestError{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_responses_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ItemRequestError) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ItemRequestError) ProtoMessage() {}
-
-func (x *ItemRequestError) ProtoReflect() protoreflect.Message {
-	mi := &file_responses_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ItemRequestError.ProtoReflect.Descriptor instead.
-func (*ItemRequestError) Descriptor() ([]byte, []int) {
-	return file_responses_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *ItemRequestError) GetItemRequestUUID() []byte {
-	if x != nil {
-		return x.ItemRequestUUID
-	}
-	return nil
-}
-
-func (x *ItemRequestError) GetErrorType() ItemRequestError_ErrorType {
-	if x != nil {
-		return x.ErrorType
-	}
-	return ItemRequestError_OTHER
-}
-
-func (x *ItemRequestError) GetErrorString() string {
-	if x != nil {
-		return x.ErrorString
-	}
-	return ""
-}
-
-func (x *ItemRequestError) GetScope() string {
-	if x != nil {
-		return x.Scope
-	}
-	return ""
-}
-
-func (x *ItemRequestError) GetSourceName() string {
-	if x != nil {
-		return x.SourceName
-	}
-	return ""
-}
-
-func (x *ItemRequestError) GetItemType() string {
-	if x != nil {
-		return x.ItemType
-	}
-	return ""
-}
-
-func (x *ItemRequestError) GetResponderName() string {
-	if x != nil {
-		return x.ResponderName
-	}
-	return ""
 }
 
 var File_responses_proto protoreflect.FileDescriptor
@@ -339,7 +170,7 @@ var file_responses_proto_rawDesc = []byte{
 	0x0a, 0x0f, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x1a, 0x1e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x2f, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xb8, 0x01, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1c,
+	0x6f, 0x22, 0xac, 0x01, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1c,
 	0x0a, 0x09, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x09, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x25, 0x0a, 0x05,
 	0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0f, 0x2e, 0x52, 0x65,
@@ -348,30 +179,8 @@ var file_responses_proto_rawDesc = []byte{
 	0x65, 0x49, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
 	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61,
 	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0c, 0x6e, 0x65, 0x78, 0x74, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x49, 0x6e, 0x12, 0x28, 0x0a, 0x0f, 0x69, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x55, 0x55, 0x49, 0x44, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0f, 0x69, 0x74, 0x65,
-	0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x55, 0x55, 0x49, 0x44, 0x22, 0xd1, 0x02, 0x0a,
-	0x10, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x72, 0x72, 0x6f,
-	0x72, 0x12, 0x28, 0x0a, 0x0f, 0x69, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0f, 0x69, 0x74, 0x65, 0x6d,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x55, 0x55, 0x49, 0x44, 0x12, 0x39, 0x0a, 0x09, 0x65,
-	0x72, 0x72, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b,
-	0x2e, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x45, 0x72, 0x72, 0x6f,
-	0x72, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x52, 0x09, 0x65, 0x72, 0x72,
-	0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x53,
-	0x74, 0x72, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x65, 0x72, 0x72,
-	0x6f, 0x72, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x12, 0x14, 0x0a, 0x05, 0x73, 0x63, 0x6f, 0x70,
-	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x73, 0x63, 0x6f, 0x70, 0x65, 0x12, 0x1e,
-	0x0a, 0x0a, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x0a, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x1a,
-	0x0a, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x08, 0x69, 0x74, 0x65, 0x6d, 0x54, 0x79, 0x70, 0x65, 0x12, 0x24, 0x0a, 0x0d, 0x72, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x64, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x0d, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x64, 0x65, 0x72, 0x4e, 0x61, 0x6d, 0x65,
-	0x22, 0x3e, 0x0a, 0x09, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x54, 0x79, 0x70, 0x65, 0x12, 0x09, 0x0a,
-	0x05, 0x4f, 0x54, 0x48, 0x45, 0x52, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x4e, 0x4f, 0x54, 0x46,
-	0x4f, 0x55, 0x4e, 0x44, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x4e, 0x4f, 0x53, 0x43, 0x4f, 0x50,
-	0x45, 0x10, 0x02, 0x12, 0x0b, 0x0a, 0x07, 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0x10, 0x03,
+	0x49, 0x6e, 0x12, 0x1c, 0x0a, 0x09, 0x71, 0x75, 0x65, 0x72, 0x79, 0x55, 0x55, 0x49, 0x44, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x71, 0x75, 0x65, 0x72, 0x79, 0x55, 0x55, 0x49, 0x44,
 	0x2a, 0x52, 0x0a, 0x0e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x64, 0x65, 0x72, 0x53, 0x74, 0x61,
 	0x74, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x57, 0x4f, 0x52, 0x4b, 0x49, 0x4e, 0x47, 0x10, 0x00, 0x12,
 	0x0c, 0x0a, 0x08, 0x43, 0x4f, 0x4d, 0x50, 0x4c, 0x45, 0x54, 0x45, 0x10, 0x01, 0x12, 0x09, 0x0a,
@@ -395,24 +204,21 @@ func file_responses_proto_rawDescGZIP() []byte {
 	return file_responses_proto_rawDescData
 }
 
-var file_responses_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_responses_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_responses_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_responses_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_responses_proto_goTypes = []interface{}{
-	(ResponderState)(0),             // 0: ResponderState
-	(ItemRequestError_ErrorType)(0), // 1: ItemRequestError.ErrorType
-	(*Response)(nil),                // 2: Response
-	(*ItemRequestError)(nil),        // 3: ItemRequestError
-	(*durationpb.Duration)(nil),     // 4: google.protobuf.Duration
+	(ResponderState)(0),         // 0: ResponderState
+	(*Response)(nil),            // 1: Response
+	(*durationpb.Duration)(nil), // 2: google.protobuf.Duration
 }
 var file_responses_proto_depIdxs = []int32{
 	0, // 0: Response.state:type_name -> ResponderState
-	4, // 1: Response.nextUpdateIn:type_name -> google.protobuf.Duration
-	1, // 2: ItemRequestError.errorType:type_name -> ItemRequestError.ErrorType
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2, // 1: Response.nextUpdateIn:type_name -> google.protobuf.Duration
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_responses_proto_init() }
@@ -433,26 +239,14 @@ func file_responses_proto_init() {
 				return nil
 			}
 		}
-		file_responses_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ItemRequestError); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_responses_proto_rawDesc,
-			NumEnums:      2,
-			NumMessages:   2,
+			NumEnums:      1,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
