@@ -285,9 +285,9 @@ func TestValidateResponse(t *testing.T) {
 		}
 	})
 
-	t.Run("Response has empty QueryUUID", func(t *testing.T) {
+	t.Run("Response has empty UUID", func(t *testing.T) {
 		r := newResponse()
-		r.QueryUUID = nil
+		r.UUID = nil
 
 		err := r.Validate()
 
@@ -312,9 +312,9 @@ func TestValidateQueryError(t *testing.T) {
 
 	})
 
-	t.Run("QueryError has empty QueryUUID", func(t *testing.T) {
+	t.Run("QueryError has empty UUID", func(t *testing.T) {
 		e := newQueryError()
-		e.QueryUUID = nil
+		e.UUID = nil
 		err := e.Validate()
 
 		if err == nil {
@@ -456,7 +456,7 @@ func newQueryError() *QueryError {
 	u := uuid.New()
 
 	return &QueryError{
-		QueryUUID:     u[:],
+		UUID:          u[:],
 		ErrorType:     QueryError_OTHER,
 		ErrorString:   "bad",
 		Scope:         "global",
@@ -473,7 +473,7 @@ func newResponse() *Response {
 		Responder:    "foo",
 		State:        ResponderState_WORKING,
 		NextUpdateIn: durationpb.New(time.Second),
-		QueryUUID:    u[:],
+		UUID:         u[:],
 	}
 }
 

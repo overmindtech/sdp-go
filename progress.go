@@ -406,7 +406,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
 				log.WithFields(log.Fields{
-					"QueryUUID":     err.QueryUUID,
+					"UUID":          err.UUID,
 					"ErrorType":     err.ErrorType,
 					"ErrorString":   err.ErrorString,
 					"Scope":         err.Scope,

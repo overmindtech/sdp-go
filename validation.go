@@ -98,8 +98,8 @@ func (r *Response) Validate() error {
 		return errors.New("Response has empty Responder")
 	}
 
-	if len(r.QueryUUID) == 0 {
-		return errors.New("Response has empty QueryUUID")
+	if len(r.UUID) == 0 {
+		return errors.New("Response has empty UUID")
 	}
 
 	return nil
@@ -111,8 +111,8 @@ func (e *QueryError) Validate() error {
 		return errors.New("QueryError is nil")
 	}
 
-	if len(e.QueryUUID) == 0 {
-		return errors.New("QueryError has empty QueryUUID")
+	if len(e.UUID) == 0 {
+		return errors.New("QueryError has empty UUID")
 	}
 
 	if e.ErrorString == "" {

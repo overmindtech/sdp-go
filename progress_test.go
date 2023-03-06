@@ -746,7 +746,7 @@ func TestExecute(t *testing.T) {
 			conn.Publish(context.Background(), q.ResponseSubject, &Response{
 				Responder: "test",
 				State:     ResponderState_WORKING,
-				QueryUUID: q.UUID,
+				UUID:      q.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
 					Nanos:   0,
@@ -766,7 +766,7 @@ func TestExecute(t *testing.T) {
 			conn.Publish(context.Background(), q.ResponseSubject, &Response{
 				Responder: "test",
 				State:     ResponderState_COMPLETE,
-				QueryUUID: q.UUID,
+				UUID:      q.UUID,
 			})
 		}()
 
@@ -820,7 +820,7 @@ func TestRealNats(t *testing.T) {
 			enc.Publish(ctx, q.ResponseSubject, &Response{
 				Responder: "test",
 				State:     ResponderState_WORKING,
-				QueryUUID: q.UUID,
+				UUID:      q.UUID,
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
 					Nanos:   0,
@@ -836,7 +836,7 @@ func TestRealNats(t *testing.T) {
 			enc.Publish(ctx, q.ResponseSubject, &Response{
 				Responder: "test",
 				State:     ResponderState_COMPLETE,
-				QueryUUID: q.UUID,
+				UUID:      q.UUID,
 			})
 		}))
 		ready <- true
