@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"reflect"
@@ -401,11 +402,12 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 				t.Error("Metadata.SourceQuery.Type does not match")
 			}
 
-			uuidA, _ := uuid.FromBytes(itemA.Metadata.SourceQuery.UUID)
-			uuidB, _ := uuid.FromBytes(itemB.Metadata.SourceQuery.UUID)
-
-			if uuidA.String() != uuidB.String() {
+			if !bytes.Equal(itemA.Metadata.SourceQuery.UUID, itemB.Metadata.SourceQuery.UUID) {
 				t.Error("Metadata.SourceQuery.UUID does not match")
+			}
+
+			if !bytes.Equal(itemA.Metadata.SourceQueryUUID, itemB.Metadata.SourceQueryUUID) {
+				t.Error("Metadata.SourceQueryUUID does not match")
 			}
 		}
 	}

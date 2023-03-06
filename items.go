@@ -153,6 +153,9 @@ func (m *Metadata) Copy(dest *Metadata) {
 		m.SourceQuery.Copy(dest.SourceQuery)
 	}
 
+	dest.SourceQueryUUID = make([]byte, len(m.SourceQueryUUID))
+	copy(dest.SourceQueryUUID, m.SourceQueryUUID)
+
 	dest.Timestamp = &timestamppb.Timestamp{
 		Seconds: m.Timestamp.GetSeconds(),
 		Nanos:   m.Timestamp.GetNanos(),
