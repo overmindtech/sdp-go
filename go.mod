@@ -1,6 +1,6 @@
 module github.com/overmindtech/sdp-go
 
-go 1.18
+go 1.19
 
 require (
 	github.com/getsentry/sentry-go v0.19.0
