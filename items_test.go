@@ -232,7 +232,7 @@ func TestCopy(t *testing.T) {
 			LinkedItemQueries: []*Query{
 				{
 					Type:   "user",
-					Method: RequestMethod_GET,
+					Method: QueryMethod_GET,
 					Query:  "Mike",
 				},
 			},
@@ -241,7 +241,7 @@ func TestCopy(t *testing.T) {
 				SourceName: "test",
 				SourceQuery: &Query{
 					Type:   "user",
-					Method: RequestMethod_GET,
+					Method: QueryMethod_GET,
 					Query:  "Dylan",
 					Scope:  "testScope",
 					UUID:   u[:],
@@ -271,7 +271,7 @@ func TestCopy(t *testing.T) {
 			LinkedItemQueries: []*Query{
 				{
 					Type:   "user",
-					Method: RequestMethod_GET,
+					Method: QueryMethod_GET,
 					Query:  "Mike",
 				},
 			},
@@ -421,7 +421,7 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 func TestTimeoutContext(t *testing.T) {
 	r := Query{
 		Type:        "person",
-		Method:      RequestMethod_GET,
+		Method:      QueryMethod_GET,
 		Query:       "foo",
 		LinkDepth:   2,
 		IgnoreCache: false,

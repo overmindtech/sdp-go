@@ -156,7 +156,7 @@ func (q *Query) Validate() error {
 		return errors.New("Response has empty UUID")
 	}
 
-	if q.Method == RequestMethod_GET {
+	if q.Method == QueryMethod_GET {
 		if q.Query == "" {
 			return errors.New("Query cannot have empty Query when method is Get")
 		}
