@@ -147,6 +147,7 @@ func (m *Metadata) Copy(dest *Metadata) {
 	}
 
 	dest.SourceName = m.SourceName
+	dest.Hidden = m.Hidden
 
 	if m.SourceQuery != nil {
 		dest.SourceQuery = &Query{}

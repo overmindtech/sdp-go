@@ -277,6 +277,7 @@ func TestCopy(t *testing.T) {
 			},
 			LinkedItems: []*Reference{},
 			Metadata: &Metadata{
+				Hidden:                true,
 				SourceName:            "test",
 				Timestamp:             timestamppb.Now(),
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
@@ -383,6 +384,10 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 
 		if itemA.Metadata.Timestamp.String() != itemB.Metadata.Timestamp.String() {
 			t.Error("Timestamp did not match")
+		}
+
+		if itemA.Metadata.Hidden != itemB.Metadata.Hidden {
+			t.Error("Metadata.Hidden does not match")
 		}
 
 		if itemA.Metadata.SourceQuery != nil {
