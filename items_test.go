@@ -246,7 +246,6 @@ func TestCopy(t *testing.T) {
 					Scope:  "testScope",
 					UUID:   u[:],
 				},
-				SourceQueryUUID:       u[:],
 				Timestamp:             timestamppb.Now(),
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
 				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
@@ -409,10 +408,6 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 
 			if !bytes.Equal(itemA.Metadata.SourceQuery.UUID, itemB.Metadata.SourceQuery.UUID) {
 				t.Error("Metadata.SourceQuery.UUID does not match")
-			}
-
-			if !bytes.Equal(itemA.Metadata.SourceQueryUUID, itemB.Metadata.SourceQueryUUID) {
-				t.Error("Metadata.SourceQueryUUID does not match")
 			}
 		}
 	}
