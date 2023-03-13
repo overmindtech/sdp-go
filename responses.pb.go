@@ -23,13 +23,13 @@ const (
 
 // ResponderState represents the state of the responder, note that both
 // COMPLETE and ERROR are completion states i.e. do not expect any more items
-// to be returned from the request
+// to be returned from the query
 type ResponderState int32
 
 const (
 	// The responder is still gathering data
 	ResponderState_WORKING ResponderState = 0
-	// The request is complete
+	// The query is complete
 	ResponderState_COMPLETE ResponderState = 1
 	// All sources have returned errors
 	ResponderState_ERROR ResponderState = 2
@@ -99,7 +99,7 @@ type Response struct {
 	// further interim responses are received within this time the connection
 	// can be considered stale and the requester may give up
 	NextUpdateIn *durationpb.Duration `protobuf:"bytes,3,opt,name=nextUpdateIn,proto3" json:"nextUpdateIn,omitempty"`
-	// UUID if the item request that this response is in relation to (in binary
+	// UUID of the item query that this response is in relation to (in binary
 	// format)
 	UUID []byte `protobuf:"bytes,4,opt,name=UUID,proto3" json:"UUID,omitempty"`
 }

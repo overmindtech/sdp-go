@@ -699,7 +699,7 @@ func TestExecute(t *testing.T) {
 	t.Run("with no responders", func(t *testing.T) {
 		q := Query{
 			Type:            "user",
-			Method:          RequestMethod_GET,
+			Method:          QueryMethod_GET,
 			Query:           "Dylan",
 			LinkDepth:       0,
 			Scope:           "global",
@@ -724,7 +724,7 @@ func TestExecute(t *testing.T) {
 	t.Run("with a full response set", func(t *testing.T) {
 		q := Query{
 			Type:            "user",
-			Method:          RequestMethod_GET,
+			Method:          QueryMethod_GET,
 			Query:           "Dylan",
 			LinkDepth:       0,
 			Scope:           "global",
@@ -801,7 +801,7 @@ func TestRealNats(t *testing.T) {
 	u := uuid.New()
 	q := Query{
 		Type:   "person",
-		Method: RequestMethod_GET,
+		Method: QueryMethod_GET,
 		Query:  "dylan",
 		Scope:  "global",
 		UUID:   u[:],

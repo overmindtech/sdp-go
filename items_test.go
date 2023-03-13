@@ -232,7 +232,7 @@ func TestCopy(t *testing.T) {
 			LinkedItemQueries: []*Query{
 				{
 					Type:   "user",
-					Method: RequestMethod_GET,
+					Method: QueryMethod_GET,
 					Query:  "Mike",
 				},
 			},
@@ -241,12 +241,11 @@ func TestCopy(t *testing.T) {
 				SourceName: "test",
 				SourceQuery: &Query{
 					Type:   "user",
-					Method: RequestMethod_GET,
+					Method: QueryMethod_GET,
 					Query:  "Dylan",
 					Scope:  "testScope",
 					UUID:   u[:],
 				},
-				SourceQueryUUID:       u[:],
 				Timestamp:             timestamppb.Now(),
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
 				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
@@ -271,7 +270,7 @@ func TestCopy(t *testing.T) {
 			LinkedItemQueries: []*Query{
 				{
 					Type:   "user",
-					Method: RequestMethod_GET,
+					Method: QueryMethod_GET,
 					Query:  "Mike",
 				},
 			},
@@ -410,10 +409,6 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 			if !bytes.Equal(itemA.Metadata.SourceQuery.UUID, itemB.Metadata.SourceQuery.UUID) {
 				t.Error("Metadata.SourceQuery.UUID does not match")
 			}
-
-			if !bytes.Equal(itemA.Metadata.SourceQueryUUID, itemB.Metadata.SourceQueryUUID) {
-				t.Error("Metadata.SourceQueryUUID does not match")
-			}
 		}
 	}
 }
@@ -421,7 +416,7 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 func TestTimeoutContext(t *testing.T) {
 	r := Query{
 		Type:        "person",
-		Method:      RequestMethod_GET,
+		Method:      QueryMethod_GET,
 		Query:       "foo",
 		LinkDepth:   2,
 		IgnoreCache: false,

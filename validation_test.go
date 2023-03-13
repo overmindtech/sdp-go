@@ -423,7 +423,7 @@ func TestValidateQuery(t *testing.T) {
 
 	t.Run("Query cannot have empty Query when method is Get", func(t *testing.T) {
 		r := newQuery()
-		r.Method = RequestMethod_GET
+		r.Method = QueryMethod_GET
 		r.Query = ""
 		err := r.Validate()
 
@@ -439,7 +439,7 @@ func newQuery() *Query {
 
 	return &Query{
 		Type:            "person",
-		Method:          RequestMethod_GET,
+		Method:          QueryMethod_GET,
 		Query:           "Dylan",
 		LinkDepth:       1,
 		Scope:           "global",
@@ -521,7 +521,7 @@ func newItem() *Item {
 			SourceName: "users",
 			SourceQuery: &Query{
 				Type:            "user",
-				Method:          RequestMethod_LIST,
+				Method:          QueryMethod_LIST,
 				Query:           "*",
 				LinkDepth:       12,
 				Scope:           "testScope",

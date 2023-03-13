@@ -16,7 +16,7 @@ var _u = uuid.New()
 
 var query = Query{
 	Type:      "user",
-	Method:    RequestMethod_LIST,
+	Method:    QueryMethod_LIST,
 	LinkDepth: 10,
 	Scope:     "test",
 	UUID:      _u[:],
@@ -39,7 +39,7 @@ var metadata = Metadata{
 	SourceName: "users",
 	SourceQuery: &Query{
 		Type:            "user",
-		Method:          RequestMethod_LIST,
+		Method:          QueryMethod_LIST,
 		Query:           "*",
 		LinkDepth:       12,
 		Scope:           "testScope",
