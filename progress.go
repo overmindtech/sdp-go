@@ -351,7 +351,17 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 	qp.itemSub, err = ec.Subscribe(qp.Query.ItemSubject, NewItemHandler("Request.ItemSubject", func(ctx context.Context, item *Item) {
 		defer atomic.AddInt64(qp.itemsProcessed, 1)
 
-		if item != nil {
+		span := trace.SpanFromContext(ctx)
+
+		if item == nil {
+			span.SetAttributes(
+				attribute.String("om.item", "nil"),
+			)
+		} else {
+			span.SetAttributes(
+				attribute.String("om.item", item.GloballyUniqueName()),
+			)
+
 			qp.chanMutex.RLock()
 			defer qp.chanMutex.RUnlock()
 			if qp.channelsClosed {
