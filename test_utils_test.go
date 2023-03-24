@@ -12,8 +12,6 @@ func TestRequest(t *testing.T) {
 	tc := TestConnection{}
 
 	t.Run("with a regular subject", func(t *testing.T) {
-		t.Parallel()
-
 		// Create the responder
 		tc.Subscribe("test", func(msg *nats.Msg) {
 			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
@@ -50,8 +48,6 @@ func TestRequest(t *testing.T) {
 	})
 
 	t.Run("with a > wildcard subject", func(t *testing.T) {
-		t.Parallel()
-
 		// Create the responder
 		tc.Subscribe("test.>", func(msg *nats.Msg) {
 			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
@@ -88,8 +84,6 @@ func TestRequest(t *testing.T) {
 	})
 
 	t.Run("with a * wildcard subject", func(t *testing.T) {
-		t.Parallel()
-
 		// Create the responder
 		tc.Subscribe("test.*.bar", func(msg *nats.Msg) {
 			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
