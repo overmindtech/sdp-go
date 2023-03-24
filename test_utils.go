@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strings"
 	sync "sync"
 
 	"github.com/nats-io/nats.go"
@@ -21,12 +23,14 @@ type TestConnection struct {
 	Messages      []ResponseMessage
 	messagesMutex sync.Mutex
 
-	Subscriptions      map[string][]nats.MsgHandler
-	subscriptionsMutex sync.Mutex
+	Subscriptions      map[*regexp.Regexp][]nats.MsgHandler
+	subscriptionsMutex sync.RWMutex
 }
 
 // assert interface implementation
 var _ EncodedConnection = (*TestConnection)(nil)
+
+var ErrNoResponders = errors.New("no responders available")
 
 // Publish Test publish method, notes down the subject and the message
 func (t *TestConnection) Publish(ctx context.Context, subj string, m proto.Message) error {
@@ -69,16 +73,39 @@ func (t *TestConnection) Subscribe(subj string, cb nats.MsgHandler) (*nats.Subsc
 	defer t.subscriptionsMutex.Unlock()
 
 	if t.Subscriptions == nil {
-		t.Subscriptions = make(map[string][]nats.MsgHandler)
+		t.Subscriptions = make(map[*regexp.Regexp][]nats.MsgHandler)
 	}
 
-	t.Subscriptions[subj] = append(t.Subscriptions[subj], cb)
+	regex := t.subjectToRegexp(subj)
+
+	t.Subscriptions[regex] = append(t.Subscriptions[regex], cb)
 
 	return nil, nil
 }
 
 func (t *TestConnection) QueueSubscribe(subj, queue string, cb nats.MsgHandler) (*nats.Subscription, error) {
 	panic("TODO")
+}
+
+func (r *TestConnection) subjectToRegexp(subject string) *regexp.Regexp {
+	// If the subject contains a > then handle this
+	if strings.Contains(subject, ">") {
+		// Escape regex to literal
+		quoted := regexp.QuoteMeta(subject)
+
+		// Replace > with .*$
+		return regexp.MustCompile(strings.ReplaceAll(quoted, ">", ".*$"))
+	}
+
+	if strings.Contains(subject, "*") {
+		// Escape regex to literal
+		quoted := regexp.QuoteMeta(subject)
+
+		// Replace \* with \w+
+		return regexp.MustCompile(strings.ReplaceAll(quoted, `\*`, `\w+`))
+	}
+
+	return regexp.MustCompile(regexp.QuoteMeta(subject))
 }
 
 // RequestMsg Simulates a request on the given subject, assigns a random
@@ -89,22 +116,16 @@ func (t *TestConnection) RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.M
 	msg.Reply = replySubject
 	replies := make(chan interface{}, 128)
 
-	t.subscriptionsMutex.Lock()
-	handlers, ok := t.Subscriptions[msg.Subject]
-	t.subscriptionsMutex.Unlock()
+	// Subscribe to the reply subject
+	t.Subscribe(replySubject, func(msg *nats.Msg) {
+		replies <- msg
+	})
 
-	if ok {
-		// Subscribe to the reply subject
-		t.Subscribe(replySubject, func(msg *nats.Msg) {
-			replies <- msg
-		})
+	// Run the handlers
+	err := t.runHandlers(msg)
 
-		// Run the handlers
-		for _, handler := range handlers {
-			handler(msg)
-		}
-	} else {
-		return nil, fmt.Errorf("no responders on subject %v", msg.Subject)
+	if err != nil {
+		return nil, err
 	}
 
 	// Return the first result
@@ -159,16 +180,25 @@ func (n *TestConnection) Underlying() *nats.Conn {
 func (n *TestConnection) Drop() {}
 
 // runHandlers Runs the handlers for a given subject
-func (t *TestConnection) runHandlers(msg *nats.Msg) {
-	t.subscriptionsMutex.Lock()
-	defer t.subscriptionsMutex.Unlock()
+func (t *TestConnection) runHandlers(msg *nats.Msg) error {
+	t.subscriptionsMutex.RLock()
+	defer t.subscriptionsMutex.RUnlock()
 
-	handlers, ok := t.Subscriptions[msg.Subject]
+	var hasResponder bool
 
-	if ok {
-		for _, handler := range handlers {
-			handler(msg)
+	for subjectRegex, handlers := range t.Subscriptions {
+		if subjectRegex.MatchString(msg.Subject) {
+			for _, handler := range handlers {
+				hasResponder = true
+				handler(msg)
+			}
 		}
+	}
+
+	if hasResponder {
+		return nil
+	} else {
+		return ErrNoResponders
 	}
 }
 
