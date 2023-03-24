@@ -28,9 +28,9 @@ func TestTraceContextPropagation(t *testing.T) {
 	// 		t.Errorf("outer span has unexpected context: %v", string(outerJson))
 	// 	}
 	// }
-	handlerCalled := false
+	handlerCalled := make(chan struct{})
 	tc.Subscribe("test.subject", NewOtelExtractingHandler("inner span", func(innerCtx context.Context, msg *nats.Msg) {
-		handlerCalled = true
+		handlerCalled <- struct{}{}
 
 		_, innerSpan := tp.Tracer("innerTracer").Start(innerCtx, "innerSpan")
 		// innerJson, err := innerSpan.SpanContext().MarshalJSON()
@@ -54,7 +54,5 @@ func TestTraceContextPropagation(t *testing.T) {
 	InjectOtelTraceContext(outerCtx, m)
 	tc.PublishMsg(outerCtx, m)
 
-	if !handlerCalled {
-		t.Error("handler was not called")
-	}
+	<-handlerCalled
 }
