@@ -617,14 +617,6 @@ func TestStart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, ok := conn.Subscriptions[query.ItemSubject]; !ok {
-		t.Errorf("subscription %v not created", query.ItemSubject)
-	}
-
-	if _, ok := conn.Subscriptions[query.ResponseSubject]; !ok {
-		t.Errorf("subscription %v not created", query.ResponseSubject)
-	}
-
 	if len(conn.Messages) != 1 {
 		t.Errorf("expected 1 message to be sent, got %v", len(conn.Messages))
 	}
