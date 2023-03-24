@@ -190,7 +190,7 @@ func (t *TestConnection) runHandlers(msg *nats.Msg) error {
 		if subjectRegex.MatchString(msg.Subject) {
 			for _, handler := range handlers {
 				hasResponder = true
-				handler(msg)
+				go handler(msg)
 			}
 		}
 	}
