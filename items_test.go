@@ -250,6 +250,7 @@ func TestCopy(t *testing.T) {
 				SourceDuration:        durationpb.New(100 * time.Millisecond),
 				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
 			},
+			Health: Health_HEALTH_ERROR.Enum(),
 		}
 
 		itemB := Item{}
@@ -365,6 +366,21 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 	if len(itemA.LinkedItems) > 0 {
 		if itemA.LinkedItems[0].Type != itemB.LinkedItems[0].Type {
 			t.Error("LinkedItemQueries[0].Type did not match")
+		}
+	}
+
+	if itemA.Health == nil {
+		if itemB.Health != nil {
+			t.Errorf("mismatched health nil and %v", *itemB.Health)
+		}
+	} else {
+		if itemB.Health == nil {
+			t.Errorf("mismatched health %v and nil", *itemA.Health)
+
+		} else {
+			if *itemA.Health != *itemB.Health {
+				t.Errorf("mismatched health %v and %v", *itemA.Health, *itemB.Health)
+			}
 		}
 	}
 

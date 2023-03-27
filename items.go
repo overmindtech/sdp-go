@@ -100,6 +100,12 @@ func (i *Item) Copy(dest *Item) {
 
 		dest.LinkedItems = append(dest.LinkedItems, newLinkedItem)
 	}
+
+	if i.Health == nil {
+		dest.Health = nil
+	} else {
+		dest.Health = i.Health.Enum()
+	}
 }
 
 // Hash Returns a 12 character hash for the item. This is likely but not
@@ -514,7 +520,7 @@ func hashSum(b []byte) string {
 	shaSum = sha1.Sum(b)
 
 	// We need to specify a custom encoding here since dGraph has fairly strict
-	// requirements aboout what name a variable can have
+	// requirements about what name a variable can have
 	paddedEncoding = base32.NewEncoding("abcdefghijklmnopqrstuvwxyzABCDEF")
 
 	// We also can't have padding since "=" is not allowed in variable names
