@@ -270,7 +270,7 @@ func (x *StoreBookmarkRequest) GetDescription() string {
 }
 
 // After a bookmark is successfully stored, this reply with the new bookmark's details is sent.
-type BookmarkStoreResult struct {
+type StoreBookmarkResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -280,8 +280,8 @@ type BookmarkStoreResult struct {
 	Bookmark     *BookmarkDescriptor `protobuf:"bytes,3,opt,name=bookmark,proto3" json:"bookmark,omitempty"`
 }
 
-func (x *BookmarkStoreResult) Reset() {
-	*x = BookmarkStoreResult{}
+func (x *StoreBookmarkResponse) Reset() {
+	*x = StoreBookmarkResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_bookmarks_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -289,13 +289,13 @@ func (x *BookmarkStoreResult) Reset() {
 	}
 }
 
-func (x *BookmarkStoreResult) String() string {
+func (x *StoreBookmarkResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BookmarkStoreResult) ProtoMessage() {}
+func (*StoreBookmarkResponse) ProtoMessage() {}
 
-func (x *BookmarkStoreResult) ProtoReflect() protoreflect.Message {
+func (x *StoreBookmarkResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_bookmarks_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -307,26 +307,156 @@ func (x *BookmarkStoreResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BookmarkStoreResult.ProtoReflect.Descriptor instead.
-func (*BookmarkStoreResult) Descriptor() ([]byte, []int) {
+// Deprecated: Use StoreBookmarkResponse.ProtoReflect.Descriptor instead.
+func (*StoreBookmarkResponse) Descriptor() ([]byte, []int) {
 	return file_bookmarks_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *BookmarkStoreResult) GetSuccess() bool {
+func (x *StoreBookmarkResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-func (x *BookmarkStoreResult) GetErrorMessage() string {
+func (x *StoreBookmarkResponse) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
 	return ""
 }
 
-func (x *BookmarkStoreResult) GetBookmark() *BookmarkDescriptor {
+func (x *StoreBookmarkResponse) GetBookmark() *BookmarkDescriptor {
+	if x != nil {
+		return x.Bookmark
+	}
+	return nil
+}
+
+type UpdateBookmarkRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// unique id to identify this bookmark
+	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
+	// user supplied name of this bookmark
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// user supplied description of this bookmark
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+}
+
+func (x *UpdateBookmarkRequest) Reset() {
+	*x = UpdateBookmarkRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_bookmarks_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateBookmarkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateBookmarkRequest) ProtoMessage() {}
+
+func (x *UpdateBookmarkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_bookmarks_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateBookmarkRequest.ProtoReflect.Descriptor instead.
+func (*UpdateBookmarkRequest) Descriptor() ([]byte, []int) {
+	return file_bookmarks_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpdateBookmarkRequest) GetUUID() []byte {
+	if x != nil {
+		return x.UUID
+	}
+	return nil
+}
+
+func (x *UpdateBookmarkRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateBookmarkRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+// After a bookmark is successfully updated, this reply with the new bookmark's details is sent.
+type UpdateBookmarkResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Success      bool                `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	ErrorMessage string              `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
+	Bookmark     *BookmarkDescriptor `protobuf:"bytes,3,opt,name=bookmark,proto3" json:"bookmark,omitempty"`
+}
+
+func (x *UpdateBookmarkResponse) Reset() {
+	*x = UpdateBookmarkResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_bookmarks_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateBookmarkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateBookmarkResponse) ProtoMessage() {}
+
+func (x *UpdateBookmarkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_bookmarks_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateBookmarkResponse.ProtoReflect.Descriptor instead.
+func (*UpdateBookmarkResponse) Descriptor() ([]byte, []int) {
+	return file_bookmarks_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateBookmarkResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *UpdateBookmarkResponse) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *UpdateBookmarkResponse) GetBookmark() *BookmarkDescriptor {
 	if x != nil {
 		return x.Bookmark
 	}
@@ -347,7 +477,7 @@ type LoadBookmarkRequest struct {
 func (x *LoadBookmarkRequest) Reset() {
 	*x = LoadBookmarkRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bookmarks_proto_msgTypes[5]
+		mi := &file_bookmarks_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -360,7 +490,7 @@ func (x *LoadBookmarkRequest) String() string {
 func (*LoadBookmarkRequest) ProtoMessage() {}
 
 func (x *LoadBookmarkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bookmarks_proto_msgTypes[5]
+	mi := &file_bookmarks_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -373,7 +503,7 @@ func (x *LoadBookmarkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadBookmarkRequest.ProtoReflect.Descriptor instead.
 func (*LoadBookmarkRequest) Descriptor() ([]byte, []int) {
-	return file_bookmarks_proto_rawDescGZIP(), []int{5}
+	return file_bookmarks_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LoadBookmarkRequest) GetUUID() []byte {
@@ -383,7 +513,7 @@ func (x *LoadBookmarkRequest) GetUUID() []byte {
 	return nil
 }
 
-type BookmarkLoadResult struct {
+type LoadBookmarkResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -392,23 +522,23 @@ type BookmarkLoadResult struct {
 	ErrorMessage string `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 }
 
-func (x *BookmarkLoadResult) Reset() {
-	*x = BookmarkLoadResult{}
+func (x *LoadBookmarkResponse) Reset() {
+	*x = LoadBookmarkResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bookmarks_proto_msgTypes[6]
+		mi := &file_bookmarks_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *BookmarkLoadResult) String() string {
+func (x *LoadBookmarkResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BookmarkLoadResult) ProtoMessage() {}
+func (*LoadBookmarkResponse) ProtoMessage() {}
 
-func (x *BookmarkLoadResult) ProtoReflect() protoreflect.Message {
-	mi := &file_bookmarks_proto_msgTypes[6]
+func (x *LoadBookmarkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_bookmarks_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,19 +549,19 @@ func (x *BookmarkLoadResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BookmarkLoadResult.ProtoReflect.Descriptor instead.
-func (*BookmarkLoadResult) Descriptor() ([]byte, []int) {
-	return file_bookmarks_proto_rawDescGZIP(), []int{6}
+// Deprecated: Use LoadBookmarkResponse.ProtoReflect.Descriptor instead.
+func (*LoadBookmarkResponse) Descriptor() ([]byte, []int) {
+	return file_bookmarks_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *BookmarkLoadResult) GetSuccess() bool {
+func (x *LoadBookmarkResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-func (x *BookmarkLoadResult) GetErrorMessage() string {
+func (x *LoadBookmarkResponse) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -451,7 +581,7 @@ type DeleteBookmarkRequest struct {
 func (x *DeleteBookmarkRequest) Reset() {
 	*x = DeleteBookmarkRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bookmarks_proto_msgTypes[7]
+		mi := &file_bookmarks_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -464,7 +594,7 @@ func (x *DeleteBookmarkRequest) String() string {
 func (*DeleteBookmarkRequest) ProtoMessage() {}
 
 func (x *DeleteBookmarkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_bookmarks_proto_msgTypes[7]
+	mi := &file_bookmarks_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -477,7 +607,7 @@ func (x *DeleteBookmarkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteBookmarkRequest.ProtoReflect.Descriptor instead.
 func (*DeleteBookmarkRequest) Descriptor() ([]byte, []int) {
-	return file_bookmarks_proto_rawDescGZIP(), []int{7}
+	return file_bookmarks_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DeleteBookmarkRequest) GetUUID() []byte {
@@ -487,7 +617,7 @@ func (x *DeleteBookmarkRequest) GetUUID() []byte {
 	return nil
 }
 
-type BookmarkDeleteResult struct {
+type DeleteBookmarkResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -496,23 +626,23 @@ type BookmarkDeleteResult struct {
 	ErrorMessage string `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
 }
 
-func (x *BookmarkDeleteResult) Reset() {
-	*x = BookmarkDeleteResult{}
+func (x *DeleteBookmarkResponse) Reset() {
+	*x = DeleteBookmarkResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_bookmarks_proto_msgTypes[8]
+		mi := &file_bookmarks_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *BookmarkDeleteResult) String() string {
+func (x *DeleteBookmarkResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BookmarkDeleteResult) ProtoMessage() {}
+func (*DeleteBookmarkResponse) ProtoMessage() {}
 
-func (x *BookmarkDeleteResult) ProtoReflect() protoreflect.Message {
-	mi := &file_bookmarks_proto_msgTypes[8]
+func (x *DeleteBookmarkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_bookmarks_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -523,19 +653,19 @@ func (x *BookmarkDeleteResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BookmarkDeleteResult.ProtoReflect.Descriptor instead.
-func (*BookmarkDeleteResult) Descriptor() ([]byte, []int) {
-	return file_bookmarks_proto_rawDescGZIP(), []int{8}
+// Deprecated: Use DeleteBookmarkResponse.ProtoReflect.Descriptor instead.
+func (*DeleteBookmarkResponse) Descriptor() ([]byte, []int) {
+	return file_bookmarks_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *BookmarkDeleteResult) GetSuccess() bool {
+func (x *DeleteBookmarkResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-func (x *BookmarkDeleteResult) GetErrorMessage() string {
+func (x *DeleteBookmarkResponse) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -573,35 +703,50 @@ var file_bookmarks_proto_rawDesc = []byte{
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64,
 	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x84, 0x01,
-	0x0a, 0x13, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52,
-	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12,
-	0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x08, 0x62, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b,
-	0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x08, 0x62, 0x6f, 0x6f, 0x6b,
-	0x6d, 0x61, 0x72, 0x6b, 0x22, 0x29, 0x0a, 0x13, 0x4c, 0x6f, 0x61, 0x64, 0x42, 0x6f, 0x6f, 0x6b,
-	0x6d, 0x61, 0x72, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x55,
-	0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44, 0x22,
-	0x52, 0x0a, 0x12, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x4c, 0x6f, 0x61, 0x64, 0x52,
-	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12,
-	0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x22, 0x2b, 0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x42, 0x6f, 0x6f,
-	0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04,
-	0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44,
-	0x22, 0x54, 0x0a, 0x14, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x44, 0x65, 0x6c, 0x65,
-	0x74, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63,
-	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65,
-	0x73, 0x73, 0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61,
-	0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d,
-	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x39, 0x42, 0x0e, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61,
-	0x72, 0x6b, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x76, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x64, 0x74,
-	0x65, 0x63, 0x68, 0x2f, 0x73, 0x64, 0x70, 0x2d, 0x67, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x73, 0x64,
+	0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x86, 0x01,
+	0x0a, 0x15, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65,
+	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73,
+	0x73, 0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x08, 0x62, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72,
+	0x6b, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61,
+	0x72, 0x6b, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x08, 0x62, 0x6f,
+	0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x22, 0x61, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x12, 0x0a, 0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55,
+	0x55, 0x49, 0x44, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72,
+	0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x87, 0x01, 0x0a, 0x16, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x22,
+	0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x12, 0x2f, 0x0a, 0x08, 0x62, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x44,
+	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x08, 0x62, 0x6f, 0x6f, 0x6b, 0x6d,
+	0x61, 0x72, 0x6b, 0x22, 0x29, 0x0a, 0x13, 0x4c, 0x6f, 0x61, 0x64, 0x42, 0x6f, 0x6f, 0x6b, 0x6d,
+	0x61, 0x72, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x55,
+	0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44, 0x22, 0x54,
+	0x0a, 0x14, 0x4c, 0x6f, 0x61, 0x64, 0x42, 0x6f, 0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73,
+	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73,
+	0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x22, 0x2b, 0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x42, 0x6f,
+	0x6f, 0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a,
+	0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49,
+	0x44, 0x22, 0x56, 0x0a, 0x16, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x42, 0x6f, 0x6f, 0x6b, 0x6d,
+	0x61, 0x72, 0x6b, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73,
+	0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75,
+	0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x36, 0x42, 0x0e, 0x42, 0x6f, 0x6f,
+	0x6b, 0x6d, 0x61, 0x72, 0x6b, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x22, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x76, 0x65, 0x72, 0x6d, 0x69,
+	0x6e, 0x64, 0x74, 0x65, 0x63, 0x68, 0x2f, 0x73, 0x64, 0x70, 0x2d, 0x67, 0x6f, 0x2f, 0x73, 0x64,
 	0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
@@ -617,28 +762,31 @@ func file_bookmarks_proto_rawDescGZIP() []byte {
 	return file_bookmarks_proto_rawDescData
 }
 
-var file_bookmarks_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_bookmarks_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_bookmarks_proto_goTypes = []interface{}{
-	(*BookmarkDescriptor)(nil),    // 0: BookmarkDescriptor
-	(*ListBookmarksRequest)(nil),  // 1: ListBookmarksRequest
-	(*ListBookmarkResponse)(nil),  // 2: ListBookmarkResponse
-	(*StoreBookmarkRequest)(nil),  // 3: StoreBookmarkRequest
-	(*BookmarkStoreResult)(nil),   // 4: BookmarkStoreResult
-	(*LoadBookmarkRequest)(nil),   // 5: LoadBookmarkRequest
-	(*BookmarkLoadResult)(nil),    // 6: BookmarkLoadResult
-	(*DeleteBookmarkRequest)(nil), // 7: DeleteBookmarkRequest
-	(*BookmarkDeleteResult)(nil),  // 8: BookmarkDeleteResult
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
+	(*BookmarkDescriptor)(nil),     // 0: BookmarkDescriptor
+	(*ListBookmarksRequest)(nil),   // 1: ListBookmarksRequest
+	(*ListBookmarkResponse)(nil),   // 2: ListBookmarkResponse
+	(*StoreBookmarkRequest)(nil),   // 3: StoreBookmarkRequest
+	(*StoreBookmarkResponse)(nil),  // 4: StoreBookmarkResponse
+	(*UpdateBookmarkRequest)(nil),  // 5: UpdateBookmarkRequest
+	(*UpdateBookmarkResponse)(nil), // 6: UpdateBookmarkResponse
+	(*LoadBookmarkRequest)(nil),    // 7: LoadBookmarkRequest
+	(*LoadBookmarkResponse)(nil),   // 8: LoadBookmarkResponse
+	(*DeleteBookmarkRequest)(nil),  // 9: DeleteBookmarkRequest
+	(*DeleteBookmarkResponse)(nil), // 10: DeleteBookmarkResponse
+	(*timestamppb.Timestamp)(nil),  // 11: google.protobuf.Timestamp
 }
 var file_bookmarks_proto_depIdxs = []int32{
-	9, // 0: BookmarkDescriptor.created:type_name -> google.protobuf.Timestamp
-	0, // 1: ListBookmarkResponse.bookmarks:type_name -> BookmarkDescriptor
-	0, // 2: BookmarkStoreResult.bookmark:type_name -> BookmarkDescriptor
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	11, // 0: BookmarkDescriptor.created:type_name -> google.protobuf.Timestamp
+	0,  // 1: ListBookmarkResponse.bookmarks:type_name -> BookmarkDescriptor
+	0,  // 2: StoreBookmarkResponse.bookmark:type_name -> BookmarkDescriptor
+	0,  // 3: UpdateBookmarkResponse.bookmark:type_name -> BookmarkDescriptor
+	4,  // [4:4] is the sub-list for method output_type
+	4,  // [4:4] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_bookmarks_proto_init() }
@@ -696,7 +844,7 @@ func file_bookmarks_proto_init() {
 			}
 		}
 		file_bookmarks_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BookmarkStoreResult); i {
+			switch v := v.(*StoreBookmarkResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -708,7 +856,7 @@ func file_bookmarks_proto_init() {
 			}
 		}
 		file_bookmarks_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LoadBookmarkRequest); i {
+			switch v := v.(*UpdateBookmarkRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -720,7 +868,7 @@ func file_bookmarks_proto_init() {
 			}
 		}
 		file_bookmarks_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BookmarkLoadResult); i {
+			switch v := v.(*UpdateBookmarkResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -732,7 +880,7 @@ func file_bookmarks_proto_init() {
 			}
 		}
 		file_bookmarks_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DeleteBookmarkRequest); i {
+			switch v := v.(*LoadBookmarkRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -744,7 +892,31 @@ func file_bookmarks_proto_init() {
 			}
 		}
 		file_bookmarks_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*BookmarkDeleteResult); i {
+			switch v := v.(*LoadBookmarkResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_bookmarks_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteBookmarkRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_bookmarks_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteBookmarkResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -762,7 +934,7 @@ func file_bookmarks_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_bookmarks_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
