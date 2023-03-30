@@ -23,10 +23,18 @@ import (
 type AccountNameContextKey struct{}
 
 // TODO: return connect_go.Response with error
-func HasScope(ctx context.Context, scope string) bool {
+func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 	token := ctx.Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
 	claims := token.CustomClaims.(*CustomClaims)
-	return claims.HasScope(scope)
+	trace.SpanFromContext(ctx).SetAttributes(
+		attribute.StringSlice("om.auth.requiredScopes", requiredScopes),
+	)
+	for _, scope := range requiredScopes {
+		if !claims.HasScope(scope) {
+			return false
+		}
+	}
+	return true
 }
 
 func EnsureValidTokenWithPattern(pattern string, next http.Handler) (string, http.Handler) {
