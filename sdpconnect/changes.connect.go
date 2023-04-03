@@ -27,12 +27,12 @@ const (
 
 // ChangesServiceClient is a client for the changes.ChangesService service.
 type ChangesServiceClient interface {
-	ListApp(context.Context, *connect_go.Request[sdp_go.ListAppRequest]) (*connect_go.Response[sdp_go.ListAppResponse], error)
+	ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error)
 	CreateApp(context.Context, *connect_go.Request[sdp_go.CreateAppRequest]) (*connect_go.Response[sdp_go.CreateAppResponse], error)
 	GetApp(context.Context, *connect_go.Request[sdp_go.GetAppRequest]) (*connect_go.Response[sdp_go.GetAppResponse], error)
 	UpdateApp(context.Context, *connect_go.Request[sdp_go.UpdateAppRequest]) (*connect_go.Response[sdp_go.UpdateAppResponse], error)
 	DeleteApp(context.Context, *connect_go.Request[sdp_go.DeleteAppRequest]) (*connect_go.Response[sdp_go.DeleteAppResponse], error)
-	ListChange(context.Context, *connect_go.Request[sdp_go.ListChangeRequest]) (*connect_go.Response[sdp_go.ListChangeResponse], error)
+	ListChanges(context.Context, *connect_go.Request[sdp_go.ListChangesRequest]) (*connect_go.Response[sdp_go.ListChangesResponse], error)
 	CreateChange(context.Context, *connect_go.Request[sdp_go.CreateChangeRequest]) (*connect_go.Response[sdp_go.CreateChangeResponse], error)
 	GetChange(context.Context, *connect_go.Request[sdp_go.GetChangeRequest]) (*connect_go.Response[sdp_go.GetChangeResponse], error)
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
@@ -52,9 +52,9 @@ type ChangesServiceClient interface {
 func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ChangesServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &changesServiceClient{
-		listApp: connect_go.NewClient[sdp_go.ListAppRequest, sdp_go.ListAppResponse](
+		listApps: connect_go.NewClient[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/ListApp",
+			baseURL+"/changes.ChangesService/ListApps",
 			opts...,
 		),
 		createApp: connect_go.NewClient[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse](
@@ -77,9 +77,9 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+"/changes.ChangesService/DeleteApp",
 			opts...,
 		),
-		listChange: connect_go.NewClient[sdp_go.ListChangeRequest, sdp_go.ListChangeResponse](
+		listChanges: connect_go.NewClient[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/ListChange",
+			baseURL+"/changes.ChangesService/ListChanges",
 			opts...,
 		),
 		createChange: connect_go.NewClient[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse](
@@ -122,12 +122,12 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // changesServiceClient implements ChangesServiceClient.
 type changesServiceClient struct {
-	listApp          *connect_go.Client[sdp_go.ListAppRequest, sdp_go.ListAppResponse]
+	listApps         *connect_go.Client[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse]
 	createApp        *connect_go.Client[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse]
 	getApp           *connect_go.Client[sdp_go.GetAppRequest, sdp_go.GetAppResponse]
 	updateApp        *connect_go.Client[sdp_go.UpdateAppRequest, sdp_go.UpdateAppResponse]
 	deleteApp        *connect_go.Client[sdp_go.DeleteAppRequest, sdp_go.DeleteAppResponse]
-	listChange       *connect_go.Client[sdp_go.ListChangeRequest, sdp_go.ListChangeResponse]
+	listChanges      *connect_go.Client[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse]
 	createChange     *connect_go.Client[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse]
 	getChange        *connect_go.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
 	updateChange     *connect_go.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
@@ -137,9 +137,9 @@ type changesServiceClient struct {
 	getChangesHome   *connect_go.Client[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse]
 }
 
-// ListApp calls changes.ChangesService.ListApp.
-func (c *changesServiceClient) ListApp(ctx context.Context, req *connect_go.Request[sdp_go.ListAppRequest]) (*connect_go.Response[sdp_go.ListAppResponse], error) {
-	return c.listApp.CallUnary(ctx, req)
+// ListApps calls changes.ChangesService.ListApps.
+func (c *changesServiceClient) ListApps(ctx context.Context, req *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error) {
+	return c.listApps.CallUnary(ctx, req)
 }
 
 // CreateApp calls changes.ChangesService.CreateApp.
@@ -162,9 +162,9 @@ func (c *changesServiceClient) DeleteApp(ctx context.Context, req *connect_go.Re
 	return c.deleteApp.CallUnary(ctx, req)
 }
 
-// ListChange calls changes.ChangesService.ListChange.
-func (c *changesServiceClient) ListChange(ctx context.Context, req *connect_go.Request[sdp_go.ListChangeRequest]) (*connect_go.Response[sdp_go.ListChangeResponse], error) {
-	return c.listChange.CallUnary(ctx, req)
+// ListChanges calls changes.ChangesService.ListChanges.
+func (c *changesServiceClient) ListChanges(ctx context.Context, req *connect_go.Request[sdp_go.ListChangesRequest]) (*connect_go.Response[sdp_go.ListChangesResponse], error) {
+	return c.listChanges.CallUnary(ctx, req)
 }
 
 // CreateChange calls changes.ChangesService.CreateChange.
@@ -204,12 +204,12 @@ func (c *changesServiceClient) GetChangesHome(ctx context.Context, req *connect_
 
 // ChangesServiceHandler is an implementation of the changes.ChangesService service.
 type ChangesServiceHandler interface {
-	ListApp(context.Context, *connect_go.Request[sdp_go.ListAppRequest]) (*connect_go.Response[sdp_go.ListAppResponse], error)
+	ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error)
 	CreateApp(context.Context, *connect_go.Request[sdp_go.CreateAppRequest]) (*connect_go.Response[sdp_go.CreateAppResponse], error)
 	GetApp(context.Context, *connect_go.Request[sdp_go.GetAppRequest]) (*connect_go.Response[sdp_go.GetAppResponse], error)
 	UpdateApp(context.Context, *connect_go.Request[sdp_go.UpdateAppRequest]) (*connect_go.Response[sdp_go.UpdateAppResponse], error)
 	DeleteApp(context.Context, *connect_go.Request[sdp_go.DeleteAppRequest]) (*connect_go.Response[sdp_go.DeleteAppResponse], error)
-	ListChange(context.Context, *connect_go.Request[sdp_go.ListChangeRequest]) (*connect_go.Response[sdp_go.ListChangeResponse], error)
+	ListChanges(context.Context, *connect_go.Request[sdp_go.ListChangesRequest]) (*connect_go.Response[sdp_go.ListChangesResponse], error)
 	CreateChange(context.Context, *connect_go.Request[sdp_go.CreateChangeRequest]) (*connect_go.Response[sdp_go.CreateChangeResponse], error)
 	GetChange(context.Context, *connect_go.Request[sdp_go.GetChangeRequest]) (*connect_go.Response[sdp_go.GetChangeResponse], error)
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
@@ -226,9 +226,9 @@ type ChangesServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/changes.ChangesService/ListApp", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/ListApp",
-		svc.ListApp,
+	mux.Handle("/changes.ChangesService/ListApps", connect_go.NewUnaryHandler(
+		"/changes.ChangesService/ListApps",
+		svc.ListApps,
 		opts...,
 	))
 	mux.Handle("/changes.ChangesService/CreateApp", connect_go.NewUnaryHandler(
@@ -251,9 +251,9 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 		svc.DeleteApp,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/ListChange", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/ListChange",
-		svc.ListChange,
+	mux.Handle("/changes.ChangesService/ListChanges", connect_go.NewUnaryHandler(
+		"/changes.ChangesService/ListChanges",
+		svc.ListChanges,
 		opts...,
 	))
 	mux.Handle("/changes.ChangesService/CreateChange", connect_go.NewUnaryHandler(
@@ -297,8 +297,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 // UnimplementedChangesServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedChangesServiceHandler struct{}
 
-func (UnimplementedChangesServiceHandler) ListApp(context.Context, *connect_go.Request[sdp_go.ListAppRequest]) (*connect_go.Response[sdp_go.ListAppResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.ListApp is not implemented"))
+func (UnimplementedChangesServiceHandler) ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.ListApps is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) CreateApp(context.Context, *connect_go.Request[sdp_go.CreateAppRequest]) (*connect_go.Response[sdp_go.CreateAppResponse], error) {
@@ -317,8 +317,8 @@ func (UnimplementedChangesServiceHandler) DeleteApp(context.Context, *connect_go
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.DeleteApp is not implemented"))
 }
 
-func (UnimplementedChangesServiceHandler) ListChange(context.Context, *connect_go.Request[sdp_go.ListChangeRequest]) (*connect_go.Response[sdp_go.ListChangeResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.ListChange is not implemented"))
+func (UnimplementedChangesServiceHandler) ListChanges(context.Context, *connect_go.Request[sdp_go.ListChangesRequest]) (*connect_go.Response[sdp_go.ListChangesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.ListChanges is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) CreateChange(context.Context, *connect_go.Request[sdp_go.CreateChangeRequest]) (*connect_go.Response[sdp_go.CreateChangeResponse], error) {

@@ -21,26 +21,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Descriptor for a snapshot
-type SnapshotDescriptor struct {
+type Snapshot struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// unique id to identify this snapshot
-	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
-	// timestamp when this snapshot was created
-	Created *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
-	// user supplied name of this snapshot
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// user supplied description of this snapshot
-	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	// number of items in this snapshot
-	Size uint32 `protobuf:"varint,5,opt,name=size,proto3" json:"size,omitempty"`
+	Metadata   *SnapshotMetadata   `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Properties *SnapshotProperties `protobuf:"bytes,2,opt,name=properties,proto3" json:"properties,omitempty"`
 }
 
-func (x *SnapshotDescriptor) Reset() {
-	*x = SnapshotDescriptor{}
+func (x *Snapshot) Reset() {
+	*x = Snapshot{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -48,13 +39,13 @@ func (x *SnapshotDescriptor) Reset() {
 	}
 }
 
-func (x *SnapshotDescriptor) String() string {
+func (x *Snapshot) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SnapshotDescriptor) ProtoMessage() {}
+func (*Snapshot) ProtoMessage() {}
 
-func (x *SnapshotDescriptor) ProtoReflect() protoreflect.Message {
+func (x *Snapshot) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -66,56 +57,44 @@ func (x *SnapshotDescriptor) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SnapshotDescriptor.ProtoReflect.Descriptor instead.
-func (*SnapshotDescriptor) Descriptor() ([]byte, []int) {
+// Deprecated: Use Snapshot.ProtoReflect.Descriptor instead.
+func (*Snapshot) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SnapshotDescriptor) GetUUID() []byte {
+func (x *Snapshot) GetMetadata() *SnapshotMetadata {
 	if x != nil {
-		return x.UUID
+		return x.Metadata
 	}
 	return nil
 }
 
-func (x *SnapshotDescriptor) GetCreated() *timestamppb.Timestamp {
+func (x *Snapshot) GetProperties() *SnapshotProperties {
 	if x != nil {
-		return x.Created
+		return x.Properties
 	}
 	return nil
 }
 
-func (x *SnapshotDescriptor) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *SnapshotDescriptor) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *SnapshotDescriptor) GetSize() uint32 {
-	if x != nil {
-		return x.Size
-	}
-	return 0
-}
-
-// Retrieve the list of stored query snapshots for the currently active account.
-// Returns a SnapshotList
-type ListSnapshots struct {
+type SnapshotProperties struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	// name of this snapshot
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// description of this snapshot
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// queries that make up the snapshot
+	Queries []*Query `protobuf:"bytes,3,rep,name=queries,proto3" json:"queries,omitempty"`
+	// items that should be excluded from the snapshot's results
+	ExcludedItems []*Reference `protobuf:"bytes,4,rep,name=excludedItems,proto3" json:"excludedItems,omitempty"`
+	// items stored in the snapshot
+	Items []*Item `protobuf:"bytes,5,rep,name=items,proto3" json:"items,omitempty"`
 }
 
-func (x *ListSnapshots) Reset() {
-	*x = ListSnapshots{}
+func (x *SnapshotProperties) Reset() {
+	*x = SnapshotProperties{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -123,13 +102,13 @@ func (x *ListSnapshots) Reset() {
 	}
 }
 
-func (x *ListSnapshots) String() string {
+func (x *SnapshotProperties) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListSnapshots) ProtoMessage() {}
+func (*SnapshotProperties) ProtoMessage() {}
 
-func (x *ListSnapshots) ProtoReflect() protoreflect.Message {
+func (x *SnapshotProperties) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -141,24 +120,61 @@ func (x *ListSnapshots) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListSnapshots.ProtoReflect.Descriptor instead.
-func (*ListSnapshots) Descriptor() ([]byte, []int) {
+// Deprecated: Use SnapshotProperties.ProtoReflect.Descriptor instead.
+func (*SnapshotProperties) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{1}
 }
 
-// response format for ListSnapshots
-type SnapshotListResult struct {
+func (x *SnapshotProperties) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SnapshotProperties) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *SnapshotProperties) GetQueries() []*Query {
+	if x != nil {
+		return x.Queries
+	}
+	return nil
+}
+
+func (x *SnapshotProperties) GetExcludedItems() []*Reference {
+	if x != nil {
+		return x.ExcludedItems
+	}
+	return nil
+}
+
+func (x *SnapshotProperties) GetItems() []*Item {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type SnapshotMetadata struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Success      bool                  `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage string                `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
-	Snapshots    []*SnapshotDescriptor `protobuf:"bytes,3,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
+	// unique id to identify this snapshot
+	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
+	// timestamp when this snapshot was created
+	Created *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
+	// the number of items in this snapshot
+	Size uint32 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
 }
 
-func (x *SnapshotListResult) Reset() {
-	*x = SnapshotListResult{}
+func (x *SnapshotMetadata) Reset() {
+	*x = SnapshotMetadata{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -166,13 +182,13 @@ func (x *SnapshotListResult) Reset() {
 	}
 }
 
-func (x *SnapshotListResult) String() string {
+func (x *SnapshotMetadata) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SnapshotListResult) ProtoMessage() {}
+func (*SnapshotMetadata) ProtoMessage() {}
 
-func (x *SnapshotListResult) ProtoReflect() protoreflect.Message {
+func (x *SnapshotMetadata) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,47 +200,41 @@ func (x *SnapshotListResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SnapshotListResult.ProtoReflect.Descriptor instead.
-func (*SnapshotListResult) Descriptor() ([]byte, []int) {
+// Deprecated: Use SnapshotMetadata.ProtoReflect.Descriptor instead.
+func (*SnapshotMetadata) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SnapshotListResult) GetSuccess() bool {
+func (x *SnapshotMetadata) GetUUID() []byte {
 	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *SnapshotListResult) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-func (x *SnapshotListResult) GetSnapshots() []*SnapshotDescriptor {
-	if x != nil {
-		return x.Snapshots
+		return x.UUID
 	}
 	return nil
 }
 
-// Ask the gateway to store the current state as snapshot with the specified details.
-// Returns a SnapshotStored message when the snapshot is stored
-type StoreSnapshot struct {
+func (x *SnapshotMetadata) GetCreated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Created
+	}
+	return nil
+}
+
+func (x *SnapshotMetadata) GetSize() uint32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+// lists all snapshots
+type ListSnapshotsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	// user supplied name of this snapshot
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// user supplied description of this snapshot
-	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 }
 
-func (x *StoreSnapshot) Reset() {
-	*x = StoreSnapshot{}
+func (x *ListSnapshotsRequest) Reset() {
+	*x = ListSnapshotsRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -232,13 +242,13 @@ func (x *StoreSnapshot) Reset() {
 	}
 }
 
-func (x *StoreSnapshot) String() string {
+func (x *ListSnapshotsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StoreSnapshot) ProtoMessage() {}
+func (*ListSnapshotsRequest) ProtoMessage() {}
 
-func (x *StoreSnapshot) ProtoReflect() protoreflect.Message {
+func (x *ListSnapshotsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -250,38 +260,22 @@ func (x *StoreSnapshot) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StoreSnapshot.ProtoReflect.Descriptor instead.
-func (*StoreSnapshot) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListSnapshotsRequest.ProtoReflect.Descriptor instead.
+func (*ListSnapshotsRequest) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *StoreSnapshot) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *StoreSnapshot) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-// After a snapshot is successfully stored, this reply with the new snapshot's details is sent.
-type SnapshotStoreResult struct {
+type ListSnapshotResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Success      bool                `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage string              `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
-	Snapshot     *SnapshotDescriptor `protobuf:"bytes,3,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	// the list of all snapshots
+	Snapshots []*Snapshot `protobuf:"bytes,1,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
 }
 
-func (x *SnapshotStoreResult) Reset() {
-	*x = SnapshotStoreResult{}
+func (x *ListSnapshotResponse) Reset() {
+	*x = ListSnapshotResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -289,13 +283,13 @@ func (x *SnapshotStoreResult) Reset() {
 	}
 }
 
-func (x *SnapshotStoreResult) String() string {
+func (x *ListSnapshotResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SnapshotStoreResult) ProtoMessage() {}
+func (*ListSnapshotResponse) ProtoMessage() {}
 
-func (x *SnapshotStoreResult) ProtoReflect() protoreflect.Message {
+func (x *ListSnapshotResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -307,45 +301,30 @@ func (x *SnapshotStoreResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SnapshotStoreResult.ProtoReflect.Descriptor instead.
-func (*SnapshotStoreResult) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListSnapshotResponse.ProtoReflect.Descriptor instead.
+func (*ListSnapshotResponse) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SnapshotStoreResult) GetSuccess() bool {
+func (x *ListSnapshotResponse) GetSnapshots() []*Snapshot {
 	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-func (x *SnapshotStoreResult) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-func (x *SnapshotStoreResult) GetSnapshot() *SnapshotDescriptor {
-	if x != nil {
-		return x.Snapshot
+		return x.Snapshots
 	}
 	return nil
 }
 
-// Ask the gateway to load the specified snapshot into the current state.
-// Results are streamed to the client in the same way query results are.
-type LoadSnapshot struct {
+// creates a new snapshot
+type CreateSnapshotRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// unique id of the snapshot to load
-	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
+	// properties of the new snapshot
+	Properties *SnapshotProperties `protobuf:"bytes,1,opt,name=properties,proto3" json:"properties,omitempty"`
 }
 
-func (x *LoadSnapshot) Reset() {
-	*x = LoadSnapshot{}
+func (x *CreateSnapshotRequest) Reset() {
+	*x = CreateSnapshotRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -353,13 +332,13 @@ func (x *LoadSnapshot) Reset() {
 	}
 }
 
-func (x *LoadSnapshot) String() string {
+func (x *CreateSnapshotRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoadSnapshot) ProtoMessage() {}
+func (*CreateSnapshotRequest) ProtoMessage() {}
 
-func (x *LoadSnapshot) ProtoReflect() protoreflect.Message {
+func (x *CreateSnapshotRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -371,29 +350,29 @@ func (x *LoadSnapshot) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoadSnapshot.ProtoReflect.Descriptor instead.
-func (*LoadSnapshot) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateSnapshotRequest.ProtoReflect.Descriptor instead.
+func (*CreateSnapshotRequest) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *LoadSnapshot) GetUUID() []byte {
+func (x *CreateSnapshotRequest) GetProperties() *SnapshotProperties {
 	if x != nil {
-		return x.UUID
+		return x.Properties
 	}
 	return nil
 }
 
-type SnapshotLoadResult struct {
+type CreateSnapshotResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Success      bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage string `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
+	// the newly created snapshot
+	Snapshot *Snapshot `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
 }
 
-func (x *SnapshotLoadResult) Reset() {
-	*x = SnapshotLoadResult{}
+func (x *CreateSnapshotResponse) Reset() {
+	*x = CreateSnapshotResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -401,13 +380,13 @@ func (x *SnapshotLoadResult) Reset() {
 	}
 }
 
-func (x *SnapshotLoadResult) String() string {
+func (x *CreateSnapshotResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SnapshotLoadResult) ProtoMessage() {}
+func (*CreateSnapshotResponse) ProtoMessage() {}
 
-func (x *SnapshotLoadResult) ProtoReflect() protoreflect.Message {
+func (x *CreateSnapshotResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -419,37 +398,29 @@ func (x *SnapshotLoadResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SnapshotLoadResult.ProtoReflect.Descriptor instead.
-func (*SnapshotLoadResult) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateSnapshotResponse.ProtoReflect.Descriptor instead.
+func (*CreateSnapshotResponse) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *SnapshotLoadResult) GetSuccess() bool {
+func (x *CreateSnapshotResponse) GetSnapshot() *Snapshot {
 	if x != nil {
-		return x.Success
+		return x.Snapshot
 	}
-	return false
+	return nil
 }
 
-func (x *SnapshotLoadResult) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
-// Delete the snapshot with the specified ID.
-type DeleteSnapshot struct {
+// get the details of a specific snapshot
+type GetSnapshotRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// unique id of the snapshot to delete
 	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
 }
 
-func (x *DeleteSnapshot) Reset() {
-	*x = DeleteSnapshot{}
+func (x *GetSnapshotRequest) Reset() {
+	*x = GetSnapshotRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -457,13 +428,13 @@ func (x *DeleteSnapshot) Reset() {
 	}
 }
 
-func (x *DeleteSnapshot) String() string {
+func (x *GetSnapshotRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteSnapshot) ProtoMessage() {}
+func (*GetSnapshotRequest) ProtoMessage() {}
 
-func (x *DeleteSnapshot) ProtoReflect() protoreflect.Message {
+func (x *GetSnapshotRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -475,29 +446,28 @@ func (x *DeleteSnapshot) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteSnapshot.ProtoReflect.Descriptor instead.
-func (*DeleteSnapshot) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetSnapshotRequest.ProtoReflect.Descriptor instead.
+func (*GetSnapshotRequest) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *DeleteSnapshot) GetUUID() []byte {
+func (x *GetSnapshotRequest) GetUUID() []byte {
 	if x != nil {
 		return x.UUID
 	}
 	return nil
 }
 
-type SnapshotDeleteResult struct {
+type GetSnapshotResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Success      bool   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage string `protobuf:"bytes,2,opt,name=errorMessage,proto3" json:"errorMessage,omitempty"`
+	Snapshot *Snapshot `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
 }
 
-func (x *SnapshotDeleteResult) Reset() {
-	*x = SnapshotDeleteResult{}
+func (x *GetSnapshotResponse) Reset() {
+	*x = GetSnapshotResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_snapshots_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -505,13 +475,13 @@ func (x *SnapshotDeleteResult) Reset() {
 	}
 }
 
-func (x *SnapshotDeleteResult) String() string {
+func (x *GetSnapshotResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SnapshotDeleteResult) ProtoMessage() {}
+func (*GetSnapshotResponse) ProtoMessage() {}
 
-func (x *SnapshotDeleteResult) ProtoReflect() protoreflect.Message {
+func (x *GetSnapshotResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_snapshots_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -523,23 +493,206 @@ func (x *SnapshotDeleteResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SnapshotDeleteResult.ProtoReflect.Descriptor instead.
-func (*SnapshotDeleteResult) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetSnapshotResponse.ProtoReflect.Descriptor instead.
+func (*GetSnapshotResponse) Descriptor() ([]byte, []int) {
 	return file_snapshots_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *SnapshotDeleteResult) GetSuccess() bool {
+func (x *GetSnapshotResponse) GetSnapshot() *Snapshot {
 	if x != nil {
-		return x.Success
+		return x.Snapshot
 	}
-	return false
+	return nil
 }
 
-func (x *SnapshotDeleteResult) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
+// updates the properties of an existing snapshot
+type UpdateSnapshotRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	UUID       []byte              `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
+	Properties *SnapshotProperties `protobuf:"bytes,2,opt,name=properties,proto3" json:"properties,omitempty"`
+}
+
+func (x *UpdateSnapshotRequest) Reset() {
+	*x = UpdateSnapshotRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_snapshots_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
 	}
-	return ""
+}
+
+func (x *UpdateSnapshotRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSnapshotRequest) ProtoMessage() {}
+
+func (x *UpdateSnapshotRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_snapshots_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSnapshotRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSnapshotRequest) Descriptor() ([]byte, []int) {
+	return file_snapshots_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UpdateSnapshotRequest) GetUUID() []byte {
+	if x != nil {
+		return x.UUID
+	}
+	return nil
+}
+
+func (x *UpdateSnapshotRequest) GetProperties() *SnapshotProperties {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+type UpdateSnapshotResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// the updated version of the snapshot
+	Snapshot *Snapshot `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+}
+
+func (x *UpdateSnapshotResponse) Reset() {
+	*x = UpdateSnapshotResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_snapshots_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateSnapshotResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSnapshotResponse) ProtoMessage() {}
+
+func (x *UpdateSnapshotResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_snapshots_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSnapshotResponse.ProtoReflect.Descriptor instead.
+func (*UpdateSnapshotResponse) Descriptor() ([]byte, []int) {
+	return file_snapshots_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *UpdateSnapshotResponse) GetSnapshot() *Snapshot {
+	if x != nil {
+		return x.Snapshot
+	}
+	return nil
+}
+
+// deletes a given snapshot
+type DeleteSnapshotRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
+}
+
+func (x *DeleteSnapshotRequest) Reset() {
+	*x = DeleteSnapshotRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_snapshots_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DeleteSnapshotRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSnapshotRequest) ProtoMessage() {}
+
+func (x *DeleteSnapshotRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_snapshots_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSnapshotRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSnapshotRequest) Descriptor() ([]byte, []int) {
+	return file_snapshots_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DeleteSnapshotRequest) GetUUID() []byte {
+	if x != nil {
+		return x.UUID
+	}
+	return nil
+}
+
+type DeleteSnapshotResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *DeleteSnapshotResponse) Reset() {
+	*x = DeleteSnapshotResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_snapshots_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DeleteSnapshotResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSnapshotResponse) ProtoMessage() {}
+
+func (x *DeleteSnapshotResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_snapshots_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSnapshotResponse.ProtoReflect.Descriptor instead.
+func (*DeleteSnapshotResponse) Descriptor() ([]byte, []int) {
+	return file_snapshots_proto_rawDescGZIP(), []int{12}
 }
 
 var File_snapshots_proto protoreflect.FileDescriptor
@@ -548,58 +701,93 @@ var file_snapshots_proto_rawDesc = []byte{
 	0x0a, 0x0f, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
 	0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0xa8, 0x01, 0x0a, 0x12, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x44,
-	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x55, 0x49,
-	0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44, 0x12, 0x34, 0x0a,
-	0x07, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
-	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
-	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x07, 0x63, 0x72, 0x65, 0x61,
-	0x74, 0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72,
-	0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65,
-	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a,
-	0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x22, 0x0f, 0x0a,
-	0x0d, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x22, 0x85,
-	0x01, 0x0a, 0x12, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x4c, 0x69, 0x73, 0x74, 0x52,
-	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12,
-	0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x12, 0x31, 0x0a, 0x09, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73,
-	0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
-	0x74, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x09, 0x73, 0x6e, 0x61,
-	0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x22, 0x45, 0x0a, 0x0d, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53,
-	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64,
-	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x84, 0x01,
-	0x0a, 0x13, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52,
-	0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12,
-	0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73,
-	0x61, 0x67, 0x65, 0x12, 0x2f, 0x0a, 0x08, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
-	0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x08, 0x73, 0x6e, 0x61, 0x70,
-	0x73, 0x68, 0x6f, 0x74, 0x22, 0x22, 0x0a, 0x0c, 0x4c, 0x6f, 0x61, 0x64, 0x53, 0x6e, 0x61, 0x70,
-	0x73, 0x68, 0x6f, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44, 0x22, 0x52, 0x0a, 0x12, 0x53, 0x6e, 0x61, 0x70,
-	0x73, 0x68, 0x6f, 0x74, 0x4c, 0x6f, 0x61, 0x64, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18,
-	0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52,
-	0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f,
-	0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c,
-	0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x24, 0x0a, 0x0e,
-	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12, 0x12,
-	0x0a, 0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55,
-	0x49, 0x44, 0x22, 0x54, 0x0a, 0x14, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x44, 0x65,
-	0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75,
-	0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63,
-	0x63, 0x65, 0x73, 0x73, 0x12, 0x22, 0x0a, 0x0c, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x4d, 0x65, 0x73,
-	0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x65, 0x72, 0x72, 0x6f,
-	0x72, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x76, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x64, 0x74,
-	0x65, 0x63, 0x68, 0x2f, 0x73, 0x64, 0x70, 0x2d, 0x67, 0x6f, 0x3b, 0x73, 0x64, 0x70, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x6f, 0x1a, 0x0b, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
+	0x6e, 0x0a, 0x08, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12, 0x2d, 0x0a, 0x08, 0x6d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e,
+	0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0x52, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x33, 0x0a, 0x0a, 0x70, 0x72,
+	0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13,
+	0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x50, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74,
+	0x69, 0x65, 0x73, 0x52, 0x0a, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x22,
+	0xbb, 0x01, 0x0a, 0x12, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x50, 0x72, 0x6f, 0x70,
+	0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x20, 0x0a, 0x07,
+	0x71, 0x75, 0x65, 0x72, 0x69, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x06, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x07, 0x71, 0x75, 0x65, 0x72, 0x69, 0x65, 0x73, 0x12, 0x30,
+	0x0a, 0x0d, 0x65, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64, 0x49, 0x74, 0x65, 0x6d, 0x73, 0x18,
+	0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63,
+	0x65, 0x52, 0x0d, 0x65, 0x78, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x64, 0x49, 0x74, 0x65, 0x6d, 0x73,
+	0x12, 0x1b, 0x0a, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x05, 0x2e, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x05, 0x69, 0x74, 0x65, 0x6d, 0x73, 0x22, 0x70, 0x0a,
+	0x10, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52,
+	0x04, 0x55, 0x55, 0x49, 0x44, 0x12, 0x34, 0x0a, 0x07, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61,
+	0x6d, 0x70, 0x52, 0x07, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x73,
+	0x69, 0x7a, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x22,
+	0x16, 0x0a, 0x14, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x3f, 0x0a, 0x14, 0x4c, 0x69, 0x73, 0x74, 0x53,
+	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x27, 0x0a, 0x09, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x18, 0x01, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x09, 0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x09, 0x73,
+	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x22, 0x4c, 0x0a, 0x15, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x33, 0x0a, 0x0a, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x50, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x52, 0x0a, 0x70, 0x72, 0x6f, 0x70,
+	0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x22, 0x3f, 0x0a, 0x16, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x25, 0x0a, 0x08, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x09, 0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x08, 0x73,
+	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x22, 0x28, 0x0a, 0x12, 0x47, 0x65, 0x74, 0x53, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a,
+	0x04, 0x55, 0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49,
+	0x44, 0x22, 0x3c, 0x0a, 0x13, 0x47, 0x65, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x25, 0x0a, 0x08, 0x73, 0x6e, 0x61, 0x70,
+	0x73, 0x68, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x53, 0x6e, 0x61,
+	0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x08, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x22,
+	0x60, 0x0a, 0x15, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x55, 0x55, 0x49, 0x44,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44, 0x12, 0x33, 0x0a, 0x0a,
+	0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x13, 0x2e, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x50, 0x72, 0x6f, 0x70, 0x65,
+	0x72, 0x74, 0x69, 0x65, 0x73, 0x52, 0x0a, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65,
+	0x73, 0x22, 0x3f, 0x0a, 0x16, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73,
+	0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x25, 0x0a, 0x08, 0x73,
+	0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e,
+	0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x08, 0x73, 0x6e, 0x61, 0x70, 0x73, 0x68,
+	0x6f, 0x74, 0x22, 0x2b, 0x0a, 0x15, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70,
+	0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x55,
+	0x55, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x55, 0x55, 0x49, 0x44, 0x22,
+	0x18, 0x0a, 0x16, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f,
+	0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xd4, 0x02, 0x0a, 0x10, 0x53, 0x6e,
+	0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3d,
+	0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x12,
+	0x15, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x6e, 0x61,
+	0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a,
+	0x0e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12,
+	0x16, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
+	0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x38, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12,
+	0x13, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x14, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68,
+	0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x0e, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12, 0x16, 0x2e, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x6e, 0x61,
+	0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a,
+	0x0e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x12,
+	0x16, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65,
+	0x53, 0x6e, 0x61, 0x70, 0x73, 0x68, 0x6f, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f,
+	0x76, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x64, 0x74, 0x65, 0x63, 0x68, 0x2f, 0x73, 0x64, 0x70, 0x2d,
+	0x67, 0x6f, 0x3b, 0x73, 0x64, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -614,28 +802,54 @@ func file_snapshots_proto_rawDescGZIP() []byte {
 	return file_snapshots_proto_rawDescData
 }
 
-var file_snapshots_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_snapshots_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_snapshots_proto_goTypes = []interface{}{
-	(*SnapshotDescriptor)(nil),    // 0: SnapshotDescriptor
-	(*ListSnapshots)(nil),         // 1: ListSnapshots
-	(*SnapshotListResult)(nil),    // 2: SnapshotListResult
-	(*StoreSnapshot)(nil),         // 3: StoreSnapshot
-	(*SnapshotStoreResult)(nil),   // 4: SnapshotStoreResult
-	(*LoadSnapshot)(nil),          // 5: LoadSnapshot
-	(*SnapshotLoadResult)(nil),    // 6: SnapshotLoadResult
-	(*DeleteSnapshot)(nil),        // 7: DeleteSnapshot
-	(*SnapshotDeleteResult)(nil),  // 8: SnapshotDeleteResult
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
+	(*Snapshot)(nil),               // 0: Snapshot
+	(*SnapshotProperties)(nil),     // 1: SnapshotProperties
+	(*SnapshotMetadata)(nil),       // 2: SnapshotMetadata
+	(*ListSnapshotsRequest)(nil),   // 3: ListSnapshotsRequest
+	(*ListSnapshotResponse)(nil),   // 4: ListSnapshotResponse
+	(*CreateSnapshotRequest)(nil),  // 5: CreateSnapshotRequest
+	(*CreateSnapshotResponse)(nil), // 6: CreateSnapshotResponse
+	(*GetSnapshotRequest)(nil),     // 7: GetSnapshotRequest
+	(*GetSnapshotResponse)(nil),    // 8: GetSnapshotResponse
+	(*UpdateSnapshotRequest)(nil),  // 9: UpdateSnapshotRequest
+	(*UpdateSnapshotResponse)(nil), // 10: UpdateSnapshotResponse
+	(*DeleteSnapshotRequest)(nil),  // 11: DeleteSnapshotRequest
+	(*DeleteSnapshotResponse)(nil), // 12: DeleteSnapshotResponse
+	(*Query)(nil),                  // 13: Query
+	(*Reference)(nil),              // 14: Reference
+	(*Item)(nil),                   // 15: Item
+	(*timestamppb.Timestamp)(nil),  // 16: google.protobuf.Timestamp
 }
 var file_snapshots_proto_depIdxs = []int32{
-	9, // 0: SnapshotDescriptor.created:type_name -> google.protobuf.Timestamp
-	0, // 1: SnapshotListResult.snapshots:type_name -> SnapshotDescriptor
-	0, // 2: SnapshotStoreResult.snapshot:type_name -> SnapshotDescriptor
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2,  // 0: Snapshot.metadata:type_name -> SnapshotMetadata
+	1,  // 1: Snapshot.properties:type_name -> SnapshotProperties
+	13, // 2: SnapshotProperties.queries:type_name -> Query
+	14, // 3: SnapshotProperties.excludedItems:type_name -> Reference
+	15, // 4: SnapshotProperties.items:type_name -> Item
+	16, // 5: SnapshotMetadata.created:type_name -> google.protobuf.Timestamp
+	0,  // 6: ListSnapshotResponse.snapshots:type_name -> Snapshot
+	1,  // 7: CreateSnapshotRequest.properties:type_name -> SnapshotProperties
+	0,  // 8: CreateSnapshotResponse.snapshot:type_name -> Snapshot
+	0,  // 9: GetSnapshotResponse.snapshot:type_name -> Snapshot
+	1,  // 10: UpdateSnapshotRequest.properties:type_name -> SnapshotProperties
+	0,  // 11: UpdateSnapshotResponse.snapshot:type_name -> Snapshot
+	3,  // 12: SnapshotsService.ListSnapshots:input_type -> ListSnapshotsRequest
+	5,  // 13: SnapshotsService.CreateSnapshot:input_type -> CreateSnapshotRequest
+	7,  // 14: SnapshotsService.GetSnapshot:input_type -> GetSnapshotRequest
+	9,  // 15: SnapshotsService.UpdateSnapshot:input_type -> UpdateSnapshotRequest
+	11, // 16: SnapshotsService.DeleteSnapshot:input_type -> DeleteSnapshotRequest
+	4,  // 17: SnapshotsService.ListSnapshots:output_type -> ListSnapshotResponse
+	6,  // 18: SnapshotsService.CreateSnapshot:output_type -> CreateSnapshotResponse
+	8,  // 19: SnapshotsService.GetSnapshot:output_type -> GetSnapshotResponse
+	10, // 20: SnapshotsService.UpdateSnapshot:output_type -> UpdateSnapshotResponse
+	12, // 21: SnapshotsService.DeleteSnapshot:output_type -> DeleteSnapshotResponse
+	17, // [17:22] is the sub-list for method output_type
+	12, // [12:17] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_snapshots_proto_init() }
@@ -643,9 +857,10 @@ func file_snapshots_proto_init() {
 	if File_snapshots_proto != nil {
 		return
 	}
+	file_items_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_snapshots_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SnapshotDescriptor); i {
+			switch v := v.(*Snapshot); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -657,7 +872,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListSnapshots); i {
+			switch v := v.(*SnapshotProperties); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -669,7 +884,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SnapshotListResult); i {
+			switch v := v.(*SnapshotMetadata); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -681,7 +896,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreSnapshot); i {
+			switch v := v.(*ListSnapshotsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -693,7 +908,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SnapshotStoreResult); i {
+			switch v := v.(*ListSnapshotResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -705,7 +920,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LoadSnapshot); i {
+			switch v := v.(*CreateSnapshotRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -717,7 +932,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SnapshotLoadResult); i {
+			switch v := v.(*CreateSnapshotResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -729,7 +944,7 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DeleteSnapshot); i {
+			switch v := v.(*GetSnapshotRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -741,7 +956,55 @@ func file_snapshots_proto_init() {
 			}
 		}
 		file_snapshots_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SnapshotDeleteResult); i {
+			switch v := v.(*GetSnapshotResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_snapshots_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateSnapshotRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_snapshots_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateSnapshotResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_snapshots_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteSnapshotRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_snapshots_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*DeleteSnapshotResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -759,9 +1022,9 @@ func file_snapshots_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_snapshots_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   13,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_snapshots_proto_goTypes,
 		DependencyIndexes: file_snapshots_proto_depIdxs,
