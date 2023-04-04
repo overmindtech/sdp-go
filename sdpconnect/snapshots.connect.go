@@ -25,6 +25,31 @@ const (
 	SnapshotsServiceName = "SnapshotsService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// SnapshotsServiceListSnapshotsProcedure is the fully-qualified name of the SnapshotsService's
+	// ListSnapshots RPC.
+	SnapshotsServiceListSnapshotsProcedure = "/SnapshotsService/ListSnapshots"
+	// SnapshotsServiceCreateSnapshotProcedure is the fully-qualified name of the SnapshotsService's
+	// CreateSnapshot RPC.
+	SnapshotsServiceCreateSnapshotProcedure = "/SnapshotsService/CreateSnapshot"
+	// SnapshotsServiceGetSnapshotProcedure is the fully-qualified name of the SnapshotsService's
+	// GetSnapshot RPC.
+	SnapshotsServiceGetSnapshotProcedure = "/SnapshotsService/GetSnapshot"
+	// SnapshotsServiceUpdateSnapshotProcedure is the fully-qualified name of the SnapshotsService's
+	// UpdateSnapshot RPC.
+	SnapshotsServiceUpdateSnapshotProcedure = "/SnapshotsService/UpdateSnapshot"
+	// SnapshotsServiceDeleteSnapshotProcedure is the fully-qualified name of the SnapshotsService's
+	// DeleteSnapshot RPC.
+	SnapshotsServiceDeleteSnapshotProcedure = "/SnapshotsService/DeleteSnapshot"
+)
+
 // SnapshotsServiceClient is a client for the SnapshotsService service.
 type SnapshotsServiceClient interface {
 	ListSnapshots(context.Context, *connect_go.Request[sdp_go.ListSnapshotsRequest]) (*connect_go.Response[sdp_go.ListSnapshotResponse], error)
@@ -46,27 +71,27 @@ func NewSnapshotsServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 	return &snapshotsServiceClient{
 		listSnapshots: connect_go.NewClient[sdp_go.ListSnapshotsRequest, sdp_go.ListSnapshotResponse](
 			httpClient,
-			baseURL+"/.SnapshotsService/ListSnapshots",
+			baseURL+SnapshotsServiceListSnapshotsProcedure,
 			opts...,
 		),
 		createSnapshot: connect_go.NewClient[sdp_go.CreateSnapshotRequest, sdp_go.CreateSnapshotResponse](
 			httpClient,
-			baseURL+"/.SnapshotsService/CreateSnapshot",
+			baseURL+SnapshotsServiceCreateSnapshotProcedure,
 			opts...,
 		),
 		getSnapshot: connect_go.NewClient[sdp_go.GetSnapshotRequest, sdp_go.GetSnapshotResponse](
 			httpClient,
-			baseURL+"/.SnapshotsService/GetSnapshot",
+			baseURL+SnapshotsServiceGetSnapshotProcedure,
 			opts...,
 		),
 		updateSnapshot: connect_go.NewClient[sdp_go.UpdateSnapshotRequest, sdp_go.UpdateSnapshotResponse](
 			httpClient,
-			baseURL+"/.SnapshotsService/UpdateSnapshot",
+			baseURL+SnapshotsServiceUpdateSnapshotProcedure,
 			opts...,
 		),
 		deleteSnapshot: connect_go.NewClient[sdp_go.DeleteSnapshotRequest, sdp_go.DeleteSnapshotResponse](
 			httpClient,
-			baseURL+"/.SnapshotsService/DeleteSnapshot",
+			baseURL+SnapshotsServiceDeleteSnapshotProcedure,
 			opts...,
 		),
 	}
@@ -122,28 +147,28 @@ type SnapshotsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/.SnapshotsService/ListSnapshots", connect_go.NewUnaryHandler(
-		"/.SnapshotsService/ListSnapshots",
+	mux.Handle(SnapshotsServiceListSnapshotsProcedure, connect_go.NewUnaryHandler(
+		SnapshotsServiceListSnapshotsProcedure,
 		svc.ListSnapshots,
 		opts...,
 	))
-	mux.Handle("/.SnapshotsService/CreateSnapshot", connect_go.NewUnaryHandler(
-		"/.SnapshotsService/CreateSnapshot",
+	mux.Handle(SnapshotsServiceCreateSnapshotProcedure, connect_go.NewUnaryHandler(
+		SnapshotsServiceCreateSnapshotProcedure,
 		svc.CreateSnapshot,
 		opts...,
 	))
-	mux.Handle("/.SnapshotsService/GetSnapshot", connect_go.NewUnaryHandler(
-		"/.SnapshotsService/GetSnapshot",
+	mux.Handle(SnapshotsServiceGetSnapshotProcedure, connect_go.NewUnaryHandler(
+		SnapshotsServiceGetSnapshotProcedure,
 		svc.GetSnapshot,
 		opts...,
 	))
-	mux.Handle("/.SnapshotsService/UpdateSnapshot", connect_go.NewUnaryHandler(
-		"/.SnapshotsService/UpdateSnapshot",
+	mux.Handle(SnapshotsServiceUpdateSnapshotProcedure, connect_go.NewUnaryHandler(
+		SnapshotsServiceUpdateSnapshotProcedure,
 		svc.UpdateSnapshot,
 		opts...,
 	))
-	mux.Handle("/.SnapshotsService/DeleteSnapshot", connect_go.NewUnaryHandler(
-		"/.SnapshotsService/DeleteSnapshot",
+	mux.Handle(SnapshotsServiceDeleteSnapshotProcedure, connect_go.NewUnaryHandler(
+		SnapshotsServiceDeleteSnapshotProcedure,
 		svc.DeleteSnapshot,
 		opts...,
 	))

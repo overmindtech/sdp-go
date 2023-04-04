@@ -25,6 +25,53 @@ const (
 	ChangesServiceName = "changes.ChangesService"
 )
 
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// ChangesServiceListAppsProcedure is the fully-qualified name of the ChangesService's ListApps RPC.
+	ChangesServiceListAppsProcedure = "/changes.ChangesService/ListApps"
+	// ChangesServiceCreateAppProcedure is the fully-qualified name of the ChangesService's CreateApp
+	// RPC.
+	ChangesServiceCreateAppProcedure = "/changes.ChangesService/CreateApp"
+	// ChangesServiceGetAppProcedure is the fully-qualified name of the ChangesService's GetApp RPC.
+	ChangesServiceGetAppProcedure = "/changes.ChangesService/GetApp"
+	// ChangesServiceUpdateAppProcedure is the fully-qualified name of the ChangesService's UpdateApp
+	// RPC.
+	ChangesServiceUpdateAppProcedure = "/changes.ChangesService/UpdateApp"
+	// ChangesServiceDeleteAppProcedure is the fully-qualified name of the ChangesService's DeleteApp
+	// RPC.
+	ChangesServiceDeleteAppProcedure = "/changes.ChangesService/DeleteApp"
+	// ChangesServiceListChangesProcedure is the fully-qualified name of the ChangesService's
+	// ListChanges RPC.
+	ChangesServiceListChangesProcedure = "/changes.ChangesService/ListChanges"
+	// ChangesServiceCreateChangeProcedure is the fully-qualified name of the ChangesService's
+	// CreateChange RPC.
+	ChangesServiceCreateChangeProcedure = "/changes.ChangesService/CreateChange"
+	// ChangesServiceGetChangeProcedure is the fully-qualified name of the ChangesService's GetChange
+	// RPC.
+	ChangesServiceGetChangeProcedure = "/changes.ChangesService/GetChange"
+	// ChangesServiceUpdateChangeProcedure is the fully-qualified name of the ChangesService's
+	// UpdateChange RPC.
+	ChangesServiceUpdateChangeProcedure = "/changes.ChangesService/UpdateChange"
+	// ChangesServiceDeleteChangeProcedure is the fully-qualified name of the ChangesService's
+	// DeleteChange RPC.
+	ChangesServiceDeleteChangeProcedure = "/changes.ChangesService/DeleteChange"
+	// ChangesServiceGetOnboardingProcedure is the fully-qualified name of the ChangesService's
+	// GetOnboarding RPC.
+	ChangesServiceGetOnboardingProcedure = "/changes.ChangesService/GetOnboarding"
+	// ChangesServiceUpdateOnboardingProcedure is the fully-qualified name of the ChangesService's
+	// UpdateOnboarding RPC.
+	ChangesServiceUpdateOnboardingProcedure = "/changes.ChangesService/UpdateOnboarding"
+	// ChangesServiceGetChangesHomeProcedure is the fully-qualified name of the ChangesService's
+	// GetChangesHome RPC.
+	ChangesServiceGetChangesHomeProcedure = "/changes.ChangesService/GetChangesHome"
+)
+
 // ChangesServiceClient is a client for the changes.ChangesService service.
 type ChangesServiceClient interface {
 	ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error)
@@ -54,67 +101,67 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 	return &changesServiceClient{
 		listApps: connect_go.NewClient[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/ListApps",
+			baseURL+ChangesServiceListAppsProcedure,
 			opts...,
 		),
 		createApp: connect_go.NewClient[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/CreateApp",
+			baseURL+ChangesServiceCreateAppProcedure,
 			opts...,
 		),
 		getApp: connect_go.NewClient[sdp_go.GetAppRequest, sdp_go.GetAppResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/GetApp",
+			baseURL+ChangesServiceGetAppProcedure,
 			opts...,
 		),
 		updateApp: connect_go.NewClient[sdp_go.UpdateAppRequest, sdp_go.UpdateAppResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/UpdateApp",
+			baseURL+ChangesServiceUpdateAppProcedure,
 			opts...,
 		),
 		deleteApp: connect_go.NewClient[sdp_go.DeleteAppRequest, sdp_go.DeleteAppResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/DeleteApp",
+			baseURL+ChangesServiceDeleteAppProcedure,
 			opts...,
 		),
 		listChanges: connect_go.NewClient[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/ListChanges",
+			baseURL+ChangesServiceListChangesProcedure,
 			opts...,
 		),
 		createChange: connect_go.NewClient[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/CreateChange",
+			baseURL+ChangesServiceCreateChangeProcedure,
 			opts...,
 		),
 		getChange: connect_go.NewClient[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/GetChange",
+			baseURL+ChangesServiceGetChangeProcedure,
 			opts...,
 		),
 		updateChange: connect_go.NewClient[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/UpdateChange",
+			baseURL+ChangesServiceUpdateChangeProcedure,
 			opts...,
 		),
 		deleteChange: connect_go.NewClient[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/DeleteChange",
+			baseURL+ChangesServiceDeleteChangeProcedure,
 			opts...,
 		),
 		getOnboarding: connect_go.NewClient[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/GetOnboarding",
+			baseURL+ChangesServiceGetOnboardingProcedure,
 			opts...,
 		),
 		updateOnboarding: connect_go.NewClient[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/UpdateOnboarding",
+			baseURL+ChangesServiceUpdateOnboardingProcedure,
 			opts...,
 		),
 		getChangesHome: connect_go.NewClient[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse](
 			httpClient,
-			baseURL+"/changes.ChangesService/GetChangesHome",
+			baseURL+ChangesServiceGetChangesHomeProcedure,
 			opts...,
 		),
 	}
@@ -226,68 +273,68 @@ type ChangesServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/changes.ChangesService/ListApps", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/ListApps",
+	mux.Handle(ChangesServiceListAppsProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceListAppsProcedure,
 		svc.ListApps,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/CreateApp", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/CreateApp",
+	mux.Handle(ChangesServiceCreateAppProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceCreateAppProcedure,
 		svc.CreateApp,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/GetApp", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/GetApp",
+	mux.Handle(ChangesServiceGetAppProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceGetAppProcedure,
 		svc.GetApp,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/UpdateApp", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/UpdateApp",
+	mux.Handle(ChangesServiceUpdateAppProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceUpdateAppProcedure,
 		svc.UpdateApp,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/DeleteApp", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/DeleteApp",
+	mux.Handle(ChangesServiceDeleteAppProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceDeleteAppProcedure,
 		svc.DeleteApp,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/ListChanges", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/ListChanges",
+	mux.Handle(ChangesServiceListChangesProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceListChangesProcedure,
 		svc.ListChanges,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/CreateChange", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/CreateChange",
+	mux.Handle(ChangesServiceCreateChangeProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceCreateChangeProcedure,
 		svc.CreateChange,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/GetChange", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/GetChange",
+	mux.Handle(ChangesServiceGetChangeProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceGetChangeProcedure,
 		svc.GetChange,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/UpdateChange", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/UpdateChange",
+	mux.Handle(ChangesServiceUpdateChangeProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceUpdateChangeProcedure,
 		svc.UpdateChange,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/DeleteChange", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/DeleteChange",
+	mux.Handle(ChangesServiceDeleteChangeProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceDeleteChangeProcedure,
 		svc.DeleteChange,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/GetOnboarding", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/GetOnboarding",
+	mux.Handle(ChangesServiceGetOnboardingProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceGetOnboardingProcedure,
 		svc.GetOnboarding,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/UpdateOnboarding", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/UpdateOnboarding",
+	mux.Handle(ChangesServiceUpdateOnboardingProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceUpdateOnboardingProcedure,
 		svc.UpdateOnboarding,
 		opts...,
 	))
-	mux.Handle("/changes.ChangesService/GetChangesHome", connect_go.NewUnaryHandler(
-		"/changes.ChangesService/GetChangesHome",
+	mux.Handle(ChangesServiceGetChangesHomeProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceGetChangesHomeProcedure,
 		svc.GetChangesHome,
 		opts...,
 	))
