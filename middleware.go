@@ -42,6 +42,13 @@ func EnsureValidTokenWithPattern(pattern string, next http.Handler) (string, htt
 }
 
 // EnsureValidToken is a middleware that will check the validity of our JWT.
+//
+// This requires the following environment variables to be set as per the Auth0
+// standards:
+//
+// - AUTH0_DOMAIN
+// - AUTH0_AUDIENCE
+// - AUTH_COOKIE_NAME
 func EnsureValidToken(next http.Handler) http.Handler {
 	issuerURL, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/")
 	if err != nil {
@@ -74,9 +81,19 @@ func EnsureValidToken(next http.Handler) http.Handler {
 		w.Write([]byte(`{"message":"Failed to validate JWT."}`))
 	}
 
+	// Set up token extractors based on what env vars are available
+	extractors := []jwtmiddleware.TokenExtractor{
+		jwtmiddleware.AuthHeaderTokenExtractor,
+	}
+
+	if name := os.Getenv("AUTH_COOKIE_NAME"); name != "" {
+		extractors = append(extractors, jwtmiddleware.CookieTokenExtractor(name))
+	}
+
 	middleware := jwtmiddleware.New(
 		jwtValidator.ValidateToken,
 		jwtmiddleware.WithErrorHandler(errorHandler),
+		jwtmiddleware.WithTokenExtractor(jwtmiddleware.MultiTokenExtractor(extractors...)),
 	)
 
 	return middleware.CheckJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
