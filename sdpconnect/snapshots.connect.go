@@ -22,7 +22,7 @@ const _ = connect_go.IsAtLeastVersion0_1_0
 
 const (
 	// SnapshotsServiceName is the fully-qualified name of the SnapshotsService service.
-	SnapshotsServiceName = "SnapshotsService"
+	SnapshotsServiceName = "snapshots.SnapshotsService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -35,22 +35,22 @@ const (
 const (
 	// SnapshotsServiceListSnapshotsProcedure is the fully-qualified name of the SnapshotsService's
 	// ListSnapshots RPC.
-	SnapshotsServiceListSnapshotsProcedure = "/SnapshotsService/ListSnapshots"
+	SnapshotsServiceListSnapshotsProcedure = "/snapshots.SnapshotsService/ListSnapshots"
 	// SnapshotsServiceCreateSnapshotProcedure is the fully-qualified name of the SnapshotsService's
 	// CreateSnapshot RPC.
-	SnapshotsServiceCreateSnapshotProcedure = "/SnapshotsService/CreateSnapshot"
+	SnapshotsServiceCreateSnapshotProcedure = "/snapshots.SnapshotsService/CreateSnapshot"
 	// SnapshotsServiceGetSnapshotProcedure is the fully-qualified name of the SnapshotsService's
 	// GetSnapshot RPC.
-	SnapshotsServiceGetSnapshotProcedure = "/SnapshotsService/GetSnapshot"
+	SnapshotsServiceGetSnapshotProcedure = "/snapshots.SnapshotsService/GetSnapshot"
 	// SnapshotsServiceUpdateSnapshotProcedure is the fully-qualified name of the SnapshotsService's
 	// UpdateSnapshot RPC.
-	SnapshotsServiceUpdateSnapshotProcedure = "/SnapshotsService/UpdateSnapshot"
+	SnapshotsServiceUpdateSnapshotProcedure = "/snapshots.SnapshotsService/UpdateSnapshot"
 	// SnapshotsServiceDeleteSnapshotProcedure is the fully-qualified name of the SnapshotsService's
 	// DeleteSnapshot RPC.
-	SnapshotsServiceDeleteSnapshotProcedure = "/SnapshotsService/DeleteSnapshot"
+	SnapshotsServiceDeleteSnapshotProcedure = "/snapshots.SnapshotsService/DeleteSnapshot"
 )
 
-// SnapshotsServiceClient is a client for the SnapshotsService service.
+// SnapshotsServiceClient is a client for the snapshots.SnapshotsService service.
 type SnapshotsServiceClient interface {
 	ListSnapshots(context.Context, *connect_go.Request[sdp_go.ListSnapshotsRequest]) (*connect_go.Response[sdp_go.ListSnapshotResponse], error)
 	CreateSnapshot(context.Context, *connect_go.Request[sdp_go.CreateSnapshotRequest]) (*connect_go.Response[sdp_go.CreateSnapshotResponse], error)
@@ -59,10 +59,10 @@ type SnapshotsServiceClient interface {
 	DeleteSnapshot(context.Context, *connect_go.Request[sdp_go.DeleteSnapshotRequest]) (*connect_go.Response[sdp_go.DeleteSnapshotResponse], error)
 }
 
-// NewSnapshotsServiceClient constructs a client for the SnapshotsService service. By default, it
-// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
+// NewSnapshotsServiceClient constructs a client for the snapshots.SnapshotsService service. By
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
@@ -106,32 +106,32 @@ type snapshotsServiceClient struct {
 	deleteSnapshot *connect_go.Client[sdp_go.DeleteSnapshotRequest, sdp_go.DeleteSnapshotResponse]
 }
 
-// ListSnapshots calls SnapshotsService.ListSnapshots.
+// ListSnapshots calls snapshots.SnapshotsService.ListSnapshots.
 func (c *snapshotsServiceClient) ListSnapshots(ctx context.Context, req *connect_go.Request[sdp_go.ListSnapshotsRequest]) (*connect_go.Response[sdp_go.ListSnapshotResponse], error) {
 	return c.listSnapshots.CallUnary(ctx, req)
 }
 
-// CreateSnapshot calls SnapshotsService.CreateSnapshot.
+// CreateSnapshot calls snapshots.SnapshotsService.CreateSnapshot.
 func (c *snapshotsServiceClient) CreateSnapshot(ctx context.Context, req *connect_go.Request[sdp_go.CreateSnapshotRequest]) (*connect_go.Response[sdp_go.CreateSnapshotResponse], error) {
 	return c.createSnapshot.CallUnary(ctx, req)
 }
 
-// GetSnapshot calls SnapshotsService.GetSnapshot.
+// GetSnapshot calls snapshots.SnapshotsService.GetSnapshot.
 func (c *snapshotsServiceClient) GetSnapshot(ctx context.Context, req *connect_go.Request[sdp_go.GetSnapshotRequest]) (*connect_go.Response[sdp_go.GetSnapshotResponse], error) {
 	return c.getSnapshot.CallUnary(ctx, req)
 }
 
-// UpdateSnapshot calls SnapshotsService.UpdateSnapshot.
+// UpdateSnapshot calls snapshots.SnapshotsService.UpdateSnapshot.
 func (c *snapshotsServiceClient) UpdateSnapshot(ctx context.Context, req *connect_go.Request[sdp_go.UpdateSnapshotRequest]) (*connect_go.Response[sdp_go.UpdateSnapshotResponse], error) {
 	return c.updateSnapshot.CallUnary(ctx, req)
 }
 
-// DeleteSnapshot calls SnapshotsService.DeleteSnapshot.
+// DeleteSnapshot calls snapshots.SnapshotsService.DeleteSnapshot.
 func (c *snapshotsServiceClient) DeleteSnapshot(ctx context.Context, req *connect_go.Request[sdp_go.DeleteSnapshotRequest]) (*connect_go.Response[sdp_go.DeleteSnapshotResponse], error) {
 	return c.deleteSnapshot.CallUnary(ctx, req)
 }
 
-// SnapshotsServiceHandler is an implementation of the SnapshotsService service.
+// SnapshotsServiceHandler is an implementation of the snapshots.SnapshotsService service.
 type SnapshotsServiceHandler interface {
 	ListSnapshots(context.Context, *connect_go.Request[sdp_go.ListSnapshotsRequest]) (*connect_go.Response[sdp_go.ListSnapshotResponse], error)
 	CreateSnapshot(context.Context, *connect_go.Request[sdp_go.CreateSnapshotRequest]) (*connect_go.Response[sdp_go.CreateSnapshotResponse], error)
@@ -172,28 +172,28 @@ func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect_go.
 		svc.DeleteSnapshot,
 		opts...,
 	))
-	return "/.SnapshotsService/", mux
+	return "/snapshots.SnapshotsService/", mux
 }
 
 // UnimplementedSnapshotsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSnapshotsServiceHandler struct{}
 
 func (UnimplementedSnapshotsServiceHandler) ListSnapshots(context.Context, *connect_go.Request[sdp_go.ListSnapshotsRequest]) (*connect_go.Response[sdp_go.ListSnapshotResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("SnapshotsService.ListSnapshots is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("snapshots.SnapshotsService.ListSnapshots is not implemented"))
 }
 
 func (UnimplementedSnapshotsServiceHandler) CreateSnapshot(context.Context, *connect_go.Request[sdp_go.CreateSnapshotRequest]) (*connect_go.Response[sdp_go.CreateSnapshotResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("SnapshotsService.CreateSnapshot is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("snapshots.SnapshotsService.CreateSnapshot is not implemented"))
 }
 
 func (UnimplementedSnapshotsServiceHandler) GetSnapshot(context.Context, *connect_go.Request[sdp_go.GetSnapshotRequest]) (*connect_go.Response[sdp_go.GetSnapshotResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("SnapshotsService.GetSnapshot is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("snapshots.SnapshotsService.GetSnapshot is not implemented"))
 }
 
 func (UnimplementedSnapshotsServiceHandler) UpdateSnapshot(context.Context, *connect_go.Request[sdp_go.UpdateSnapshotRequest]) (*connect_go.Response[sdp_go.UpdateSnapshotResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("SnapshotsService.UpdateSnapshot is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("snapshots.SnapshotsService.UpdateSnapshot is not implemented"))
 }
 
 func (UnimplementedSnapshotsServiceHandler) DeleteSnapshot(context.Context, *connect_go.Request[sdp_go.DeleteSnapshotRequest]) (*connect_go.Response[sdp_go.DeleteSnapshotResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("SnapshotsService.DeleteSnapshot is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("snapshots.SnapshotsService.DeleteSnapshot is not implemented"))
 }

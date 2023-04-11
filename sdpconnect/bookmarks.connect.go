@@ -22,7 +22,7 @@ const _ = connect_go.IsAtLeastVersion0_1_0
 
 const (
 	// BookmarksServiceName is the fully-qualified name of the BookmarksService service.
-	BookmarksServiceName = "BookmarksService"
+	BookmarksServiceName = "bookmarks.BookmarksService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -35,22 +35,22 @@ const (
 const (
 	// BookmarksServiceListBookmarksProcedure is the fully-qualified name of the BookmarksService's
 	// ListBookmarks RPC.
-	BookmarksServiceListBookmarksProcedure = "/BookmarksService/ListBookmarks"
+	BookmarksServiceListBookmarksProcedure = "/bookmarks.BookmarksService/ListBookmarks"
 	// BookmarksServiceCreateBookmarkProcedure is the fully-qualified name of the BookmarksService's
 	// CreateBookmark RPC.
-	BookmarksServiceCreateBookmarkProcedure = "/BookmarksService/CreateBookmark"
+	BookmarksServiceCreateBookmarkProcedure = "/bookmarks.BookmarksService/CreateBookmark"
 	// BookmarksServiceGetBookmarkProcedure is the fully-qualified name of the BookmarksService's
 	// GetBookmark RPC.
-	BookmarksServiceGetBookmarkProcedure = "/BookmarksService/GetBookmark"
+	BookmarksServiceGetBookmarkProcedure = "/bookmarks.BookmarksService/GetBookmark"
 	// BookmarksServiceUpdateBookmarkProcedure is the fully-qualified name of the BookmarksService's
 	// UpdateBookmark RPC.
-	BookmarksServiceUpdateBookmarkProcedure = "/BookmarksService/UpdateBookmark"
+	BookmarksServiceUpdateBookmarkProcedure = "/bookmarks.BookmarksService/UpdateBookmark"
 	// BookmarksServiceDeleteBookmarkProcedure is the fully-qualified name of the BookmarksService's
 	// DeleteBookmark RPC.
-	BookmarksServiceDeleteBookmarkProcedure = "/BookmarksService/DeleteBookmark"
+	BookmarksServiceDeleteBookmarkProcedure = "/bookmarks.BookmarksService/DeleteBookmark"
 )
 
-// BookmarksServiceClient is a client for the BookmarksService service.
+// BookmarksServiceClient is a client for the bookmarks.BookmarksService service.
 type BookmarksServiceClient interface {
 	ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error)
 	CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error)
@@ -59,10 +59,10 @@ type BookmarksServiceClient interface {
 	DeleteBookmark(context.Context, *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error)
 }
 
-// NewBookmarksServiceClient constructs a client for the BookmarksService service. By default, it
-// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
+// NewBookmarksServiceClient constructs a client for the bookmarks.BookmarksService service. By
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
@@ -106,32 +106,32 @@ type bookmarksServiceClient struct {
 	deleteBookmark *connect_go.Client[sdp_go.DeleteBookmarkRequest, sdp_go.DeleteBookmarkResponse]
 }
 
-// ListBookmarks calls BookmarksService.ListBookmarks.
+// ListBookmarks calls bookmarks.BookmarksService.ListBookmarks.
 func (c *bookmarksServiceClient) ListBookmarks(ctx context.Context, req *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error) {
 	return c.listBookmarks.CallUnary(ctx, req)
 }
 
-// CreateBookmark calls BookmarksService.CreateBookmark.
+// CreateBookmark calls bookmarks.BookmarksService.CreateBookmark.
 func (c *bookmarksServiceClient) CreateBookmark(ctx context.Context, req *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error) {
 	return c.createBookmark.CallUnary(ctx, req)
 }
 
-// GetBookmark calls BookmarksService.GetBookmark.
+// GetBookmark calls bookmarks.BookmarksService.GetBookmark.
 func (c *bookmarksServiceClient) GetBookmark(ctx context.Context, req *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error) {
 	return c.getBookmark.CallUnary(ctx, req)
 }
 
-// UpdateBookmark calls BookmarksService.UpdateBookmark.
+// UpdateBookmark calls bookmarks.BookmarksService.UpdateBookmark.
 func (c *bookmarksServiceClient) UpdateBookmark(ctx context.Context, req *connect_go.Request[sdp_go.UpdateBookmarkRequest]) (*connect_go.Response[sdp_go.UpdateBookmarkResponse], error) {
 	return c.updateBookmark.CallUnary(ctx, req)
 }
 
-// DeleteBookmark calls BookmarksService.DeleteBookmark.
+// DeleteBookmark calls bookmarks.BookmarksService.DeleteBookmark.
 func (c *bookmarksServiceClient) DeleteBookmark(ctx context.Context, req *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error) {
 	return c.deleteBookmark.CallUnary(ctx, req)
 }
 
-// BookmarksServiceHandler is an implementation of the BookmarksService service.
+// BookmarksServiceHandler is an implementation of the bookmarks.BookmarksService service.
 type BookmarksServiceHandler interface {
 	ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error)
 	CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error)
@@ -172,28 +172,28 @@ func NewBookmarksServiceHandler(svc BookmarksServiceHandler, opts ...connect_go.
 		svc.DeleteBookmark,
 		opts...,
 	))
-	return "/.BookmarksService/", mux
+	return "/bookmarks.BookmarksService/", mux
 }
 
 // UnimplementedBookmarksServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedBookmarksServiceHandler struct{}
 
 func (UnimplementedBookmarksServiceHandler) ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("BookmarksService.ListBookmarks is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.ListBookmarks is not implemented"))
 }
 
 func (UnimplementedBookmarksServiceHandler) CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("BookmarksService.CreateBookmark is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.CreateBookmark is not implemented"))
 }
 
 func (UnimplementedBookmarksServiceHandler) GetBookmark(context.Context, *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("BookmarksService.GetBookmark is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.GetBookmark is not implemented"))
 }
 
 func (UnimplementedBookmarksServiceHandler) UpdateBookmark(context.Context, *connect_go.Request[sdp_go.UpdateBookmarkRequest]) (*connect_go.Response[sdp_go.UpdateBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("BookmarksService.UpdateBookmark is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.UpdateBookmark is not implemented"))
 }
 
 func (UnimplementedBookmarksServiceHandler) DeleteBookmark(context.Context, *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("BookmarksService.DeleteBookmark is not implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.DeleteBookmark is not implemented"))
 }
