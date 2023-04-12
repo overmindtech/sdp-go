@@ -12,6 +12,8 @@ import (
 
 func TestHasScopes(t *testing.T) {
 	t.Run("with auth bypassed", func(t *testing.T) {
+		t.Parallel()
+
 		ctx := context.WithValue(context.Background(), AuthBypassed{}, true)
 
 		pass := HasScopes(ctx, "test")
@@ -22,6 +24,8 @@ func TestHasScopes(t *testing.T) {
 	})
 
 	t.Run("with good scopes", func(t *testing.T) {
+		t.Parallel()
+
 		ctx := context.WithValue(context.Background(), jwtmiddleware.ContextKey{}, &validator.ValidatedClaims{
 			CustomClaims: &CustomClaims{
 				Scope: "test foo bar",
@@ -31,11 +35,13 @@ func TestHasScopes(t *testing.T) {
 		pass := HasScopes(ctx, "test")
 
 		if !pass {
-			t.Error("expected to allow since scopes are present")
+			t.Error("expected to allow since `test` scope is present")
 		}
 	})
 
 	t.Run("with bad scopes", func(t *testing.T) {
+		t.Parallel()
+
 		ctx := context.WithValue(context.Background(), jwtmiddleware.ContextKey{}, &validator.ValidatedClaims{
 			CustomClaims: &CustomClaims{
 				Scope: "test foo bar",
@@ -45,12 +51,14 @@ func TestHasScopes(t *testing.T) {
 		pass := HasScopes(ctx, "baz")
 
 		if pass {
-			t.Error("expected to deny since scopes are not present")
+			t.Error("expected to deny since `baz` scope is not present")
 		}
 	})
 }
 
 func TestBypassAuth(t *testing.T) {
+	t.Parallel()
+
 	handler := BypassAuth("test", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Context().Value(AuthBypassed{}) != true {
 			t.Error("expected auth bypassed to be set")
