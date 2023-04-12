@@ -31,6 +31,8 @@ type AuthBypassed struct{}
 // TODO: return connect_go.Response with error
 func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 	if ctx.Value(AuthBypassed{}) == true {
+		trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("om.auth.bypass", true))
+
 		// Bypass all auth
 		return true
 	}
@@ -48,22 +50,29 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 	return true
 }
 
+// NewAuthMiddleware Creates a new auth middleware that can optionally bypass
+// auth entirely. If auth is bypassed, the `accountName` will be set in the
+// request context, if auth is not bypassed this parameter is ignored.
+func NewAuthMiddleware(bypassAuth bool, accountName string, next http.Handler) http.Handler {
+	if bypassAuth {
+		return BypassAuth(accountName, next)
+	}
+
+	return EnsureValidToken(next)
+}
+
 // BypassAuth is a middleware that will bypass authentication and set the
 // account name to the given string
 func BypassAuth(accountName string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set the account name to "unauthenticated"
-		r = r.Clone(context.WithValue(r.Context(), AccountNameContextKey{}, accountName))
-		r = r.Clone(context.WithValue(r.Context(), AuthBypassed{}, true))
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, AuthBypassed{}, true)
+		ctx = context.WithValue(ctx, AccountNameContextKey{}, accountName)
+
+		r = r.Clone(ctx)
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-// EnsureValidTokenWithPattern is a middleware that will check the validity of
-// our JWT, returning the pattern and a handler
-func EnsureValidTokenWithPattern(pattern string, next http.Handler) (string, http.Handler) {
-	return pattern, EnsureValidToken(next)
 }
 
 // EnsureValidToken is a middleware that will check the validity of our JWT.
