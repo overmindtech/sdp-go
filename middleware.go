@@ -22,8 +22,19 @@ import (
 // validated JWT will be stored.
 type AccountNameContextKey struct{}
 
+// AuthBypassed is a key that is stored in the request context when authis us
+// actively being bypassed, e.g. in development. When this is set the
+// `HasScopes()` function will always return true, and can be set using the
+// `BypassAuth()` middleware.
+type AuthBypassed struct{}
+
 // TODO: return connect_go.Response with error
 func HasScopes(ctx context.Context, requiredScopes ...string) bool {
+	if ctx.Value(AuthBypassed{}) == true {
+		// Bypass all auth
+		return true
+	}
+
 	token := ctx.Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
 	claims := token.CustomClaims.(*CustomClaims)
 	trace.SpanFromContext(ctx).SetAttributes(
@@ -37,6 +48,20 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 	return true
 }
 
+// BypassAuth is a middleware that will bypass authentication and set the
+// account name to the given string
+func BypassAuth(accountName string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set the account name to "unauthenticated"
+		r = r.Clone(context.WithValue(r.Context(), AccountNameContextKey{}, accountName))
+		r = r.Clone(context.WithValue(r.Context(), AuthBypassed{}, true))
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// EnsureValidTokenWithPattern is a middleware that will check the validity of
+// our JWT, returning the pattern and a handler
 func EnsureValidTokenWithPattern(pattern string, next http.Handler) (string, http.Handler) {
 	return pattern, EnsureValidToken(next)
 }
