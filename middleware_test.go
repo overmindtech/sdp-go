@@ -11,7 +11,7 @@ func TestHasScopes(t *testing.T) {
 	t.Run("with auth bypassed", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := AddBypassAuthConfig(context.Background(), "foo")
+		ctx := AddBypassAuthConfig(context.Background())
 
 		pass := HasScopes(ctx, "test")
 
@@ -23,9 +23,9 @@ func TestHasScopes(t *testing.T) {
 	t.Run("with good scopes", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), CustomClaimsContextKey{}, &CustomClaims{
-			Scope: "test foo bar",
-		})
+		account := "foo"
+		scope := "test foo bar"
+		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
 
 		pass := HasScopes(ctx, "test")
 
@@ -37,9 +37,9 @@ func TestHasScopes(t *testing.T) {
 	t.Run("with bad scopes", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), CustomClaimsContextKey{}, &CustomClaims{
-			Scope: "test foo bar",
-		})
+		account := "foo"
+		scope := "test foo bar"
+		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
 
 		pass := HasScopes(ctx, "baz")
 

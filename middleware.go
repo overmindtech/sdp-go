@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// AuthBypassedContextKey is a key that is stored in the request context when authis us
+// AuthBypassedContextKey is a key that is stored in the request context when auth is
 // actively being bypassed, e.g. in development. When this is set the
 // `HasScopes()` function will always return true, and can be set using the
 // `BypassAuth()` middleware.
@@ -31,9 +31,14 @@ type CustomClaimsContextKey struct{}
 type AuthConfig struct {
 	// Bypasses all auth checks, meaning that HasScopes() will always return
 	// true. This should be used in conjunction with the `AccountOverride` field
+	// since there won't be a token to parse the account from
 	BypassAuth bool
 
+	// Overrides the account name stored in the CustomClaimsContextKey
 	AccountOverride *string
+
+	// Overrides the scope stored in the CustomClaimsContextKey
+	ScopeOverride *string
 }
 
 // HasScopes checks that the authenticated user in the request context has the
@@ -69,24 +74,51 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 // AUTH0_AUDIENCE. If cookie auth is intended to be used, then AUTH_COOKIE_NAME
 // must also be set.
 func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
+	processOverrides := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := OverrideCustomClaims(r.Context(), config.ScopeOverride, config.AccountOverride)
+
+		r = r.Clone(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+
 	if config.BypassAuth {
-		return bypassAuthHandler(*config.AccountOverride, next)
+		return bypassAuthHandler(*config.AccountOverride, processOverrides)
 	} else {
-		return ensureValidTokenHandler(next)
+		return ensureValidTokenHandler(processOverrides)
 	}
 }
 
 // AddBypassAuthConfig Adds the requires keys to the context so that
 // authentication is bypassed. This is intended to be used in tests
-func AddBypassAuthConfig(ctx context.Context, accountOverride string) context.Context {
-	ctx = context.WithValue(ctx, AuthBypassedContextKey{}, true)
+func AddBypassAuthConfig(ctx context.Context) context.Context {
+	return context.WithValue(ctx, AuthBypassedContextKey{}, true)
+}
 
-	// Override the account and set custom claims
-	claims := CustomClaims{
-		Scope:       "override",
-		AccountName: accountOverride,
+// OverrideCustomClaims Overrides the custom claims in the context that have
+// been set at CustomClaimsContextKey
+func OverrideCustomClaims(ctx context.Context, scope *string, account *string) context.Context {
+	// Read existing claims from the context
+	i := ctx.Value(CustomClaimsContextKey{})
+
+	var claims *CustomClaims
+	var ok bool
+
+	if claims, ok = i.(*CustomClaims); !ok {
+		// Create a new object if required
+		claims = &CustomClaims{}
 	}
-	ctx = context.WithValue(ctx, CustomClaimsContextKey{}, &claims)
+
+	if scope != nil {
+		claims.Scope = *scope
+	}
+
+	if account != nil {
+		claims.AccountName = *account
+	}
+
+	// Store the new claims in the context
+	ctx = context.WithValue(ctx, CustomClaimsContextKey{}, claims)
 
 	return ctx
 }
@@ -94,7 +126,7 @@ func AddBypassAuthConfig(ctx context.Context, accountOverride string) context.Co
 // bypassAuthHandler is a middleware that will bypass authentication
 func bypassAuthHandler(accountName string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := AddBypassAuthConfig(r.Context(), accountName)
+		ctx := AddBypassAuthConfig(r.Context())
 
 		r = r.Clone(ctx)
 
