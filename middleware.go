@@ -17,28 +17,41 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// AccountNameContextKey is the key used in the request
-// context where the account name from a
-// validated JWT will be stored.
-type AccountNameContextKey struct{}
-
-// AuthBypassed is a key that is stored in the request context when authis us
+// AuthBypassedContextKey is a key that is stored in the request context when auth is
 // actively being bypassed, e.g. in development. When this is set the
 // `HasScopes()` function will always return true, and can be set using the
 // `BypassAuth()` middleware.
-type AuthBypassed struct{}
+type AuthBypassedContextKey struct{}
 
-// TODO: return connect_go.Response with error
+// CustomClaimsContextKey is the key that is used to store the custom claims
+// from the JWT
+type CustomClaimsContextKey struct{}
+
+// AuthConfig Configuration for the auth middleware
+type AuthConfig struct {
+	// Bypasses all auth checks, meaning that HasScopes() will always return
+	// true. This should be used in conjunction with the `AccountOverride` field
+	// since there won't be a token to parse the account from
+	BypassAuth bool
+
+	// Overrides the account name stored in the CustomClaimsContextKey
+	AccountOverride *string
+
+	// Overrides the scope stored in the CustomClaimsContextKey
+	ScopeOverride *string
+}
+
+// HasScopes checks that the authenticated user in the request context has the
+// required scopes. If auth has been bypassed, this will always return true
 func HasScopes(ctx context.Context, requiredScopes ...string) bool {
-	if ctx.Value(AuthBypassed{}) == true {
+	if ctx.Value(AuthBypassedContextKey{}) == true {
 		trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("om.auth.bypass", true))
 
 		// Bypass all auth
 		return true
 	}
 
-	token := ctx.Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
-	claims := token.CustomClaims.(*CustomClaims)
+	claims := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
 	trace.SpanFromContext(ctx).SetAttributes(
 		attribute.StringSlice("om.auth.requiredScopes", requiredScopes),
 	)
@@ -50,24 +63,70 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 	return true
 }
 
-// NewAuthMiddleware Creates a new auth middleware that can optionally bypass
-// auth entirely. If auth is bypassed, the `accountName` will be set in the
-// request context, if auth is not bypassed this parameter is ignored.
-func NewAuthMiddleware(bypassAuth bool, accountName string, next http.Handler) http.Handler {
-	if bypassAuth {
-		return BypassAuth(accountName, next)
-	}
+// NewAuthMiddleware Creates new auth middleware. The options allow you to
+// bypass the authentication process or not, but either way this middleware will
+// set the `CustomClaimsContextKey` in the request context which allows you to
+// use the `HasScopes()` function to check the scopes without having to worry
+// about whether the server is using auth or not.
+//
+// If auth is not bypassed, then tokens will be validated using Auth0 and
+// therefore the following environment variables must be set: AUTH0_DOMAIN,
+// AUTH0_AUDIENCE. If cookie auth is intended to be used, then AUTH_COOKIE_NAME
+// must also be set.
+func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
+	processOverrides := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := OverrideCustomClaims(r.Context(), config.ScopeOverride, config.AccountOverride)
 
-	return EnsureValidToken(next)
+		r = r.Clone(ctx)
+
+		next.ServeHTTP(w, r)
+	})
+
+	if config.BypassAuth {
+		return bypassAuthHandler(*config.AccountOverride, processOverrides)
+	} else {
+		return ensureValidTokenHandler(processOverrides)
+	}
 }
 
-// BypassAuth is a middleware that will bypass authentication and set the
-// account name to the given string
-func BypassAuth(accountName string, next http.Handler) http.Handler {
+// AddBypassAuthConfig Adds the requires keys to the context so that
+// authentication is bypassed. This is intended to be used in tests
+func AddBypassAuthConfig(ctx context.Context) context.Context {
+	return context.WithValue(ctx, AuthBypassedContextKey{}, true)
+}
+
+// OverrideCustomClaims Overrides the custom claims in the context that have
+// been set at CustomClaimsContextKey
+func OverrideCustomClaims(ctx context.Context, scope *string, account *string) context.Context {
+	// Read existing claims from the context
+	i := ctx.Value(CustomClaimsContextKey{})
+
+	var claims *CustomClaims
+	var ok bool
+
+	if claims, ok = i.(*CustomClaims); !ok {
+		// Create a new object if required
+		claims = &CustomClaims{}
+	}
+
+	if scope != nil {
+		claims.Scope = *scope
+	}
+
+	if account != nil {
+		claims.AccountName = *account
+	}
+
+	// Store the new claims in the context
+	ctx = context.WithValue(ctx, CustomClaimsContextKey{}, claims)
+
+	return ctx
+}
+
+// bypassAuthHandler is a middleware that will bypass authentication
+func bypassAuthHandler(accountName string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, AuthBypassed{}, true)
-		ctx = context.WithValue(ctx, AccountNameContextKey{}, accountName)
+		ctx := AddBypassAuthConfig(r.Context())
 
 		r = r.Clone(ctx)
 
@@ -75,15 +134,14 @@ func BypassAuth(accountName string, next http.Handler) http.Handler {
 	})
 }
 
-// EnsureValidToken is a middleware that will check the validity of our JWT.
+// ensureValidTokenHandler is a middleware that will check the validity of our JWT.
 //
 // This requires the following environment variables to be set as per the Auth0
-// standards:
+// standards: AUTH0_DOMAIN, AUTH0_AUDIENCE, AUTH_COOKIE_NAME
 //
-// - AUTH0_DOMAIN
-// - AUTH0_AUDIENCE
-// - AUTH_COOKIE_NAME
-func EnsureValidToken(next http.Handler) http.Handler {
+// This middleware also extract custom claims form the token and stores them in
+// CustomClaimsContextKey
+func ensureValidTokenHandler(next http.Handler) http.Handler {
 	issuerURL, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/")
 	if err != nil {
 		log.Fatalf("Failed to parse the issuer url: %v", err)
@@ -134,21 +192,14 @@ func EnsureValidToken(next http.Handler) http.Handler {
 		// extract account name and setup otel attributes after the JWT was validated, but before the actual handler runs
 		claims := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
 		customClaims := claims.CustomClaims.(*CustomClaims)
+
 		if customClaims != nil {
-			var accountName string
-			if customClaims.AccountName != "" {
-				accountName = customClaims.AccountName
-			}
-			if accountName != "" {
-				r = r.Clone(context.WithValue(r.Context(), AccountNameContextKey{}, accountName))
-			} else {
-				errorHandler(w, r, fmt.Errorf("couldn't get 'https://api.overmind.tech/account-name' claim from: %v", claims.CustomClaims))
-				return
-			}
+			r = r.Clone(context.WithValue(r.Context(), CustomClaimsContextKey{}, customClaims))
+
 			trace.SpanFromContext(r.Context()).SetAttributes(
 				attribute.String("om.auth.scopes", customClaims.Scope),
 				attribute.Int64("om.auth.expiry", claims.RegisteredClaims.Expiry),
-				attribute.String("om.auth.accountName", accountName),
+				attribute.String("om.auth.accountName", customClaims.AccountName),
 			)
 
 			next.ServeHTTP(w, r)
