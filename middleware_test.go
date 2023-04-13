@@ -5,16 +5,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
-	"github.com/auth0/go-jwt-middleware/v2/validator"
 )
 
 func TestHasScopes(t *testing.T) {
 	t.Run("with auth bypassed", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), AuthBypassed{}, true)
+		ctx := AddBypassAuthConfig(context.Background(), "foo")
 
 		pass := HasScopes(ctx, "test")
 
@@ -26,10 +23,8 @@ func TestHasScopes(t *testing.T) {
 	t.Run("with good scopes", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), jwtmiddleware.ContextKey{}, &validator.ValidatedClaims{
-			CustomClaims: &CustomClaims{
-				Scope: "test foo bar",
-			},
+		ctx := context.WithValue(context.Background(), CustomClaimsContextKey{}, &CustomClaims{
+			Scope: "test foo bar",
 		})
 
 		pass := HasScopes(ctx, "test")
@@ -42,10 +37,8 @@ func TestHasScopes(t *testing.T) {
 	t.Run("with bad scopes", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.WithValue(context.Background(), jwtmiddleware.ContextKey{}, &validator.ValidatedClaims{
-			CustomClaims: &CustomClaims{
-				Scope: "test foo bar",
-			},
+		ctx := context.WithValue(context.Background(), CustomClaimsContextKey{}, &CustomClaims{
+			Scope: "test foo bar",
 		})
 
 		pass := HasScopes(ctx, "baz")
@@ -56,16 +49,24 @@ func TestHasScopes(t *testing.T) {
 	})
 }
 
-func TestBypassAuth(t *testing.T) {
+func TestNewAuthMiddleware(t *testing.T) {
 	t.Parallel()
 
-	handler := BypassAuth("test", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Context().Value(AuthBypassed{}) != true {
+	account := "foo"
+	config := AuthConfig{
+		BypassAuth:      true,
+		AccountOverride: &account,
+	}
+
+	handler := NewAuthMiddleware(config, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Context().Value(AuthBypassedContextKey{}) != true {
 			t.Error("expected auth bypassed to be set")
 		}
 
-		if r.Context().Value(AccountNameContextKey{}) != "test" {
-			t.Error("expected account name to be set")
+		// Read the custom claims from the context
+		claims := r.Context().Value(CustomClaimsContextKey{}).(*CustomClaims)
+		if claims.AccountName != account {
+			t.Errorf("expected account to be %s, but was %s", account, claims.AccountName)
 		}
 	}))
 
