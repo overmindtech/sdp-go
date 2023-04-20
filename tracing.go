@@ -3,6 +3,7 @@ package sdp
 import (
 	"context"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel"
@@ -68,4 +69,18 @@ func InjectOtelTraceContext(ctx context.Context, msg *nats.Msg) {
 		msg.Header = make(nats.Header)
 	}
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(msg.Header))
+}
+
+// NewSentryInterceptor pass this to connect handlers as `connect.WithInterceptors(NewSentryInterceptor())` to recover from panics in the handler and report them to sentry. Otherwise panics get recovered by connect-go itself and do not get reported to sentry.
+func NewSentryInterceptor() connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return connect.UnaryFunc(func(
+			ctx context.Context,
+			req connect.AnyRequest,
+		) (connect.AnyResponse, error) {
+			defer sentry.Recover()
+			return next(ctx, req)
+		})
+	}
+	return connect.UnaryInterceptorFunc(interceptor)
 }
