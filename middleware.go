@@ -27,6 +27,9 @@ type AuthBypassedContextKey struct{}
 // from the JWT
 type CustomClaimsContextKey struct{}
 
+// UserTokenContextKey is the key that is used to store the full JWT token of the user
+type UserTokenContextKey struct{}
+
 // AuthConfig Configuration for the auth middleware
 type AuthConfig struct {
 	// Bypasses all auth checks, meaning that HasScopes() will always return
@@ -182,16 +185,28 @@ func ensureValidTokenHandler(next http.Handler) http.Handler {
 		extractors = append(extractors, jwtmiddleware.CookieTokenExtractor(name))
 	}
 
+	tokenExtractor := jwtmiddleware.MultiTokenExtractor(extractors...)
+
 	middleware := jwtmiddleware.New(
 		jwtValidator.ValidateToken,
 		jwtmiddleware.WithErrorHandler(errorHandler),
-		jwtmiddleware.WithTokenExtractor(jwtmiddleware.MultiTokenExtractor(extractors...)),
+		jwtmiddleware.WithTokenExtractor(tokenExtractor),
 	)
 
 	return middleware.CheckJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// extract account name and setup otel attributes after the JWT was validated, but before the actual handler runs
 		claims := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
 		customClaims := claims.CustomClaims.(*CustomClaims)
+		token, err := tokenExtractor(r)
+		// we should never hit this as the middleware wouldn't call the handler
+		if err != nil {
+			// This is not ErrJWTMissing because an error here means that the
+			// tokenExtractor had an error and _not_ that the token was missing.
+			errorHandler(w, r, fmt.Errorf("error extracting token: %w", err))
+			return
+		}
+
+		r = r.Clone(context.WithValue(r.Context(), UserTokenContextKey{}, token))
 
 		if customClaims != nil {
 			r = r.Clone(context.WithValue(r.Context(), CustomClaimsContextKey{}, customClaims))
