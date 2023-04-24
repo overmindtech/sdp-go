@@ -1,7 +1,5 @@
 github.com/auth0/go-jwt-middleware/v2 v2.1.0 h1:VU4LsC3aFPoqXVyEp8EixU6FNM+ZNIjECszRTvtGQI8=
 github.com/auth0/go-jwt-middleware/v2 v2.1.0/go.mod h1:CpzcJoleayAACpv+vt0AP8/aYn5TDngsqzLapV1nM4c=
-github.com/bufbuild/connect-go v1.6.0 h1:OCEB8JuEuvcY5lEKZCQE95CUscqkDtLnQceNhDgi92k=
-github.com/bufbuild/connect-go v1.6.0/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
 github.com/bufbuild/connect-go v1.7.0 h1:MGp82v7SCza+3RhsVhV7aMikwxvI3ZfD72YiGt8FYJo=
 github.com/bufbuild/connect-go v1.7.0/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
