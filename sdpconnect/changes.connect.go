@@ -70,6 +70,9 @@ const (
 	// ChangesServiceGetChangesHomeProcedure is the fully-qualified name of the ChangesService's
 	// GetChangesHome RPC.
 	ChangesServiceGetChangesHomeProcedure = "/changes.ChangesService/GetChangesHome"
+	// ChangesServiceListAppChangesProcedure is the fully-qualified name of the ChangesService's
+	// ListAppChanges RPC.
+	ChangesServiceListAppChangesProcedure = "/changes.ChangesService/ListAppChanges"
 )
 
 // ChangesServiceClient is a client for the changes.ChangesService service.
@@ -87,6 +90,7 @@ type ChangesServiceClient interface {
 	GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error)
 	UpdateOnboarding(context.Context, *connect_go.Request[sdp_go.UpdateOnboardingRequest]) (*connect_go.Response[sdp_go.UpdateOnboardingResponse], error)
 	GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error)
+	ListAppChanges(context.Context, *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error)
 }
 
 // NewChangesServiceClient constructs a client for the changes.ChangesService service. By default,
@@ -164,6 +168,11 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceGetChangesHomeProcedure,
 			opts...,
 		),
+		listAppChanges: connect_go.NewClient[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse](
+			httpClient,
+			baseURL+ChangesServiceListAppChangesProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -182,6 +191,7 @@ type changesServiceClient struct {
 	getOnboarding    *connect_go.Client[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse]
 	updateOnboarding *connect_go.Client[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse]
 	getChangesHome   *connect_go.Client[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse]
+	listAppChanges   *connect_go.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
 }
 
 // ListApps calls changes.ChangesService.ListApps.
@@ -249,6 +259,11 @@ func (c *changesServiceClient) GetChangesHome(ctx context.Context, req *connect_
 	return c.getChangesHome.CallUnary(ctx, req)
 }
 
+// ListAppChanges calls changes.ChangesService.ListAppChanges.
+func (c *changesServiceClient) ListAppChanges(ctx context.Context, req *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error) {
+	return c.listAppChanges.CallUnary(ctx, req)
+}
+
 // ChangesServiceHandler is an implementation of the changes.ChangesService service.
 type ChangesServiceHandler interface {
 	ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error)
@@ -264,6 +279,7 @@ type ChangesServiceHandler interface {
 	GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error)
 	UpdateOnboarding(context.Context, *connect_go.Request[sdp_go.UpdateOnboardingRequest]) (*connect_go.Response[sdp_go.UpdateOnboardingResponse], error)
 	GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error)
+	ListAppChanges(context.Context, *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error)
 }
 
 // NewChangesServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -338,6 +354,11 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 		svc.GetChangesHome,
 		opts...,
 	))
+	mux.Handle(ChangesServiceListAppChangesProcedure, connect_go.NewUnaryHandler(
+		ChangesServiceListAppChangesProcedure,
+		svc.ListAppChanges,
+		opts...,
+	))
 	return "/changes.ChangesService/", mux
 }
 
@@ -394,4 +415,8 @@ func (UnimplementedChangesServiceHandler) UpdateOnboarding(context.Context, *con
 
 func (UnimplementedChangesServiceHandler) GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.GetChangesHome is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) ListAppChanges(context.Context, *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.ListAppChanges is not implemented"))
 }
