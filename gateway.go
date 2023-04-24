@@ -1,6 +1,12 @@
 package sdp
 
-//Equal Returns whether to statuses are functionally equal
+import (
+	"encoding/hex"
+
+	"github.com/google/uuid"
+)
+
+// Equal Returns whether two statuses are functionally equal
 func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 	if x == nil {
 		if y == nil {
@@ -63,4 +69,131 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 // Whether the gateway request is complete
 func (x *GatewayRequestStatus) Done() bool {
 	return x.PostProcessingComplete && x.Summary.Working == 0
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *StoreBookmark) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err != nil {
+			return ""
+		}
+		return u.String()
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *BookmarkStoreResult) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *LoadBookmark) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *BookmarkLoadResult) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *StoreSnapshot) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *SnapshotStoreResult) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *LoadSnapshot) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *SnapshotLoadResult) GetMsgIDLogString() string {
+	bs := x.GetMsgID()
+	if len(bs) == 0 {
+		return ""
+	}
+	if len(bs) == 16 {
+		u, err := uuid.FromBytes(bs)
+		if err == nil {
+			return u.String()
+		}
+	}
+	return hex.EncodeToString(bs)
+}
+
+// GetMsgIDLogString returns the correlation ID as string for logging
+func (x *QueryStatus) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
 }
