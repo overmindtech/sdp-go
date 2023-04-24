@@ -61,6 +61,15 @@ const (
 	// ChangesServiceDeleteChangeProcedure is the fully-qualified name of the ChangesService's
 	// DeleteChange RPC.
 	ChangesServiceDeleteChangeProcedure = "/changes.ChangesService/DeleteChange"
+	// ChangesServiceCalculateBlastRadiusProcedure is the fully-qualified name of the ChangesService's
+	// CalculateBlastRadius RPC.
+	ChangesServiceCalculateBlastRadiusProcedure = "/changes.ChangesService/CalculateBlastRadius"
+	// ChangesServiceStartChangeProcedure is the fully-qualified name of the ChangesService's
+	// StartChange RPC.
+	ChangesServiceStartChangeProcedure = "/changes.ChangesService/StartChange"
+	// ChangesServiceEndChangeProcedure is the fully-qualified name of the ChangesService's EndChange
+	// RPC.
+	ChangesServiceEndChangeProcedure = "/changes.ChangesService/EndChange"
 	// ChangesServiceGetOnboardingProcedure is the fully-qualified name of the ChangesService's
 	// GetOnboarding RPC.
 	ChangesServiceGetOnboardingProcedure = "/changes.ChangesService/GetOnboarding"
@@ -77,16 +86,39 @@ const (
 
 // ChangesServiceClient is a client for the changes.ChangesService service.
 type ChangesServiceClient interface {
+	// Lists all apps
 	ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error)
+	// Creates a new app
 	CreateApp(context.Context, *connect_go.Request[sdp_go.CreateAppRequest]) (*connect_go.Response[sdp_go.CreateAppResponse], error)
+	// Gets the details of an existing app
 	GetApp(context.Context, *connect_go.Request[sdp_go.GetAppRequest]) (*connect_go.Response[sdp_go.GetAppResponse], error)
+	// Updates an existing app
 	UpdateApp(context.Context, *connect_go.Request[sdp_go.UpdateAppRequest]) (*connect_go.Response[sdp_go.UpdateAppResponse], error)
+	// Deletes an app
 	DeleteApp(context.Context, *connect_go.Request[sdp_go.DeleteAppRequest]) (*connect_go.Response[sdp_go.DeleteAppResponse], error)
+	// Lists all changes
 	ListChanges(context.Context, *connect_go.Request[sdp_go.ListChangesRequest]) (*connect_go.Response[sdp_go.ListChangesResponse], error)
+	// Creates a new change
 	CreateChange(context.Context, *connect_go.Request[sdp_go.CreateChangeRequest]) (*connect_go.Response[sdp_go.CreateChangeResponse], error)
+	// Gets the details of an existing change
 	GetChange(context.Context, *connect_go.Request[sdp_go.GetChangeRequest]) (*connect_go.Response[sdp_go.GetChangeResponse], error)
+	// Updates an existing change
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
+	// Deletes a change
 	DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error)
+	// Calculates the blast radius of a change using the
+	// `affectedItemsBookmarkUUID` as the starting point. If the
+	// `affectedItemsBookmarkUUID` is blank, this will return an error.
+	// Returns a stream of status updates. The response stream closes when all calculating has been done.
+	// Executing this RPC will move the Change to the `STATUS_DEFINING` state or return an error.
+	CalculateBlastRadius(context.Context, *connect_go.Request[sdp_go.CalculateBlastRadiusRequest]) (*connect_go.ServerStreamForClient[sdp_go.CalculateBlastRadiusResponse], error)
+	// Executing this RPC take a snapshot of the current blast radius and store it
+	// in `systemBeforeSnapshotUUID` and then advance the status to
+	// `STATUS_HAPPENING`. It can only be called once per change.
+	StartChange(context.Context, *connect_go.Request[sdp_go.StartChangeRequest]) (*connect_go.ServerStreamForClient[sdp_go.StartChangeResponse], error)
+	// Takes the "after" snapshot, stores it in `systemAfterSnapshotUUID` and
+	// advances the change status to `STATUS_DONE`
+	EndChange(context.Context, *connect_go.Request[sdp_go.EndChangeRequest]) (*connect_go.ServerStreamForClient[sdp_go.EndChangeResponse], error)
 	GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error)
 	UpdateOnboarding(context.Context, *connect_go.Request[sdp_go.UpdateOnboardingRequest]) (*connect_go.Response[sdp_go.UpdateOnboardingResponse], error)
 	GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error)
@@ -153,6 +185,21 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceDeleteChangeProcedure,
 			opts...,
 		),
+		calculateBlastRadius: connect_go.NewClient[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse](
+			httpClient,
+			baseURL+ChangesServiceCalculateBlastRadiusProcedure,
+			opts...,
+		),
+		startChange: connect_go.NewClient[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse](
+			httpClient,
+			baseURL+ChangesServiceStartChangeProcedure,
+			opts...,
+		),
+		endChange: connect_go.NewClient[sdp_go.EndChangeRequest, sdp_go.EndChangeResponse](
+			httpClient,
+			baseURL+ChangesServiceEndChangeProcedure,
+			opts...,
+		),
 		getOnboarding: connect_go.NewClient[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse](
 			httpClient,
 			baseURL+ChangesServiceGetOnboardingProcedure,
@@ -178,20 +225,23 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // changesServiceClient implements ChangesServiceClient.
 type changesServiceClient struct {
-	listApps         *connect_go.Client[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse]
-	createApp        *connect_go.Client[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse]
-	getApp           *connect_go.Client[sdp_go.GetAppRequest, sdp_go.GetAppResponse]
-	updateApp        *connect_go.Client[sdp_go.UpdateAppRequest, sdp_go.UpdateAppResponse]
-	deleteApp        *connect_go.Client[sdp_go.DeleteAppRequest, sdp_go.DeleteAppResponse]
-	listChanges      *connect_go.Client[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse]
-	createChange     *connect_go.Client[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse]
-	getChange        *connect_go.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
-	updateChange     *connect_go.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
-	deleteChange     *connect_go.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
-	getOnboarding    *connect_go.Client[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse]
-	updateOnboarding *connect_go.Client[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse]
-	getChangesHome   *connect_go.Client[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse]
-	listAppChanges   *connect_go.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
+	listApps             *connect_go.Client[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse]
+	createApp            *connect_go.Client[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse]
+	getApp               *connect_go.Client[sdp_go.GetAppRequest, sdp_go.GetAppResponse]
+	updateApp            *connect_go.Client[sdp_go.UpdateAppRequest, sdp_go.UpdateAppResponse]
+	deleteApp            *connect_go.Client[sdp_go.DeleteAppRequest, sdp_go.DeleteAppResponse]
+	listChanges          *connect_go.Client[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse]
+	createChange         *connect_go.Client[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse]
+	getChange            *connect_go.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
+	updateChange         *connect_go.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
+	deleteChange         *connect_go.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
+	calculateBlastRadius *connect_go.Client[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse]
+	startChange          *connect_go.Client[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse]
+	endChange            *connect_go.Client[sdp_go.EndChangeRequest, sdp_go.EndChangeResponse]
+	getOnboarding        *connect_go.Client[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse]
+	updateOnboarding     *connect_go.Client[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse]
+	getChangesHome       *connect_go.Client[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse]
+	listAppChanges       *connect_go.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
 }
 
 // ListApps calls changes.ChangesService.ListApps.
@@ -244,6 +294,21 @@ func (c *changesServiceClient) DeleteChange(ctx context.Context, req *connect_go
 	return c.deleteChange.CallUnary(ctx, req)
 }
 
+// CalculateBlastRadius calls changes.ChangesService.CalculateBlastRadius.
+func (c *changesServiceClient) CalculateBlastRadius(ctx context.Context, req *connect_go.Request[sdp_go.CalculateBlastRadiusRequest]) (*connect_go.ServerStreamForClient[sdp_go.CalculateBlastRadiusResponse], error) {
+	return c.calculateBlastRadius.CallServerStream(ctx, req)
+}
+
+// StartChange calls changes.ChangesService.StartChange.
+func (c *changesServiceClient) StartChange(ctx context.Context, req *connect_go.Request[sdp_go.StartChangeRequest]) (*connect_go.ServerStreamForClient[sdp_go.StartChangeResponse], error) {
+	return c.startChange.CallServerStream(ctx, req)
+}
+
+// EndChange calls changes.ChangesService.EndChange.
+func (c *changesServiceClient) EndChange(ctx context.Context, req *connect_go.Request[sdp_go.EndChangeRequest]) (*connect_go.ServerStreamForClient[sdp_go.EndChangeResponse], error) {
+	return c.endChange.CallServerStream(ctx, req)
+}
+
 // GetOnboarding calls changes.ChangesService.GetOnboarding.
 func (c *changesServiceClient) GetOnboarding(ctx context.Context, req *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error) {
 	return c.getOnboarding.CallUnary(ctx, req)
@@ -266,16 +331,39 @@ func (c *changesServiceClient) ListAppChanges(ctx context.Context, req *connect_
 
 // ChangesServiceHandler is an implementation of the changes.ChangesService service.
 type ChangesServiceHandler interface {
+	// Lists all apps
 	ListApps(context.Context, *connect_go.Request[sdp_go.ListAppsRequest]) (*connect_go.Response[sdp_go.ListAppsResponse], error)
+	// Creates a new app
 	CreateApp(context.Context, *connect_go.Request[sdp_go.CreateAppRequest]) (*connect_go.Response[sdp_go.CreateAppResponse], error)
+	// Gets the details of an existing app
 	GetApp(context.Context, *connect_go.Request[sdp_go.GetAppRequest]) (*connect_go.Response[sdp_go.GetAppResponse], error)
+	// Updates an existing app
 	UpdateApp(context.Context, *connect_go.Request[sdp_go.UpdateAppRequest]) (*connect_go.Response[sdp_go.UpdateAppResponse], error)
+	// Deletes an app
 	DeleteApp(context.Context, *connect_go.Request[sdp_go.DeleteAppRequest]) (*connect_go.Response[sdp_go.DeleteAppResponse], error)
+	// Lists all changes
 	ListChanges(context.Context, *connect_go.Request[sdp_go.ListChangesRequest]) (*connect_go.Response[sdp_go.ListChangesResponse], error)
+	// Creates a new change
 	CreateChange(context.Context, *connect_go.Request[sdp_go.CreateChangeRequest]) (*connect_go.Response[sdp_go.CreateChangeResponse], error)
+	// Gets the details of an existing change
 	GetChange(context.Context, *connect_go.Request[sdp_go.GetChangeRequest]) (*connect_go.Response[sdp_go.GetChangeResponse], error)
+	// Updates an existing change
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
+	// Deletes a change
 	DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error)
+	// Calculates the blast radius of a change using the
+	// `affectedItemsBookmarkUUID` as the starting point. If the
+	// `affectedItemsBookmarkUUID` is blank, this will return an error.
+	// Returns a stream of status updates. The response stream closes when all calculating has been done.
+	// Executing this RPC will move the Change to the `STATUS_DEFINING` state or return an error.
+	CalculateBlastRadius(context.Context, *connect_go.Request[sdp_go.CalculateBlastRadiusRequest], *connect_go.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error
+	// Executing this RPC take a snapshot of the current blast radius and store it
+	// in `systemBeforeSnapshotUUID` and then advance the status to
+	// `STATUS_HAPPENING`. It can only be called once per change.
+	StartChange(context.Context, *connect_go.Request[sdp_go.StartChangeRequest], *connect_go.ServerStream[sdp_go.StartChangeResponse]) error
+	// Takes the "after" snapshot, stores it in `systemAfterSnapshotUUID` and
+	// advances the change status to `STATUS_DONE`
+	EndChange(context.Context, *connect_go.Request[sdp_go.EndChangeRequest], *connect_go.ServerStream[sdp_go.EndChangeResponse]) error
 	GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error)
 	UpdateOnboarding(context.Context, *connect_go.Request[sdp_go.UpdateOnboardingRequest]) (*connect_go.Response[sdp_go.UpdateOnboardingResponse], error)
 	GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error)
@@ -337,6 +425,21 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 	mux.Handle(ChangesServiceDeleteChangeProcedure, connect_go.NewUnaryHandler(
 		ChangesServiceDeleteChangeProcedure,
 		svc.DeleteChange,
+		opts...,
+	))
+	mux.Handle(ChangesServiceCalculateBlastRadiusProcedure, connect_go.NewServerStreamHandler(
+		ChangesServiceCalculateBlastRadiusProcedure,
+		svc.CalculateBlastRadius,
+		opts...,
+	))
+	mux.Handle(ChangesServiceStartChangeProcedure, connect_go.NewServerStreamHandler(
+		ChangesServiceStartChangeProcedure,
+		svc.StartChange,
+		opts...,
+	))
+	mux.Handle(ChangesServiceEndChangeProcedure, connect_go.NewServerStreamHandler(
+		ChangesServiceEndChangeProcedure,
+		svc.EndChange,
 		opts...,
 	))
 	mux.Handle(ChangesServiceGetOnboardingProcedure, connect_go.NewUnaryHandler(
@@ -403,6 +506,18 @@ func (UnimplementedChangesServiceHandler) UpdateChange(context.Context, *connect
 
 func (UnimplementedChangesServiceHandler) DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.DeleteChange is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) CalculateBlastRadius(context.Context, *connect_go.Request[sdp_go.CalculateBlastRadiusRequest], *connect_go.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.CalculateBlastRadius is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) StartChange(context.Context, *connect_go.Request[sdp_go.StartChangeRequest], *connect_go.ServerStream[sdp_go.StartChangeResponse]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.StartChange is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) EndChange(context.Context, *connect_go.Request[sdp_go.EndChangeRequest], *connect_go.ServerStream[sdp_go.EndChangeResponse]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.EndChange is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error) {
