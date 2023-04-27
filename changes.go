@@ -44,6 +44,14 @@ func (a *DeleteAppRequest) GetUUIDParsed() *uuid.UUID {
 	return &u
 }
 
+func (a *ListAppChangesRequest) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(a.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
 func (a *ChangeMetadata) GetUUIDParsed() *uuid.UUID {
 	u, err := uuid.FromBytes(a.GetUUID())
 	if err != nil {
