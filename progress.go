@@ -475,7 +475,10 @@ func (qp *QueryProgress) markStarted() {
 				// Once the start timeout has elapsed, if there are no
 				// responders, or all of them are done, we can drain the
 				// connections and mark everything as done
-				if qp.NumResponders() == 0 || qp.allDone() {
+				qp.respondersMutex.RLock()
+				defer qp.respondersMutex.RUnlock()
+
+				if qp.numResponders() == 0 || qp.allDone() {
 					qp.Drain()
 				}
 			case <-ctx.Done():
@@ -680,6 +683,12 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 
 	if exists {
 		responder.CancelMonitor()
+
+		// Protect against out-of order responses. Do not mark a responder as
+		// working if it has already finished
+		if responder.lastState == ResponderState_COMPLETE {
+			return
+		}
 	} else {
 		// If the responder is new, add it to the list
 		responder = &Responder{
