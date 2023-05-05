@@ -672,25 +672,23 @@ func (qp *QueryProgress) Execute(ctx context.Context, ec EncodedConnection) ([]*
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response) {
-	func() {
-		// Update the stored data
-		qp.respondersMutex.Lock()
-		defer qp.respondersMutex.Unlock()
+	// Update the stored data
+	qp.respondersMutex.Lock()
+	defer qp.respondersMutex.Unlock()
 
-		responder, exists := qp.responders[response.Responder]
+	responder, exists := qp.responders[response.Responder]
 
-		if exists {
-			responder.CancelMonitor()
-		} else {
-			// If the responder is new, add it to the list
-			responder = &Responder{
-				Name: response.GetResponder(),
-			}
-			qp.responders[response.Responder] = responder
+	if exists {
+		responder.CancelMonitor()
+	} else {
+		// If the responder is new, add it to the list
+		responder = &Responder{
+			Name: response.GetResponder(),
 		}
+		qp.responders[response.Responder] = responder
+	}
 
-		responder.SetState(response.State)
-	}()
+	responder.SetState(response.State)
 
 	// Check if we should expect another response
 	expectFollowUp := (response.GetNextUpdateIn() != nil && response.State != ResponderState_COMPLETE)
@@ -700,12 +698,6 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 		timeout := response.GetNextUpdateIn().AsDuration()
 
 		monitorContext, monitorCancel := context.WithCancel(context.Background())
-
-		responder := func() *Responder {
-			qp.respondersMutex.RLock()
-			defer qp.respondersMutex.RUnlock()
-			return qp.responders[response.Responder]
-		}()
 
 		responder.SetMonitorContext(monitorContext, monitorCancel)
 
@@ -737,7 +729,12 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 func (qp *QueryProgress) NumWorking() int {
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
+	return qp.numWorking()
+}
 
+// numWorking Returns the number of responders that are working without taking a
+// lock
+func (qp *QueryProgress) numWorking() int {
 	var numWorking int
 
 	for _, responder := range qp.responders {
@@ -753,7 +750,12 @@ func (qp *QueryProgress) NumWorking() int {
 func (qp *QueryProgress) NumStalled() int {
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
+	return qp.numStalled()
+}
 
+// numStalled Returns the number of responders that are stalled without taking a
+// lock
+func (qp *QueryProgress) numStalled() int {
 	var numStalled int
 
 	for _, responder := range qp.responders {
@@ -769,7 +771,12 @@ func (qp *QueryProgress) NumStalled() int {
 func (qp *QueryProgress) NumComplete() int {
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
+	return qp.numComplete()
+}
 
+// numComplete Returns the number of responders that are complete without taking
+// a lock
+func (qp *QueryProgress) numComplete() int {
 	var numComplete int
 
 	for _, responder := range qp.responders {
@@ -781,11 +788,16 @@ func (qp *QueryProgress) NumComplete() int {
 	return numComplete
 }
 
-// NumError returns the number of responders that are in the FAILED state
+// NumError returns the number of responders that are in the ERROR state
 func (qp *QueryProgress) NumError() int {
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
+	return qp.numError()
+}
 
+// numError Returns the number of responders that are in the ERROR state
+// without taking a lock
+func (qp *QueryProgress) numError() int {
 	var numError int
 
 	for _, responder := range qp.responders {
@@ -801,7 +813,12 @@ func (qp *QueryProgress) NumError() int {
 func (qp *QueryProgress) NumCancelled() int {
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
+	return qp.numCancelled()
+}
 
+// numCancelled Returns the number of responders that are in the CANCELLED state
+// without taking a lock
+func (qp *QueryProgress) numCancelled() int {
 	var numCancelled int
 
 	for _, responder := range qp.responders {
@@ -817,6 +834,12 @@ func (qp *QueryProgress) NumCancelled() int {
 func (qp *QueryProgress) NumResponders() int {
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
+	return qp.numResponders()
+}
+
+// numResponders Returns the total number of unique responders without taking a
+// lock
+func (qp *QueryProgress) numResponders() int {
 	return len(qp.responders)
 }
 
@@ -845,14 +868,15 @@ func (qp *QueryProgress) String() string {
 	)
 }
 
-// Complete will return true if there are no remaining responders working
+// Complete will return true if there are no remaining responders working, does
+// not take locks
 func (qp *QueryProgress) allDone() bool {
-	if qp.NumResponders() > 0 || qp.cancelled {
+	if qp.numResponders() > 0 || qp.cancelled {
 		// If we have had at least one response, and there aren't any waiting
 		// then we are going to assume that everything is done. It is of course
 		// possible that there has just been a very fast responder and so a
 		// minimum execution time might be a good idea
-		return (qp.NumWorking() == 0)
+		return (qp.numWorking() == 0)
 	}
 	// If there have been no responders at all we can't say that we're "done"
 	return false
