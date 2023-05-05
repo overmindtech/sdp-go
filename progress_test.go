@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -849,5 +850,119 @@ func TestRealNats(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		t.Log(i)
+	}
+}
+
+func TestFastFinisher(t *testing.T) {
+	// Test for a situation where there is one responder that finishes really
+	// quickly and results in the other responders not getting a chance to start
+	conn := TestConnection{}
+
+	progress := NewQueryProgress(newQuery())
+	progress.StartTimeout = 500 * time.Millisecond
+
+	// Set up the fast responder, it should respond immediately and take only
+	// 100ms to complete its work
+	conn.Subscribe("request.scope.global", func(msg *nats.Msg) {
+		// Make sure this is the request
+		var q Query
+
+		err := proto.Unmarshal(msg.Data, &q)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		// Respond immediately saying we're started
+		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+			Responder: "fast",
+			State:     ResponderState_WORKING,
+			UUID:      q.UUID,
+			NextUpdateIn: &durationpb.Duration{
+				Seconds: 1,
+				Nanos:   0,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		time.Sleep(100 * time.Millisecond)
+
+		// Send an item
+		err = conn.Publish(context.Background(), q.ItemSubject, newItem())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Send a complete message
+		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+			Responder: "fast",
+			State:     ResponderState_COMPLETE,
+			UUID:      q.UUID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	// Set up another responder that takes 250ms to start
+	conn.Subscribe("request.scope.global", func(msg *nats.Msg) {
+		// Unmarshal the query
+		var q Query
+
+		err := proto.Unmarshal(msg.Data, &q)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		// Wait 250ms before starting
+		time.Sleep(250 * time.Millisecond)
+
+		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+			Responder: "slow",
+			State:     ResponderState_WORKING,
+			UUID:      q.UUID,
+			NextUpdateIn: &durationpb.Duration{
+				Seconds: 1,
+				Nanos:   0,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Send an item
+		item := newItem()
+		item.Attributes.Set("name", "baz")
+		err = conn.Publish(context.Background(), q.ItemSubject, newItem())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Send a complete message
+		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+			Responder: "slow",
+			State:     ResponderState_COMPLETE,
+			UUID:      q.UUID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	items, errs, err := progress.Execute(context.Background(), &conn)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(items) != 2 {
+		t.Errorf("Expected 2 items, got %d", len(items))
+	}
+
+	if len(errs) != 0 {
+		t.Errorf("Expected 0 errors, got %d", len(errs))
 	}
 }

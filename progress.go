@@ -226,9 +226,10 @@ type QueryProgress struct {
 	// How long to wait after `MarkStarted()` has been called to get at least
 	// one responder, if there are no responders in this time, the request will
 	// be marked as completed
-	StartTimeout time.Duration
-	Query        *Query
-	requestCtx   context.Context
+	StartTimeout        time.Duration
+	StartTimeoutElapsed atomic.Bool // Whether the start timeout has elapsed
+	Query               *Query
+	requestCtx          context.Context
 
 	// How long to wait before draining NATS connections after all have
 	// completed
@@ -469,13 +470,20 @@ func (qp *QueryProgress) markStarted() {
 			startTimeout := time.NewTimer(qp.StartTimeout)
 			select {
 			case <-startTimeout.C:
-				if qp.NumResponders() == 0 {
+				qp.StartTimeoutElapsed.Store(true)
+
+				// Once the start timeout has elapsed, if there are no
+				// responders, or all of them are done, we can drain the
+				// connections and mark everything as done
+				if qp.NumResponders() == 0 || qp.allDone() {
 					qp.Drain()
 				}
 			case <-ctx.Done():
 				startTimeout.Stop()
 			}
 		}(qp.noResponderContext)
+	} else {
+		qp.StartTimeoutElapsed.Store(true)
 	}
 }
 
@@ -669,11 +677,6 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 		qp.respondersMutex.Lock()
 		defer qp.respondersMutex.Unlock()
 
-		// As soon as we get a response, we can cancel the "no responders" goroutine
-		if qp.noRespondersCancel != nil {
-			qp.noRespondersCancel()
-		}
-
 		responder, exists := qp.responders[response.Responder]
 
 		if exists {
@@ -710,9 +713,11 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 		go stallMonitor(monitorContext, timeout, responder, qp)
 	}
 
-	// Finally check to see if this was the final request and if so update the
-	// chan
-	if qp.allDone() {
+	// Finally check to see if this was the final request and if so drain
+	// everything. We also need to check that the start timeout has elapsed to
+	// ensure that we don't drain too early. The start timeout goroutine will
+	// drain everything when it elapses if required
+	if qp.allDone() && qp.StartTimeoutElapsed.Load() {
 		// at this point I need to add some slack in case the we have received
 		// the completion response before the final item. The sources are
 		// supposed to wait until all items have been sent in order to send
