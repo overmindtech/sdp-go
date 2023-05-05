@@ -9,9 +9,9 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats.go v1.25.0
 	github.com/sirupsen/logrus v1.9.0
-	go.opentelemetry.io/otel v1.14.0
-	go.opentelemetry.io/otel/sdk v1.14.0
-	go.opentelemetry.io/otel/trace v1.14.0
+	go.opentelemetry.io/otel v1.15.1
+	go.opentelemetry.io/otel/sdk v1.15.1
+	go.opentelemetry.io/otel/trace v1.15.1
 	google.golang.org/protobuf v1.30.0
 )
 
