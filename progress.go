@@ -482,6 +482,8 @@ func (qp *QueryProgress) markStarted() {
 				startTimeout.Stop()
 			}
 		}(qp.noResponderContext)
+	} else {
+		qp.StartTimeoutElapsed.Store(true)
 	}
 }
 
@@ -674,11 +676,6 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 		// Update the stored data
 		qp.respondersMutex.Lock()
 		defer qp.respondersMutex.Unlock()
-
-		// As soon as we get a response, we can cancel the "no responders" goroutine
-		if qp.noRespondersCancel != nil {
-			qp.noRespondersCancel()
-		}
 
 		responder, exists := qp.responders[response.Responder]
 

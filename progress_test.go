@@ -952,46 +952,17 @@ func TestFastFinisher(t *testing.T) {
 		}
 	})
 
-	items := make(chan *Item)
-	errs := make(chan *QueryError)
-
-	err := progress.Start(context.Background(), &conn, items, errs)
+	items, errs, err := progress.Execute(context.Background(), &conn)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	itemSlice := make([]*Item, 0)
-	errSlice := make([]*QueryError, 0)
-
-	for {
-		// Listen to channels until they are closed
-		select {
-		case item, ok := <-items:
-			if ok {
-				itemSlice = append(itemSlice, item)
-			} else {
-				items = nil
-			}
-
-		case err, ok := <-errs:
-			if ok {
-				errSlice = append(errSlice, err)
-			} else {
-				errs = nil
-			}
-		}
-
-		if items == nil && errs == nil {
-			break
-		}
+	if len(items) != 2 {
+		t.Errorf("Expected 2 items, got %d", len(items))
 	}
 
-	if len(itemSlice) != 2 {
-		t.Errorf("Expected 2 items, got %d", len(itemSlice))
-	}
-
-	if len(errSlice) != 0 {
-		t.Errorf("Expected 0 errors, got %d", len(errSlice))
+	if len(errs) != 0 {
+		t.Errorf("Expected 0 errors, got %d", len(errs))
 	}
 }
