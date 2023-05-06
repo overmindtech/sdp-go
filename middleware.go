@@ -2,6 +2,7 @@ package sdp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -64,6 +65,19 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 		}
 	}
 	return true
+}
+
+var ErrNoClaims = errors.New("error extracting claims from token")
+
+// ExtractAccount Extracts the account name from a context
+func ExtractAccount(ctx context.Context) (string, error) {
+	claims := ctx.Value(CustomClaimsContextKey{})
+
+	if claims == nil {
+		return "", ErrNoClaims
+	}
+
+	return claims.(*CustomClaims).AccountName, nil
 }
 
 // NewAuthMiddleware Creates new auth middleware. The options allow you to
