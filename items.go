@@ -19,6 +19,36 @@ import (
 
 const WILDCARD = "*"
 
+// Copy copies all information from one item pointer to another
+func (liq *BlastPropagation) Copy(dest *BlastPropagation) {
+	dest.In = liq.GetIn()
+	dest.Out = liq.GetOut()
+}
+
+// Copy copies all information from one item pointer to another
+func (liq *LinkedItemQuery) Copy(dest *LinkedItemQuery) {
+	dest.Query = &Query{}
+	if liq.Query != nil {
+		liq.Query.Copy(dest.Query)
+	}
+	dest.BlastPropagation = &BlastPropagation{}
+	if liq.BlastPropagation != nil {
+		liq.BlastPropagation.Copy(dest.BlastPropagation)
+	}
+}
+
+// Copy copies all information from one item pointer to another
+func (li *LinkedItem) Copy(dest *LinkedItem) {
+	dest.Item = &Reference{}
+	if li.Item != nil {
+		li.Item.Copy(dest.Item)
+	}
+	dest.BlastPropagation = &BlastPropagation{}
+	if li.BlastPropagation != nil {
+		li.BlastPropagation.Copy(dest.BlastPropagation)
+	}
+}
+
 // UniqueAttributeValue returns the value of whatever the Unique Attribute is
 // for this item. This will then be converted to a string and returned
 func (i *Item) UniqueAttributeValue() string {
@@ -82,19 +112,19 @@ func (i *Item) Copy(dest *Item) {
 	i.Metadata.Copy(dest.Metadata)
 	i.Attributes.Copy(dest.Attributes)
 
-	dest.LinkedItemQueries = make([]*Query, 0)
-	dest.LinkedItems = make([]*Reference, 0)
+	dest.LinkedItemQueries = make([]*LinkedItemQuery, 0)
+	dest.LinkedItems = make([]*LinkedItem, 0)
 
 	for _, r := range i.LinkedItemQueries {
-		query := &Query{}
+		liq := &LinkedItemQuery{}
 
-		r.Copy(query)
+		r.Copy(liq)
 
-		dest.LinkedItemQueries = append(dest.LinkedItemQueries, query)
+		dest.LinkedItemQueries = append(dest.LinkedItemQueries, liq)
 	}
 
 	for _, r := range i.LinkedItems {
-		newLinkedItem := &Reference{}
+		newLinkedItem := &LinkedItem{}
 
 		r.Copy(newLinkedItem)
 
@@ -248,11 +278,20 @@ func (a *ItemAttributes) Copy(dest *ItemAttributes) {
 }
 
 // Copy copies all information from one Query pointer to another
+func (qrb *Query_RecursionBehaviour) Copy(dest *Query_RecursionBehaviour) {
+	dest.LinkDepth = qrb.LinkDepth
+	dest.FollowOnlyBlastPropagation = qrb.FollowOnlyBlastPropagation
+}
+
+// Copy copies all information from one Query pointer to another
 func (q *Query) Copy(dest *Query) {
 	dest.Type = q.Type
 	dest.Method = q.Method
 	dest.Query = q.Query
-	dest.LinkDepth = q.LinkDepth
+	dest.RecursionBehaviour = &Query_RecursionBehaviour{}
+	if q.RecursionBehaviour != nil {
+		q.RecursionBehaviour.Copy(dest.RecursionBehaviour)
+	}
 	dest.Scope = q.Scope
 	dest.ItemSubject = q.ItemSubject
 	dest.ResponseSubject = q.ResponseSubject

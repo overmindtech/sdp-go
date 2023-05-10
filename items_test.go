@@ -229,14 +229,16 @@ func TestCopy(t *testing.T) {
 			UniqueAttribute: "name",
 			Scope:           "test",
 			Attributes:      exampleAttributes,
-			LinkedItemQueries: []*Query{
+			LinkedItemQueries: []*LinkedItemQuery{
 				{
-					Type:   "user",
-					Method: QueryMethod_GET,
-					Query:  "Mike",
+					Query: &Query{
+						Type:   "user",
+						Method: QueryMethod_GET,
+						Query:  "Mike",
+					},
 				},
 			},
-			LinkedItems: []*Reference{},
+			LinkedItems: []*LinkedItem{},
 			Metadata: &Metadata{
 				SourceName: "test",
 				SourceQuery: &Query{
@@ -268,14 +270,16 @@ func TestCopy(t *testing.T) {
 			UniqueAttribute: "name",
 			Scope:           "test",
 			Attributes:      exampleAttributes,
-			LinkedItemQueries: []*Query{
+			LinkedItemQueries: []*LinkedItemQuery{
 				{
-					Type:   "user",
-					Method: QueryMethod_GET,
-					Query:  "Mike",
+					Query: &Query{
+						Type:   "user",
+						Method: QueryMethod_GET,
+						Query:  "Mike",
+					},
 				},
 			},
-			LinkedItems: []*Reference{},
+			LinkedItems: []*LinkedItem{},
 			Metadata: &Metadata{
 				Hidden:                true,
 				SourceName:            "test",
@@ -300,8 +304,8 @@ func TestCopy(t *testing.T) {
 			UniqueAttribute:   "name",
 			Scope:             "test",
 			Attributes:        exampleAttributes,
-			LinkedItemQueries: []*Query{},
-			LinkedItems:       []*Reference{},
+			LinkedItemQueries: []*LinkedItemQuery{},
+			LinkedItems:       []*LinkedItem{},
 		}
 
 		itemB := Item{}
@@ -354,7 +358,7 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 	}
 
 	if len(itemA.LinkedItemQueries) > 0 {
-		if itemA.LinkedItemQueries[0].Type != itemB.LinkedItemQueries[0].Type {
+		if itemA.LinkedItemQueries[0].Query.Type != itemB.LinkedItemQueries[0].Query.Type {
 			t.Error("LinkedItemQueries[0].Type did not match")
 		}
 	}
@@ -364,7 +368,7 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 	}
 
 	if len(itemA.LinkedItems) > 0 {
-		if itemA.LinkedItems[0].Type != itemB.LinkedItems[0].Type {
+		if itemA.LinkedItems[0].Item.Type != itemB.LinkedItems[0].Item.Type {
 			t.Error("LinkedItemQueries[0].Type did not match")
 		}
 	}
@@ -431,10 +435,12 @@ func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
 
 func TestTimeoutContext(t *testing.T) {
 	r := Query{
-		Type:        "person",
-		Method:      QueryMethod_GET,
-		Query:       "foo",
-		LinkDepth:   2,
+		Type:   "person",
+		Method: QueryMethod_GET,
+		Query:  "foo",
+		RecursionBehaviour: &Query_RecursionBehaviour{
+			LinkDepth: 2,
+		},
 		IgnoreCache: false,
 		Timeout:     durationpb.New(10 * time.Millisecond),
 	}

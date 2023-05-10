@@ -15,12 +15,14 @@ import (
 var _u = uuid.New()
 
 var query = Query{
-	Type:      "user",
-	Method:    QueryMethod_LIST,
-	LinkDepth: 10,
-	Scope:     "test",
-	UUID:      _u[:],
-	Timeout:   durationpb.New(10 * time.Second),
+	Type:   "user",
+	Method: QueryMethod_LIST,
+	RecursionBehaviour: &Query_RecursionBehaviour{
+		LinkDepth: 10,
+	},
+	Scope:   "test",
+	UUID:    _u[:],
+	Timeout: durationpb.New(10 * time.Second),
 }
 
 var itemAttributes = ItemAttributes{
@@ -38,10 +40,12 @@ var itemAttributes = ItemAttributes{
 var metadata = Metadata{
 	SourceName: "users",
 	SourceQuery: &Query{
-		Type:            "user",
-		Method:          QueryMethod_LIST,
-		Query:           "*",
-		LinkDepth:       12,
+		Type:   "user",
+		Method: QueryMethod_LIST,
+		Query:  "*",
+		RecursionBehaviour: &Query_RecursionBehaviour{
+			LinkDepth: 12,
+		},
 		Scope:           "testScope",
 		ItemSubject:     "items",
 		ResponseSubject: "responses",
