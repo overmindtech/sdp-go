@@ -691,10 +691,12 @@ func TestExecute(t *testing.T) {
 
 	t.Run("with no responders", func(t *testing.T) {
 		q := Query{
-			Type:            "user",
-			Method:          QueryMethod_GET,
-			Query:           "Dylan",
-			LinkDepth:       0,
+			Type:   "user",
+			Method: QueryMethod_GET,
+			Query:  "Dylan",
+			RecursionBehaviour: &Query_RecursionBehaviour{
+				LinkDepth: 0,
+			},
 			Scope:           "global",
 			IgnoreCache:     false,
 			UUID:            u[:],
@@ -716,10 +718,12 @@ func TestExecute(t *testing.T) {
 
 	t.Run("with a full response set", func(t *testing.T) {
 		q := Query{
-			Type:            "user",
-			Method:          QueryMethod_GET,
-			Query:           "Dylan",
-			LinkDepth:       0,
+			Type:   "user",
+			Method: QueryMethod_GET,
+			Query:  "Dylan",
+			RecursionBehaviour: &Query_RecursionBehaviour{
+				LinkDepth: 0,
+			},
 			Scope:           "global",
 			IgnoreCache:     false,
 			UUID:            u[:],

@@ -15,7 +15,7 @@ func TestRequest(t *testing.T) {
 		// Create the responder
 		tc.Subscribe("test", func(msg *nats.Msg) {
 			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-				LinkedItemQueries: []*Query{},
+				LinkedItemQueries: []*LinkedItemQuery{},
 				Error:             "testing",
 			})
 		})
@@ -51,7 +51,7 @@ func TestRequest(t *testing.T) {
 		// Create the responder
 		tc.Subscribe("test.>", func(msg *nats.Msg) {
 			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-				LinkedItemQueries: []*Query{},
+				LinkedItemQueries: []*LinkedItemQuery{},
 				Error:             "testing",
 			})
 		})
@@ -87,7 +87,7 @@ func TestRequest(t *testing.T) {
 		// Create the responder
 		tc.Subscribe("test.*.bar", func(msg *nats.Msg) {
 			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-				LinkedItemQueries: []*Query{},
+				LinkedItemQueries: []*LinkedItemQuery{},
 				Error:             "testing",
 			})
 		})

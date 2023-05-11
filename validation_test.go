@@ -438,10 +438,12 @@ func newQuery() *Query {
 	u := uuid.New()
 
 	return &Query{
-		Type:            "person",
-		Method:          QueryMethod_GET,
-		Query:           "Dylan",
-		LinkDepth:       1,
+		Type:   "person",
+		Method: QueryMethod_GET,
+		Query:  "Dylan",
+		RecursionBehaviour: &Query_RecursionBehaviour{
+			LinkDepth: 1,
+		},
 		Scope:           "global",
 		UUID:            u[:],
 		Timeout:         durationpb.New(time.Second),
@@ -504,8 +506,8 @@ func newItem() *Item {
 		Type:              "user",
 		UniqueAttribute:   "name",
 		Scope:             "test",
-		LinkedItemQueries: []*Query{},
-		LinkedItems:       []*Reference{},
+		LinkedItemQueries: []*LinkedItemQuery{},
+		LinkedItems:       []*LinkedItem{},
 		Attributes: &ItemAttributes{
 			AttrStruct: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -520,10 +522,12 @@ func newItem() *Item {
 		Metadata: &Metadata{
 			SourceName: "users",
 			SourceQuery: &Query{
-				Type:            "user",
-				Method:          QueryMethod_LIST,
-				Query:           "*",
-				LinkDepth:       12,
+				Type:   "user",
+				Method: QueryMethod_LIST,
+				Query:  "*",
+				RecursionBehaviour: &Query_RecursionBehaviour{
+					LinkDepth: 12,
+				},
 				Scope:           "testScope",
 				ItemSubject:     "items",
 				ResponseSubject: "responses",
