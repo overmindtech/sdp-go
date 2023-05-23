@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -383,6 +384,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 					"Current Time":         time.Now().String(),
 				}).Error("SDP-GO ERROR: An Item was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
 
+				span.SetStatus(codes.Error, "SDP-GO ERROR: An Item was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
 				return
 			}
 
@@ -678,6 +680,9 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 	// Update the stored data
 	qp.respondersMutex.Lock()
 	defer qp.respondersMutex.Unlock()
+
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("om.response", protojson.Format(response)))
 
 	responder, exists := qp.responders[response.Responder]
 
