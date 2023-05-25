@@ -76,7 +76,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 		rs.connection.Publish(
 			ctx,
 			rs.ResponseSubject,
-			&resp,
+			&QueryResponse{ResponseType: &QueryResponse_Response{Response: &resp}},
 		)
 	}
 
@@ -104,7 +104,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 					ec.Publish(
 						ctx,
 						rs.ResponseSubject,
-						r,
+						&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
 					)
 				}
 				return
@@ -118,7 +118,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				ec.Publish(
 					ctx,
 					rs.ResponseSubject,
-					r,
+					&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
 				)
 			}
 		}
@@ -222,7 +222,7 @@ func (re *Responder) LastStateTime() time.Time {
 	return re.lastStateTime
 }
 
-// QueryProgress represents the status of a request
+// QueryProgress represents the status of a query
 type QueryProgress struct {
 	// How long to wait after `MarkStarted()` has been called to get at least
 	// one responder, if there are no responders in this time, the request will
@@ -251,10 +251,7 @@ type QueryProgress struct {
 	cancelled bool
 	subMutex  sync.Mutex
 
-	// NATS subscriptions
-	itemSub     *nats.Subscription
-	responseSub *nats.Subscription
-	errorSub    *nats.Subscription
+	querySub *nats.Subscription
 
 	// Counters for how many things we have sent over the channels. This is
 	// required to make sure that we aren't closing channels that have pending
@@ -309,19 +306,6 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 
 	qp.requestCtx = ctx
 
-	// Populate inboxes if they aren't already
-	if qp.Query.ItemSubject == "" {
-		qp.Query.ItemSubject = fmt.Sprintf("return.item.%v", nats.NewInbox())
-	}
-
-	if qp.Query.ResponseSubject == "" {
-		qp.Query.ResponseSubject = fmt.Sprintf("return.response.%v", nats.NewInbox())
-	}
-
-	if qp.Query.ErrorSubject == "" {
-		qp.Query.ErrorSubject = fmt.Sprintf("return.error.%v", nats.NewInbox())
-	}
-
 	if len(qp.Query.UUID) == 0 {
 		u := uuid.New()
 		qp.Query.UUID = u[:]
@@ -350,7 +334,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 
 	var err error
 
-	qp.itemSub, err = ec.Subscribe(qp.Query.ItemSubject, NewItemHandler("Request.ItemSubject", func(ctx context.Context, item *Item) {
+	itemHandler := func(ctx context.Context, item *Item) {
 		defer atomic.AddInt64(qp.itemsProcessed, 1)
 
 		span := trace.SpanFromContext(ctx)
@@ -390,13 +374,9 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 
 			qp.itemChan <- item
 		}
-	}))
-
-	if err != nil {
-		return err
 	}
 
-	qp.errorSub, err = ec.Subscribe(qp.Query.ErrorSubject, NewQueryErrorHandler("Request.ErrorSubject", func(ctx context.Context, err *QueryError) {
+	errorHandler := func(ctx context.Context, err *QueryError) {
 		defer atomic.AddInt64(qp.errorsProcessed, 1)
 
 		if err != nil {
@@ -432,16 +412,24 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 
 			qp.errorChan <- err
 		}
-	}))
-
-	if err != nil {
-		return err
 	}
 
-	qp.responseSub, err = ec.Subscribe(qp.Query.ResponseSubject, NewResponseHandler("ProcessResponse", qp.ProcessResponse))
-
+	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("QueryProgress", func(ctx context.Context, qr *QueryResponse) {
+		log.WithContext(ctx).WithFields(log.Fields{
+			"response": qr,
+		}).Info("Received response")
+		switch qr.ResponseType.(type) {
+		case *QueryResponse_NewItem:
+			itemHandler(ctx, qr.GetNewItem())
+		case *QueryResponse_Error:
+			errorHandler(ctx, qr.GetError())
+		case *QueryResponse_Response:
+			qp.ProcessResponse(ctx, qr.GetResponse())
+		default:
+			panic(fmt.Sprintf("Received unexpected QueryResponse: %v", qr))
+		}
+	}))
 	if err != nil {
-		qp.itemSub.Unsubscribe()
 		return err
 	}
 
@@ -507,44 +495,7 @@ func (qp *QueryProgress) Drain() {
 		}
 
 		// Close the item and error subscriptions
-		unsubscribeGracefully(qp.itemSub)
-		unsubscribeGracefully(qp.errorSub)
-
-		if qp.responseSub != nil {
-			// Drain the response connection to, but don't wait for callbacks to finish.
-			// this is because this code here is likely called as part of a callback and
-			// therefore would cause deadlock as it essentially waits for itself to
-			// finish
-			qp.responseSub.Unsubscribe()
-		}
-
-		// This double-checks that all callbacks are *definitely* complete to avoid
-		// a situation where we close the channel with a goroutine still pending a
-		// send. This is rare due to the use of RWMutex on the channel, but still
-		// possible
-		var itemsDelivered int64
-		var errorsDelivered int64
-		var err error
-
-		for {
-			itemsDelivered, err = qp.itemSub.Delivered()
-
-			if err != nil {
-				break
-			}
-
-			errorsDelivered, err = qp.errorSub.Delivered()
-
-			if err != nil {
-				break
-			}
-
-			if (itemsDelivered == *qp.itemsProcessed) && (errorsDelivered == *qp.errorsProcessed) {
-				break
-			}
-
-			time.Sleep(50 * time.Millisecond)
-		}
+		unsubscribeGracefully(qp.querySub)
 
 		qp.chanMutex.Lock()
 		defer qp.chanMutex.Unlock()
@@ -923,14 +874,14 @@ func stallMonitor(context context.Context, timeout time.Duration, responder *Res
 
 // unsubscribeGracefully Closes a NATS subscription gracefully, this includes
 // draining, unsubscribing and ensuring that all callbacks are complete
-func unsubscribeGracefully(c *nats.Subscription) error {
-	if c != nil {
+func unsubscribeGracefully(s *nats.Subscription) error {
+	if s != nil {
 		// Drain NATS connections
-		err := c.Drain()
+		err := s.Drain()
 
 		if err != nil {
 			// If that fails, fall back to an unsubscribe
-			err = c.Unsubscribe()
+			err = s.Unsubscribe()
 
 			if err != nil {
 				return err
@@ -938,15 +889,6 @@ func unsubscribeGracefully(c *nats.Subscription) error {
 		}
 
 		// Wait for all items to finish processing, including all callbacks
-		for {
-			messages, _, _ := c.Pending()
-
-			if messages > 0 {
-				time.Sleep(50 * time.Millisecond)
-			} else {
-				break
-			}
-		}
 	}
 
 	return nil

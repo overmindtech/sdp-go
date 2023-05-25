@@ -283,6 +283,11 @@ func (qrb *Query_RecursionBehaviour) Copy(dest *Query_RecursionBehaviour) {
 	dest.FollowOnlyBlastPropagation = qrb.FollowOnlyBlastPropagation
 }
 
+// Subject returns a NATS subject for all traffic relating to this query
+func (q *Query) Subject() string {
+	return fmt.Sprintf("query.%v", q.ParseUuid())
+}
+
 // Copy copies all information from one Query pointer to another
 func (q *Query) Copy(dest *Query) {
 	dest.Type = q.Type
@@ -293,8 +298,6 @@ func (q *Query) Copy(dest *Query) {
 		q.RecursionBehaviour.Copy(dest.RecursionBehaviour)
 	}
 	dest.Scope = q.Scope
-	dest.ItemSubject = q.ItemSubject
-	dest.ResponseSubject = q.ResponseSubject
 	dest.IgnoreCache = q.IgnoreCache
 	dest.UUID = q.UUID
 
