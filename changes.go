@@ -60,8 +60,8 @@ func (a *ChangeMetadata) GetUUIDParsed() *uuid.UUID {
 	return &u
 }
 
-func (a *ChangeProperties) GetAffectedItemsBookmarkUUIDParsed() *uuid.UUID {
-	u, err := uuid.FromBytes(a.GetAffectedItemsBookmarkUUID())
+func (a *ChangeProperties) GetChangingItemsBookmarkUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(a.GetChangingItemsBookmarkUUID())
 	if err != nil {
 		return nil
 	}
