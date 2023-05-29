@@ -46,9 +46,7 @@ var metadata = Metadata{
 		RecursionBehaviour: &Query_RecursionBehaviour{
 			LinkDepth: 12,
 		},
-		Scope:           "testScope",
-		ItemSubject:     "items",
-		ResponseSubject: "responses",
+		Scope: "testScope",
 	},
 	Timestamp: timestamppb.Now(),
 	SourceDuration: &durationpb.Duration{

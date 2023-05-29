@@ -444,13 +444,10 @@ func newQuery() *Query {
 		RecursionBehaviour: &Query_RecursionBehaviour{
 			LinkDepth: 1,
 		},
-		Scope:           "global",
-		UUID:            u[:],
-		Timeout:         durationpb.New(time.Second),
-		IgnoreCache:     false,
-		ItemSubject:     "return.items.1",
-		ResponseSubject: "return.responses.1",
-		ErrorSubject:    "return.errors.1",
+		Scope:       "global",
+		UUID:        u[:],
+		Timeout:     durationpb.New(time.Second),
+		IgnoreCache: false,
 	}
 }
 
@@ -528,9 +525,7 @@ func newItem() *Item {
 				RecursionBehaviour: &Query_RecursionBehaviour{
 					LinkDepth: 12,
 				},
-				Scope:           "testScope",
-				ItemSubject:     "items",
-				ResponseSubject: "responses",
+				Scope: "testScope",
 			},
 			Timestamp: timestamppb.Now(),
 			SourceDuration: &durationpb.Duration{

@@ -61,9 +61,13 @@ func TestResponseSenderDone(t *testing.T) {
 	finalMessage := tp.Messages[len(tp.Messages)-1]
 	tp.messagesMutex.Unlock()
 
-	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != ResponderState_COMPLETE {
-			t.Errorf("Expected final message state to be COMPLETE (1), found: %v", finalResponse.State)
+	if queryResponse, ok := finalMessage.V.(*QueryResponse); ok {
+		if finalResponse, ok := queryResponse.ResponseType.(*QueryResponse_Response); ok {
+			if finalResponse.Response.State != ResponderState_COMPLETE {
+				t.Errorf("Expected final message state to be COMPLETE (1), found: %v", finalResponse.Response.State)
+			}
+		} else {
+			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.ResponseType)
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -102,9 +106,13 @@ func TestResponseSenderError(t *testing.T) {
 	finalMessage := tp.Messages[len(tp.Messages)-1]
 	tp.messagesMutex.Unlock()
 
-	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != ResponderState_ERROR {
-			t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.State)
+	if queryResponse, ok := finalMessage.V.(*QueryResponse); ok {
+		if finalResponse, ok := queryResponse.ResponseType.(*QueryResponse_Response); ok {
+			if finalResponse.Response.State != ResponderState_ERROR {
+				t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.Response.State)
+			}
+		} else {
+			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.ResponseType)
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -143,9 +151,13 @@ func TestResponseSenderCancel(t *testing.T) {
 	finalMessage := tp.Messages[len(tp.Messages)-1]
 	tp.messagesMutex.Unlock()
 
-	if finalResponse, ok := finalMessage.V.(*Response); ok {
-		if finalResponse.State != ResponderState_CANCELLED {
-			t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.State)
+	if queryResponse, ok := finalMessage.V.(*QueryResponse); ok {
+		if finalResponse, ok := queryResponse.ResponseType.(*QueryResponse_Response); ok {
+			if finalResponse.Response.State != ResponderState_CANCELLED {
+				t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.Response.State)
+			}
+		} else {
+			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.ResponseType)
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -613,7 +625,6 @@ func TestStart(t *testing.T) {
 	errs := make(chan *QueryError, 128)
 
 	err := rp.Start(context.Background(), &conn, items, errs)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -622,8 +633,17 @@ func TestStart(t *testing.T) {
 		t.Errorf("expected 1 message to be sent, got %v", len(conn.Messages))
 	}
 
+	response := QueryResponse{
+		ResponseType: &QueryResponse_NewItem{
+			NewItem: &item,
+		},
+	}
+
 	// Test that the handlers work
-	conn.Publish(context.Background(), query.ItemSubject, &item)
+	err = conn.Publish(context.Background(), query.Subject(), &response)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	receivedItem := <-items
 
@@ -697,12 +717,10 @@ func TestExecute(t *testing.T) {
 			RecursionBehaviour: &Query_RecursionBehaviour{
 				LinkDepth: 0,
 			},
-			Scope:           "global",
-			IgnoreCache:     false,
-			UUID:            u[:],
-			Timeout:         durationpb.New(10 * time.Second),
-			ItemSubject:     "items",
-			ResponseSubject: "responses",
+			Scope:       "global",
+			IgnoreCache: false,
+			UUID:        u[:],
+			Timeout:     durationpb.New(10 * time.Second),
 		}
 
 		rp := NewQueryProgress(&q)
@@ -724,12 +742,10 @@ func TestExecute(t *testing.T) {
 			RecursionBehaviour: &Query_RecursionBehaviour{
 				LinkDepth: 0,
 			},
-			Scope:           "global",
-			IgnoreCache:     false,
-			UUID:            u[:],
-			Timeout:         durationpb.New(10 * time.Second),
-			ItemSubject:     "items1",
-			ResponseSubject: "responses1",
+			Scope:       "global",
+			IgnoreCache: false,
+			UUID:        u[:],
+			Timeout:     durationpb.New(10 * time.Second),
 		}
 
 		rp := NewQueryProgress(&q)
@@ -740,30 +756,46 @@ func TestExecute(t *testing.T) {
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.ResponseSubject, &Response{
-				Responder: "test",
-				State:     ResponderState_WORKING,
-				UUID:      q.UUID,
-				NextUpdateIn: &durationpb.Duration{
-					Seconds: 10,
-					Nanos:   0,
+			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+				ResponseType: &QueryResponse_Response{
+					Response: &Response{
+						Responder: "test",
+						State:     ResponderState_WORKING,
+						UUID:      q.UUID,
+						NextUpdateIn: &durationpb.Duration{
+							Seconds: 10,
+							Nanos:   0,
+						},
+					},
 				},
 			})
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.ItemSubject, &item)
+			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+				ResponseType: &QueryResponse_NewItem{
+					NewItem: &item,
+				},
+			})
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.ItemSubject, &item)
+			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+				ResponseType: &QueryResponse_NewItem{
+					NewItem: &item,
+				},
+			})
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.ResponseSubject, &Response{
-				Responder: "test",
-				State:     ResponderState_COMPLETE,
-				UUID:      q.UUID,
+			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+				ResponseType: &QueryResponse_Response{
+					Response: &Response{
+						Responder: "test",
+						State:     ResponderState_COMPLETE,
+						UUID:      q.UUID,
+					},
+				},
 			})
 		}()
 
@@ -814,7 +846,7 @@ func TestRealNats(t *testing.T) {
 
 			time.Sleep(delay)
 
-			enc.Publish(ctx, q.ResponseSubject, &Response{
+			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 				Responder: "test",
 				State:     ResponderState_WORKING,
 				UUID:      q.UUID,
@@ -822,19 +854,19 @@ func TestRealNats(t *testing.T) {
 					Seconds: 10,
 					Nanos:   0,
 				},
-			})
+			}}})
 
 			time.Sleep(delay)
 
-			enc.Publish(ctx, q.ItemSubject, &item)
+			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: &item}})
 
-			enc.Publish(ctx, q.ItemSubject, &item)
+			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: &item}})
 
-			enc.Publish(ctx, q.ResponseSubject, &Response{
+			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 				Responder: "test",
 				State:     ResponderState_COMPLETE,
 				UUID:      q.UUID,
-			})
+			}}})
 		}))
 		ready <- true
 	}()
@@ -878,7 +910,7 @@ func TestFastFinisher(t *testing.T) {
 		}
 
 		// Respond immediately saying we're started
-		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 			Responder: "fast",
 			State:     ResponderState_WORKING,
 			UUID:      q.UUID,
@@ -886,7 +918,7 @@ func TestFastFinisher(t *testing.T) {
 				Seconds: 1,
 				Nanos:   0,
 			},
-		})
+		}}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -894,17 +926,17 @@ func TestFastFinisher(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		// Send an item
-		err = conn.Publish(context.Background(), q.ItemSubject, newItem())
+		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: newItem()}})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Send a complete message
-		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 			Responder: "fast",
 			State:     ResponderState_COMPLETE,
 			UUID:      q.UUID,
-		})
+		}}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -924,7 +956,7 @@ func TestFastFinisher(t *testing.T) {
 		// Wait 250ms before starting
 		time.Sleep(250 * time.Millisecond)
 
-		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 			Responder: "slow",
 			State:     ResponderState_WORKING,
 			UUID:      q.UUID,
@@ -932,7 +964,7 @@ func TestFastFinisher(t *testing.T) {
 				Seconds: 1,
 				Nanos:   0,
 			},
-		})
+		}}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -940,17 +972,17 @@ func TestFastFinisher(t *testing.T) {
 		// Send an item
 		item := newItem()
 		item.Attributes.Set("name", "baz")
-		err = conn.Publish(context.Background(), q.ItemSubject, newItem())
+		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: item}})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// Send a complete message
-		err = conn.Publish(context.Background(), q.ResponseSubject, &Response{
+		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 			Responder: "slow",
 			State:     ResponderState_COMPLETE,
 			UUID:      q.UUID,
-		})
+		}}})
 		if err != nil {
 			t.Fatal(err)
 		}
