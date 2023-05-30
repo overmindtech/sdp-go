@@ -131,3 +131,11 @@ func (ob *OnboardingProperties) GetChangeUUIDParsed() *uuid.UUID {
 	}
 	return &u
 }
+
+func (ci *UpdateChangingItemsRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(ci.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
