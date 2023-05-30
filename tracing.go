@@ -2,11 +2,15 @@ package sdp
 
 import (
 	"context"
+	"fmt"
+	"runtime/debug"
 
 	"github.com/bufbuild/connect-go"
 	"github.com/getsentry/sentry-go"
 	"github.com/nats-io/nats.go"
+	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.opentelemetry.io/otel/trace"
@@ -83,4 +87,26 @@ func NewSentryInterceptor() connect.UnaryInterceptorFunc {
 		})
 	}
 	return connect.UnaryInterceptorFunc(interceptor)
+}
+
+// LogRecoverToReturn Recovers from a panic, logs and forwards it sentry and otel, then returns
+// Does nothing when there is no panic.
+func LogRecoverToReturn(ctx *context.Context, loc string) {
+	err := recover()
+	if err == nil {
+		return
+	}
+
+	stack := string(debug.Stack())
+
+	sentry.CurrentHub().Recover(err)
+
+	msg := fmt.Sprintf("unhandled panic in %v: %v", loc, err)
+	log.WithFields(log.Fields{"loc": loc, "stack": stack}).Error(msg)
+
+	if ctx != nil {
+		span := trace.SpanFromContext(*ctx)
+		span.SetAttributes(attribute.String("om.panic.loc", loc))
+		span.SetAttributes(attribute.String("om.panic.stack", stack))
+	}
 }
