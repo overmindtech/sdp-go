@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
@@ -84,7 +83,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	// Start a goroutine to send further responses
 	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
-		defer sentry.Recover()
+		defer LogRecoverToReturn(&ctx, "ResponseSender ticker")
 		// confirm closure on exit
 		defer rs.monitorRunning.Done()
 
@@ -456,7 +455,7 @@ func (qp *QueryProgress) markStarted() {
 
 	if qp.StartTimeout != 0 {
 		go func(ctx context.Context) {
-			defer sentry.Recover()
+			defer LogRecoverToReturn(&ctx, "QueryProgress startTimeout")
 			startTimeout := time.NewTimer(qp.StartTimeout)
 			select {
 			case <-startTimeout.C:
@@ -852,10 +851,10 @@ func (qp *QueryProgress) allDone() bool {
 // stalled, and a context. The context is used to allow cancellation of the
 // stall monitor from another thread in the case that another message is
 // received.
-func stallMonitor(context context.Context, timeout time.Duration, responder *Responder, qp *QueryProgress) {
-	defer sentry.Recover()
+func stallMonitor(ctx context.Context, timeout time.Duration, responder *Responder, qp *QueryProgress) {
+	defer LogRecoverToReturn(&ctx, "stallMonitor")
 	select {
-	case <-context.Done():
+	case <-ctx.Done():
 		// If the context is cancelled then we don't want to do anything
 		return
 	case <-time.After(timeout):
