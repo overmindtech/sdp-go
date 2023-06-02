@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
-	github.com/bufbuild/connect-go v1.7.0
+	github.com/bufbuild/connect-go v1.8.0
 	github.com/getsentry/sentry-go v0.21.0
 	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats.go v1.26.0
