@@ -75,18 +75,43 @@ func InjectOtelTraceContext(ctx context.Context, msg *nats.Msg) {
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(msg.Header))
 }
 
+type sentryInterceptor struct{}
+
 // NewSentryInterceptor pass this to connect handlers as `connect.WithInterceptors(NewSentryInterceptor())` to recover from panics in the handler and report them to sentry. Otherwise panics get recovered by connect-go itself and do not get reported to sentry.
-func NewSentryInterceptor() connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return connect.UnaryFunc(func(
-			ctx context.Context,
-			req connect.AnyRequest,
-		) (connect.AnyResponse, error) {
-			defer sentry.Recover()
-			return next(ctx, req)
-		})
-	}
-	return connect.UnaryInterceptorFunc(interceptor)
+func NewSentryInterceptor() connect.Interceptor {
+	return &sentryInterceptor{}
+}
+
+func (i *sentryInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
+	// Same as previous UnaryInterceptorFunc.
+	return connect.UnaryFunc(func(
+		ctx context.Context,
+		req connect.AnyRequest,
+	) (connect.AnyResponse, error) {
+		defer sentry.Recover()
+		return next(ctx, req)
+	})
+}
+
+func (*sentryInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return connect.StreamingClientFunc(func(
+		ctx context.Context,
+		spec connect.Spec,
+	) connect.StreamingClientConn {
+		defer sentry.Recover()
+		conn := next(ctx, spec)
+		return conn
+	})
+}
+
+func (i *sentryInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return connect.StreamingHandlerFunc(func(
+		ctx context.Context,
+		conn connect.StreamingHandlerConn,
+	) error {
+		defer sentry.Recover()
+		return next(ctx, conn)
+	})
 }
 
 // LogRecoverToReturn Recovers from a panic, logs and forwards it sentry and otel, then returns
