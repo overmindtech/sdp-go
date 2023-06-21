@@ -48,11 +48,14 @@ func recordMessage(ctx context.Context, name, subj, typ, msg string) {
 		"subj":     subj,
 		"msg":      msg,
 	}).Trace(name)
-	span := trace.SpanFromContext(ctx)
-	span.AddEvent(name, trace.WithAttributes(
-		attribute.String("om.sdp.subject", subj),
-		attribute.String("om.sdp.message", msg),
-	))
+	// avoid spamming honeycomb
+	if log.GetLevel() == log.TraceLevel {
+		span := trace.SpanFromContext(ctx)
+		span.AddEvent(name, trace.WithAttributes(
+			attribute.String("om.sdp.subject", subj),
+			attribute.String("om.sdp.message", msg),
+		))
+	}
 }
 
 func (ec *EncodedConnectionImpl) Publish(ctx context.Context, subj string, m proto.Message) error {
