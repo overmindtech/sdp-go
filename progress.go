@@ -413,7 +413,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 		}
 	}
 
-	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("QueryProgress", func(ctx context.Context, qr *QueryResponse) {
+	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("", func(ctx context.Context, qr *QueryResponse) {
 		log.WithContext(ctx).WithFields(log.Fields{
 			"response": qr,
 		}).Info("Received response")

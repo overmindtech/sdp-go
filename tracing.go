@@ -41,8 +41,12 @@ func NewOtelExtractingHandler(spanName string, h CtxMsgHandler, t trace.Tracer, 
 
 		ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(msg.Header))
 
-		ctx, span := t.Start(ctx, spanName, spanOpts...)
-		defer span.End()
+		// don't start a span when we have no spanName
+		if spanName != "" {
+			var span trace.Span
+			ctx, span = t.Start(ctx, spanName, spanOpts...)
+			defer span.End()
+		}
 
 		h(ctx, msg)
 	}
@@ -60,8 +64,12 @@ func NewAsyncOtelExtractingHandler(spanName string, h CtxMsgHandler, t trace.Tra
 			ctx := context.Background()
 			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(msg.Header))
 
-			ctx, span := t.Start(ctx, spanName, spanOpts...)
-			defer span.End()
+			// don't start a span when we have no spanName
+			if spanName != "" {
+				var span trace.Span
+				ctx, span = t.Start(ctx, spanName, spanOpts...)
+				defer span.End()
+			}
 
 			h(ctx, msg)
 		}()
