@@ -64,6 +64,9 @@ const (
 	// ChangesServiceDeleteChangeProcedure is the fully-qualified name of the ChangesService's
 	// DeleteChange RPC.
 	ChangesServiceDeleteChangeProcedure = "/changes.ChangesService/DeleteChange"
+	// ChangesServiceRefreshStateProcedure is the fully-qualified name of the ChangesService's
+	// RefreshState RPC.
+	ChangesServiceRefreshStateProcedure = "/changes.ChangesService/RefreshState"
 	// ChangesServiceCalculateBlastRadiusProcedure is the fully-qualified name of the ChangesService's
 	// CalculateBlastRadius RPC.
 	ChangesServiceCalculateBlastRadiusProcedure = "/changes.ChangesService/CalculateBlastRadius"
@@ -141,6 +144,9 @@ type ChangesServiceClient interface {
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
 	DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error)
+	// Ask the gateway to refresh all internal caches and status slots
+	// The RPC will return immediately doing all processing in the background
+	RefreshState(context.Context, *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error)
 	// Calculates the blast radius of a change using the
 	// `changingItemsBookmarkUUID` as the starting point. If the
 	// `changingItemsBookmarkUUID` is blank, this will return an error.
@@ -261,6 +267,11 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceDeleteChangeProcedure,
 			opts...,
 		),
+		refreshState: connect_go.NewClient[sdp_go.RefreshStateRequest, sdp_go.RefreshStateResponse](
+			httpClient,
+			baseURL+ChangesServiceRefreshStateProcedure,
+			opts...,
+		),
 		calculateBlastRadius: connect_go.NewClient[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse](
 			httpClient,
 			baseURL+ChangesServiceCalculateBlastRadiusProcedure,
@@ -362,6 +373,7 @@ type changesServiceClient struct {
 	getChange                *connect_go.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
 	updateChange             *connect_go.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
 	deleteChange             *connect_go.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
+	refreshState             *connect_go.Client[sdp_go.RefreshStateRequest, sdp_go.RefreshStateResponse]
 	calculateBlastRadius     *connect_go.Client[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse]
 	startChange              *connect_go.Client[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse]
 	endChange                *connect_go.Client[sdp_go.EndChangeRequest, sdp_go.EndChangeResponse]
@@ -434,6 +446,11 @@ func (c *changesServiceClient) UpdateChange(ctx context.Context, req *connect_go
 // DeleteChange calls changes.ChangesService.DeleteChange.
 func (c *changesServiceClient) DeleteChange(ctx context.Context, req *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error) {
 	return c.deleteChange.CallUnary(ctx, req)
+}
+
+// RefreshState calls changes.ChangesService.RefreshState.
+func (c *changesServiceClient) RefreshState(ctx context.Context, req *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error) {
+	return c.refreshState.CallUnary(ctx, req)
 }
 
 // CalculateBlastRadius calls changes.ChangesService.CalculateBlastRadius.
@@ -546,6 +563,9 @@ type ChangesServiceHandler interface {
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
 	DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error)
+	// Ask the gateway to refresh all internal caches and status slots
+	// The RPC will return immediately doing all processing in the background
+	RefreshState(context.Context, *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error)
 	// Calculates the blast radius of a change using the
 	// `changingItemsBookmarkUUID` as the starting point. If the
 	// `changingItemsBookmarkUUID` is blank, this will return an error.
@@ -607,148 +627,215 @@ type ChangesServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ChangesServiceListAppsProcedure, connect_go.NewUnaryHandler(
+	changesServiceListAppsHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListAppsProcedure,
 		svc.ListApps,
 		opts...,
-	))
-	mux.Handle(ChangesServiceCreateAppProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceCreateAppHandler := connect_go.NewUnaryHandler(
 		ChangesServiceCreateAppProcedure,
 		svc.CreateApp,
 		opts...,
-	))
-	mux.Handle(ChangesServiceCreateSimpleAppProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceCreateSimpleAppHandler := connect_go.NewUnaryHandler(
 		ChangesServiceCreateSimpleAppProcedure,
 		svc.CreateSimpleApp,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetAppProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetAppHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetAppProcedure,
 		svc.GetApp,
 		opts...,
-	))
-	mux.Handle(ChangesServiceUpdateAppProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceUpdateAppHandler := connect_go.NewUnaryHandler(
 		ChangesServiceUpdateAppProcedure,
 		svc.UpdateApp,
 		opts...,
-	))
-	mux.Handle(ChangesServiceDeleteAppProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceDeleteAppHandler := connect_go.NewUnaryHandler(
 		ChangesServiceDeleteAppProcedure,
 		svc.DeleteApp,
 		opts...,
-	))
-	mux.Handle(ChangesServiceListChangesProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceListChangesHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListChangesProcedure,
 		svc.ListChanges,
 		opts...,
-	))
-	mux.Handle(ChangesServiceCreateChangeProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceCreateChangeHandler := connect_go.NewUnaryHandler(
 		ChangesServiceCreateChangeProcedure,
 		svc.CreateChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetChangeProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetChangeHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetChangeProcedure,
 		svc.GetChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceUpdateChangeProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceUpdateChangeHandler := connect_go.NewUnaryHandler(
 		ChangesServiceUpdateChangeProcedure,
 		svc.UpdateChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceDeleteChangeProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceDeleteChangeHandler := connect_go.NewUnaryHandler(
 		ChangesServiceDeleteChangeProcedure,
 		svc.DeleteChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceCalculateBlastRadiusProcedure, connect_go.NewServerStreamHandler(
+	)
+	changesServiceRefreshStateHandler := connect_go.NewUnaryHandler(
+		ChangesServiceRefreshStateProcedure,
+		svc.RefreshState,
+		opts...,
+	)
+	changesServiceCalculateBlastRadiusHandler := connect_go.NewServerStreamHandler(
 		ChangesServiceCalculateBlastRadiusProcedure,
 		svc.CalculateBlastRadius,
 		opts...,
-	))
-	mux.Handle(ChangesServiceStartChangeProcedure, connect_go.NewServerStreamHandler(
+	)
+	changesServiceStartChangeHandler := connect_go.NewServerStreamHandler(
 		ChangesServiceStartChangeProcedure,
 		svc.StartChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceEndChangeProcedure, connect_go.NewServerStreamHandler(
+	)
+	changesServiceEndChangeHandler := connect_go.NewServerStreamHandler(
 		ChangesServiceEndChangeProcedure,
 		svc.EndChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceSimulateChangeProcedure, connect_go.NewServerStreamHandler(
+	)
+	changesServiceSimulateChangeHandler := connect_go.NewServerStreamHandler(
 		ChangesServiceSimulateChangeProcedure,
 		svc.SimulateChange,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetChangesHomeProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetChangesHomeHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetChangesHomeProcedure,
 		svc.GetChangesHome,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetOnboardingProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetOnboardingHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetOnboardingProcedure,
 		svc.GetOnboarding,
 		opts...,
-	))
-	mux.Handle(ChangesServiceUpdateOnboardingProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceUpdateOnboardingHandler := connect_go.NewUnaryHandler(
 		ChangesServiceUpdateOnboardingProcedure,
 		svc.UpdateOnboarding,
 		opts...,
-	))
-	mux.Handle(ChangesServiceListHomeAppsProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceListHomeAppsHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListHomeAppsProcedure,
 		svc.ListHomeApps,
 		opts...,
-	))
-	mux.Handle(ChangesServiceListHomeChangesProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceListHomeChangesHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListHomeChangesProcedure,
 		svc.ListHomeChanges,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetAppSummaryProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetAppSummaryHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetAppSummaryProcedure,
 		svc.GetAppSummary,
 		opts...,
-	))
-	mux.Handle(ChangesServiceListAppChangesProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceListAppChangesHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListAppChangesProcedure,
 		svc.ListAppChanges,
 		opts...,
-	))
-	mux.Handle(ChangesServiceListAppChangesSummaryProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceListAppChangesSummaryHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListAppChangesSummaryProcedure,
 		svc.ListAppChangesSummary,
 		opts...,
-	))
-	mux.Handle(ChangesServiceUpdateChangingItemsProcedure, connect_go.NewServerStreamHandler(
+	)
+	changesServiceUpdateChangingItemsHandler := connect_go.NewServerStreamHandler(
 		ChangesServiceUpdateChangingItemsProcedure,
 		svc.UpdateChangingItems,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetAffectedAppsProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetAffectedAppsHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetAffectedAppsProcedure,
 		svc.GetAffectedApps,
 		opts...,
-	))
-	mux.Handle(ChangesServiceListChangingItemsSummaryProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceListChangingItemsSummaryHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListChangingItemsSummaryProcedure,
 		svc.ListChangingItemsSummary,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetChangeAuditLogProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetChangeAuditLogHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetChangeAuditLogProcedure,
 		svc.GetChangeAuditLog,
 		opts...,
-	))
-	mux.Handle(ChangesServiceGetDiffProcedure, connect_go.NewUnaryHandler(
+	)
+	changesServiceGetDiffHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetDiffProcedure,
 		svc.GetDiff,
 		opts...,
-	))
-	return "/changes.ChangesService/", mux
+	)
+	return "/changes.ChangesService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ChangesServiceListAppsProcedure:
+			changesServiceListAppsHandler.ServeHTTP(w, r)
+		case ChangesServiceCreateAppProcedure:
+			changesServiceCreateAppHandler.ServeHTTP(w, r)
+		case ChangesServiceCreateSimpleAppProcedure:
+			changesServiceCreateSimpleAppHandler.ServeHTTP(w, r)
+		case ChangesServiceGetAppProcedure:
+			changesServiceGetAppHandler.ServeHTTP(w, r)
+		case ChangesServiceUpdateAppProcedure:
+			changesServiceUpdateAppHandler.ServeHTTP(w, r)
+		case ChangesServiceDeleteAppProcedure:
+			changesServiceDeleteAppHandler.ServeHTTP(w, r)
+		case ChangesServiceListChangesProcedure:
+			changesServiceListChangesHandler.ServeHTTP(w, r)
+		case ChangesServiceCreateChangeProcedure:
+			changesServiceCreateChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceGetChangeProcedure:
+			changesServiceGetChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceUpdateChangeProcedure:
+			changesServiceUpdateChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceDeleteChangeProcedure:
+			changesServiceDeleteChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceRefreshStateProcedure:
+			changesServiceRefreshStateHandler.ServeHTTP(w, r)
+		case ChangesServiceCalculateBlastRadiusProcedure:
+			changesServiceCalculateBlastRadiusHandler.ServeHTTP(w, r)
+		case ChangesServiceStartChangeProcedure:
+			changesServiceStartChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceEndChangeProcedure:
+			changesServiceEndChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceSimulateChangeProcedure:
+			changesServiceSimulateChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceGetChangesHomeProcedure:
+			changesServiceGetChangesHomeHandler.ServeHTTP(w, r)
+		case ChangesServiceGetOnboardingProcedure:
+			changesServiceGetOnboardingHandler.ServeHTTP(w, r)
+		case ChangesServiceUpdateOnboardingProcedure:
+			changesServiceUpdateOnboardingHandler.ServeHTTP(w, r)
+		case ChangesServiceListHomeAppsProcedure:
+			changesServiceListHomeAppsHandler.ServeHTTP(w, r)
+		case ChangesServiceListHomeChangesProcedure:
+			changesServiceListHomeChangesHandler.ServeHTTP(w, r)
+		case ChangesServiceGetAppSummaryProcedure:
+			changesServiceGetAppSummaryHandler.ServeHTTP(w, r)
+		case ChangesServiceListAppChangesProcedure:
+			changesServiceListAppChangesHandler.ServeHTTP(w, r)
+		case ChangesServiceListAppChangesSummaryProcedure:
+			changesServiceListAppChangesSummaryHandler.ServeHTTP(w, r)
+		case ChangesServiceUpdateChangingItemsProcedure:
+			changesServiceUpdateChangingItemsHandler.ServeHTTP(w, r)
+		case ChangesServiceGetAffectedAppsProcedure:
+			changesServiceGetAffectedAppsHandler.ServeHTTP(w, r)
+		case ChangesServiceListChangingItemsSummaryProcedure:
+			changesServiceListChangingItemsSummaryHandler.ServeHTTP(w, r)
+		case ChangesServiceGetChangeAuditLogProcedure:
+			changesServiceGetChangeAuditLogHandler.ServeHTTP(w, r)
+		case ChangesServiceGetDiffProcedure:
+			changesServiceGetDiffHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedChangesServiceHandler returns CodeUnimplemented from all methods.
@@ -796,6 +883,10 @@ func (UnimplementedChangesServiceHandler) UpdateChange(context.Context, *connect
 
 func (UnimplementedChangesServiceHandler) DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.DeleteChange is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) RefreshState(context.Context, *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.RefreshState is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) CalculateBlastRadius(context.Context, *connect_go.Request[sdp_go.CalculateBlastRadiusRequest], *connect_go.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error {

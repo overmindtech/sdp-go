@@ -294,63 +294,89 @@ type AdminServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(AdminServiceListAccountsProcedure, connect_go.NewUnaryHandler(
+	adminServiceListAccountsHandler := connect_go.NewUnaryHandler(
 		AdminServiceListAccountsProcedure,
 		svc.ListAccounts,
 		opts...,
-	))
-	mux.Handle(AdminServiceCreateAccountProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceCreateAccountHandler := connect_go.NewUnaryHandler(
 		AdminServiceCreateAccountProcedure,
 		svc.CreateAccount,
 		opts...,
-	))
-	mux.Handle(AdminServiceGetAccountProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceGetAccountHandler := connect_go.NewUnaryHandler(
 		AdminServiceGetAccountProcedure,
 		svc.GetAccount,
 		opts...,
-	))
-	mux.Handle(AdminServiceDeleteAccountProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceDeleteAccountHandler := connect_go.NewUnaryHandler(
 		AdminServiceDeleteAccountProcedure,
 		svc.DeleteAccount,
 		opts...,
-	))
-	mux.Handle(AdminServiceListSourcesProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceListSourcesHandler := connect_go.NewUnaryHandler(
 		AdminServiceListSourcesProcedure,
 		svc.ListSources,
 		opts...,
-	))
-	mux.Handle(AdminServiceCreateSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceCreateSourceHandler := connect_go.NewUnaryHandler(
 		AdminServiceCreateSourceProcedure,
 		svc.CreateSource,
 		opts...,
-	))
-	mux.Handle(AdminServiceGetSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceGetSourceHandler := connect_go.NewUnaryHandler(
 		AdminServiceGetSourceProcedure,
 		svc.GetSource,
 		opts...,
-	))
-	mux.Handle(AdminServiceUpdateSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceUpdateSourceHandler := connect_go.NewUnaryHandler(
 		AdminServiceUpdateSourceProcedure,
 		svc.UpdateSource,
 		opts...,
-	))
-	mux.Handle(AdminServiceDeleteSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceDeleteSourceHandler := connect_go.NewUnaryHandler(
 		AdminServiceDeleteSourceProcedure,
 		svc.DeleteSource,
 		opts...,
-	))
-	mux.Handle(AdminServiceKeepaliveSourcesProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceKeepaliveSourcesHandler := connect_go.NewUnaryHandler(
 		AdminServiceKeepaliveSourcesProcedure,
 		svc.KeepaliveSources,
 		opts...,
-	))
-	mux.Handle(AdminServiceCreateTokenProcedure, connect_go.NewUnaryHandler(
+	)
+	adminServiceCreateTokenHandler := connect_go.NewUnaryHandler(
 		AdminServiceCreateTokenProcedure,
 		svc.CreateToken,
 		opts...,
-	))
-	return "/account.AdminService/", mux
+	)
+	return "/account.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case AdminServiceListAccountsProcedure:
+			adminServiceListAccountsHandler.ServeHTTP(w, r)
+		case AdminServiceCreateAccountProcedure:
+			adminServiceCreateAccountHandler.ServeHTTP(w, r)
+		case AdminServiceGetAccountProcedure:
+			adminServiceGetAccountHandler.ServeHTTP(w, r)
+		case AdminServiceDeleteAccountProcedure:
+			adminServiceDeleteAccountHandler.ServeHTTP(w, r)
+		case AdminServiceListSourcesProcedure:
+			adminServiceListSourcesHandler.ServeHTTP(w, r)
+		case AdminServiceCreateSourceProcedure:
+			adminServiceCreateSourceHandler.ServeHTTP(w, r)
+		case AdminServiceGetSourceProcedure:
+			adminServiceGetSourceHandler.ServeHTTP(w, r)
+		case AdminServiceUpdateSourceProcedure:
+			adminServiceUpdateSourceHandler.ServeHTTP(w, r)
+		case AdminServiceDeleteSourceProcedure:
+			adminServiceDeleteSourceHandler.ServeHTTP(w, r)
+		case AdminServiceKeepaliveSourcesProcedure:
+			adminServiceKeepaliveSourcesHandler.ServeHTTP(w, r)
+		case AdminServiceCreateTokenProcedure:
+			adminServiceCreateTokenHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedAdminServiceHandler returns CodeUnimplemented from all methods.
@@ -557,48 +583,68 @@ type ManagementServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ManagementServiceGetAccountProcedure, connect_go.NewUnaryHandler(
+	managementServiceGetAccountHandler := connect_go.NewUnaryHandler(
 		ManagementServiceGetAccountProcedure,
 		svc.GetAccount,
 		opts...,
-	))
-	mux.Handle(ManagementServiceListSourcesProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceListSourcesHandler := connect_go.NewUnaryHandler(
 		ManagementServiceListSourcesProcedure,
 		svc.ListSources,
 		opts...,
-	))
-	mux.Handle(ManagementServiceCreateSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceCreateSourceHandler := connect_go.NewUnaryHandler(
 		ManagementServiceCreateSourceProcedure,
 		svc.CreateSource,
 		opts...,
-	))
-	mux.Handle(ManagementServiceGetSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceGetSourceHandler := connect_go.NewUnaryHandler(
 		ManagementServiceGetSourceProcedure,
 		svc.GetSource,
 		opts...,
-	))
-	mux.Handle(ManagementServiceUpdateSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceUpdateSourceHandler := connect_go.NewUnaryHandler(
 		ManagementServiceUpdateSourceProcedure,
 		svc.UpdateSource,
 		opts...,
-	))
-	mux.Handle(ManagementServiceDeleteSourceProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceDeleteSourceHandler := connect_go.NewUnaryHandler(
 		ManagementServiceDeleteSourceProcedure,
 		svc.DeleteSource,
 		opts...,
-	))
-	mux.Handle(ManagementServiceKeepaliveSourcesProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceKeepaliveSourcesHandler := connect_go.NewUnaryHandler(
 		ManagementServiceKeepaliveSourcesProcedure,
 		svc.KeepaliveSources,
 		opts...,
-	))
-	mux.Handle(ManagementServiceCreateTokenProcedure, connect_go.NewUnaryHandler(
+	)
+	managementServiceCreateTokenHandler := connect_go.NewUnaryHandler(
 		ManagementServiceCreateTokenProcedure,
 		svc.CreateToken,
 		opts...,
-	))
-	return "/account.ManagementService/", mux
+	)
+	return "/account.ManagementService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ManagementServiceGetAccountProcedure:
+			managementServiceGetAccountHandler.ServeHTTP(w, r)
+		case ManagementServiceListSourcesProcedure:
+			managementServiceListSourcesHandler.ServeHTTP(w, r)
+		case ManagementServiceCreateSourceProcedure:
+			managementServiceCreateSourceHandler.ServeHTTP(w, r)
+		case ManagementServiceGetSourceProcedure:
+			managementServiceGetSourceHandler.ServeHTTP(w, r)
+		case ManagementServiceUpdateSourceProcedure:
+			managementServiceUpdateSourceHandler.ServeHTTP(w, r)
+		case ManagementServiceDeleteSourceProcedure:
+			managementServiceDeleteSourceHandler.ServeHTTP(w, r)
+		case ManagementServiceKeepaliveSourcesProcedure:
+			managementServiceKeepaliveSourcesHandler.ServeHTTP(w, r)
+		case ManagementServiceCreateTokenProcedure:
+			managementServiceCreateTokenHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedManagementServiceHandler returns CodeUnimplemented from all methods.

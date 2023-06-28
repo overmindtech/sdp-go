@@ -155,33 +155,47 @@ type ApiKeyServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ApiKeyServiceCreateAPIKeyProcedure, connect_go.NewServerStreamHandler(
+	apiKeyServiceCreateAPIKeyHandler := connect_go.NewServerStreamHandler(
 		ApiKeyServiceCreateAPIKeyProcedure,
 		svc.CreateAPIKey,
 		opts...,
-	))
-	mux.Handle(ApiKeyServiceGetAPIKeyProcedure, connect_go.NewUnaryHandler(
+	)
+	apiKeyServiceGetAPIKeyHandler := connect_go.NewUnaryHandler(
 		ApiKeyServiceGetAPIKeyProcedure,
 		svc.GetAPIKey,
 		opts...,
-	))
-	mux.Handle(ApiKeyServiceListAPIKeysProcedure, connect_go.NewUnaryHandler(
+	)
+	apiKeyServiceListAPIKeysHandler := connect_go.NewUnaryHandler(
 		ApiKeyServiceListAPIKeysProcedure,
 		svc.ListAPIKeys,
 		opts...,
-	))
-	mux.Handle(ApiKeyServiceDeleteAPIKeyProcedure, connect_go.NewUnaryHandler(
+	)
+	apiKeyServiceDeleteAPIKeyHandler := connect_go.NewUnaryHandler(
 		ApiKeyServiceDeleteAPIKeyProcedure,
 		svc.DeleteAPIKey,
 		opts...,
-	))
-	mux.Handle(ApiKeyServiceExchangeKeyForTokenProcedure, connect_go.NewUnaryHandler(
+	)
+	apiKeyServiceExchangeKeyForTokenHandler := connect_go.NewUnaryHandler(
 		ApiKeyServiceExchangeKeyForTokenProcedure,
 		svc.ExchangeKeyForToken,
 		opts...,
-	))
-	return "/apikeys.ApiKeyService/", mux
+	)
+	return "/apikeys.ApiKeyService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ApiKeyServiceCreateAPIKeyProcedure:
+			apiKeyServiceCreateAPIKeyHandler.ServeHTTP(w, r)
+		case ApiKeyServiceGetAPIKeyProcedure:
+			apiKeyServiceGetAPIKeyHandler.ServeHTTP(w, r)
+		case ApiKeyServiceListAPIKeysProcedure:
+			apiKeyServiceListAPIKeysHandler.ServeHTTP(w, r)
+		case ApiKeyServiceDeleteAPIKeyProcedure:
+			apiKeyServiceDeleteAPIKeyHandler.ServeHTTP(w, r)
+		case ApiKeyServiceExchangeKeyForTokenProcedure:
+			apiKeyServiceExchangeKeyForTokenHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedApiKeyServiceHandler returns CodeUnimplemented from all methods.

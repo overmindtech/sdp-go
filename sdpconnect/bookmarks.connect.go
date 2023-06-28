@@ -164,38 +164,54 @@ type BookmarksServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewBookmarksServiceHandler(svc BookmarksServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(BookmarksServiceListBookmarksProcedure, connect_go.NewUnaryHandler(
+	bookmarksServiceListBookmarksHandler := connect_go.NewUnaryHandler(
 		BookmarksServiceListBookmarksProcedure,
 		svc.ListBookmarks,
 		opts...,
-	))
-	mux.Handle(BookmarksServiceCreateBookmarkProcedure, connect_go.NewUnaryHandler(
+	)
+	bookmarksServiceCreateBookmarkHandler := connect_go.NewUnaryHandler(
 		BookmarksServiceCreateBookmarkProcedure,
 		svc.CreateBookmark,
 		opts...,
-	))
-	mux.Handle(BookmarksServiceGetBookmarkProcedure, connect_go.NewUnaryHandler(
+	)
+	bookmarksServiceGetBookmarkHandler := connect_go.NewUnaryHandler(
 		BookmarksServiceGetBookmarkProcedure,
 		svc.GetBookmark,
 		opts...,
-	))
-	mux.Handle(BookmarksServiceUpdateBookmarkProcedure, connect_go.NewUnaryHandler(
+	)
+	bookmarksServiceUpdateBookmarkHandler := connect_go.NewUnaryHandler(
 		BookmarksServiceUpdateBookmarkProcedure,
 		svc.UpdateBookmark,
 		opts...,
-	))
-	mux.Handle(BookmarksServiceDeleteBookmarkProcedure, connect_go.NewUnaryHandler(
+	)
+	bookmarksServiceDeleteBookmarkHandler := connect_go.NewUnaryHandler(
 		BookmarksServiceDeleteBookmarkProcedure,
 		svc.DeleteBookmark,
 		opts...,
-	))
-	mux.Handle(BookmarksServiceGetAffectedBookmarksProcedure, connect_go.NewUnaryHandler(
+	)
+	bookmarksServiceGetAffectedBookmarksHandler := connect_go.NewUnaryHandler(
 		BookmarksServiceGetAffectedBookmarksProcedure,
 		svc.GetAffectedBookmarks,
 		opts...,
-	))
-	return "/bookmarks.BookmarksService/", mux
+	)
+	return "/bookmarks.BookmarksService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case BookmarksServiceListBookmarksProcedure:
+			bookmarksServiceListBookmarksHandler.ServeHTTP(w, r)
+		case BookmarksServiceCreateBookmarkProcedure:
+			bookmarksServiceCreateBookmarkHandler.ServeHTTP(w, r)
+		case BookmarksServiceGetBookmarkProcedure:
+			bookmarksServiceGetBookmarkHandler.ServeHTTP(w, r)
+		case BookmarksServiceUpdateBookmarkProcedure:
+			bookmarksServiceUpdateBookmarkHandler.ServeHTTP(w, r)
+		case BookmarksServiceDeleteBookmarkProcedure:
+			bookmarksServiceDeleteBookmarkHandler.ServeHTTP(w, r)
+		case BookmarksServiceGetAffectedBookmarksProcedure:
+			bookmarksServiceGetAffectedBookmarksHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedBookmarksServiceHandler returns CodeUnimplemented from all methods.

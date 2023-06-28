@@ -146,33 +146,47 @@ type SnapshotsServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(SnapshotsServiceListSnapshotsProcedure, connect_go.NewUnaryHandler(
+	snapshotsServiceListSnapshotsHandler := connect_go.NewUnaryHandler(
 		SnapshotsServiceListSnapshotsProcedure,
 		svc.ListSnapshots,
 		opts...,
-	))
-	mux.Handle(SnapshotsServiceCreateSnapshotProcedure, connect_go.NewUnaryHandler(
+	)
+	snapshotsServiceCreateSnapshotHandler := connect_go.NewUnaryHandler(
 		SnapshotsServiceCreateSnapshotProcedure,
 		svc.CreateSnapshot,
 		opts...,
-	))
-	mux.Handle(SnapshotsServiceGetSnapshotProcedure, connect_go.NewUnaryHandler(
+	)
+	snapshotsServiceGetSnapshotHandler := connect_go.NewUnaryHandler(
 		SnapshotsServiceGetSnapshotProcedure,
 		svc.GetSnapshot,
 		opts...,
-	))
-	mux.Handle(SnapshotsServiceUpdateSnapshotProcedure, connect_go.NewUnaryHandler(
+	)
+	snapshotsServiceUpdateSnapshotHandler := connect_go.NewUnaryHandler(
 		SnapshotsServiceUpdateSnapshotProcedure,
 		svc.UpdateSnapshot,
 		opts...,
-	))
-	mux.Handle(SnapshotsServiceDeleteSnapshotProcedure, connect_go.NewUnaryHandler(
+	)
+	snapshotsServiceDeleteSnapshotHandler := connect_go.NewUnaryHandler(
 		SnapshotsServiceDeleteSnapshotProcedure,
 		svc.DeleteSnapshot,
 		opts...,
-	))
-	return "/snapshots.SnapshotsService/", mux
+	)
+	return "/snapshots.SnapshotsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case SnapshotsServiceListSnapshotsProcedure:
+			snapshotsServiceListSnapshotsHandler.ServeHTTP(w, r)
+		case SnapshotsServiceCreateSnapshotProcedure:
+			snapshotsServiceCreateSnapshotHandler.ServeHTTP(w, r)
+		case SnapshotsServiceGetSnapshotProcedure:
+			snapshotsServiceGetSnapshotHandler.ServeHTTP(w, r)
+		case SnapshotsServiceUpdateSnapshotProcedure:
+			snapshotsServiceUpdateSnapshotHandler.ServeHTTP(w, r)
+		case SnapshotsServiceDeleteSnapshotProcedure:
+			snapshotsServiceDeleteSnapshotHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedSnapshotsServiceHandler returns CodeUnimplemented from all methods.
