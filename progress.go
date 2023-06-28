@@ -416,7 +416,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("", func(ctx context.Context, qr *QueryResponse) {
 		log.WithContext(ctx).WithFields(log.Fields{
 			"response": qr,
-		}).Info("Received response")
+		}).Trace("Received response")
 		switch qr.ResponseType.(type) {
 		case *QueryResponse_NewItem:
 			itemHandler(ctx, qr.GetNewItem())
