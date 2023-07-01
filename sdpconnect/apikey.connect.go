@@ -38,6 +38,9 @@ const (
 	ApiKeyServiceCreateAPIKeyProcedure = "/apikeys.ApiKeyService/CreateAPIKey"
 	// ApiKeyServiceGetAPIKeyProcedure is the fully-qualified name of the ApiKeyService's GetAPIKey RPC.
 	ApiKeyServiceGetAPIKeyProcedure = "/apikeys.ApiKeyService/GetAPIKey"
+	// ApiKeyServiceUpdateAPIKeyProcedure is the fully-qualified name of the ApiKeyService's
+	// UpdateAPIKey RPC.
+	ApiKeyServiceUpdateAPIKeyProcedure = "/apikeys.ApiKeyService/UpdateAPIKey"
 	// ApiKeyServiceListAPIKeysProcedure is the fully-qualified name of the ApiKeyService's ListAPIKeys
 	// RPC.
 	ApiKeyServiceListAPIKeysProcedure = "/apikeys.ApiKeyService/ListAPIKeys"
@@ -56,6 +59,7 @@ type ApiKeyServiceClient interface {
 	// allows Auth0 to actually generate an access token
 	CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.Response[sdp_go.CreateAPIKeyResponse], error)
 	GetAPIKey(context.Context, *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error)
+	UpdateAPIKey(context.Context, *connect_go.Request[sdp_go.UpdateAPIKeyRequest]) (*connect_go.Response[sdp_go.UpdateAPIKeyResponse], error)
 	ListAPIKeys(context.Context, *connect_go.Request[sdp_go.ListAPIKeysRequest]) (*connect_go.Response[sdp_go.ListAPIKeysResponse], error)
 	DeleteAPIKey(context.Context, *connect_go.Request[sdp_go.DeleteAPIKeyRequest]) (*connect_go.Response[sdp_go.DeleteAPIKeyResponse], error)
 	// Exchanges an Overmind API key for an Oauth access token. That token can
@@ -83,6 +87,11 @@ func NewApiKeyServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 			baseURL+ApiKeyServiceGetAPIKeyProcedure,
 			opts...,
 		),
+		updateAPIKey: connect_go.NewClient[sdp_go.UpdateAPIKeyRequest, sdp_go.UpdateAPIKeyResponse](
+			httpClient,
+			baseURL+ApiKeyServiceUpdateAPIKeyProcedure,
+			opts...,
+		),
 		listAPIKeys: connect_go.NewClient[sdp_go.ListAPIKeysRequest, sdp_go.ListAPIKeysResponse](
 			httpClient,
 			baseURL+ApiKeyServiceListAPIKeysProcedure,
@@ -105,6 +114,7 @@ func NewApiKeyServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 type apiKeyServiceClient struct {
 	createAPIKey        *connect_go.Client[sdp_go.CreateAPIKeyRequest, sdp_go.CreateAPIKeyResponse]
 	getAPIKey           *connect_go.Client[sdp_go.GetAPIKeyRequest, sdp_go.GetAPIKeyResponse]
+	updateAPIKey        *connect_go.Client[sdp_go.UpdateAPIKeyRequest, sdp_go.UpdateAPIKeyResponse]
 	listAPIKeys         *connect_go.Client[sdp_go.ListAPIKeysRequest, sdp_go.ListAPIKeysResponse]
 	deleteAPIKey        *connect_go.Client[sdp_go.DeleteAPIKeyRequest, sdp_go.DeleteAPIKeyResponse]
 	exchangeKeyForToken *connect_go.Client[sdp_go.ExchangeKeyForTokenRequest, sdp_go.ExchangeKeyForTokenResponse]
@@ -118,6 +128,11 @@ func (c *apiKeyServiceClient) CreateAPIKey(ctx context.Context, req *connect_go.
 // GetAPIKey calls apikeys.ApiKeyService.GetAPIKey.
 func (c *apiKeyServiceClient) GetAPIKey(ctx context.Context, req *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error) {
 	return c.getAPIKey.CallUnary(ctx, req)
+}
+
+// UpdateAPIKey calls apikeys.ApiKeyService.UpdateAPIKey.
+func (c *apiKeyServiceClient) UpdateAPIKey(ctx context.Context, req *connect_go.Request[sdp_go.UpdateAPIKeyRequest]) (*connect_go.Response[sdp_go.UpdateAPIKeyResponse], error) {
+	return c.updateAPIKey.CallUnary(ctx, req)
 }
 
 // ListAPIKeys calls apikeys.ApiKeyService.ListAPIKeys.
@@ -142,6 +157,7 @@ type ApiKeyServiceHandler interface {
 	// allows Auth0 to actually generate an access token
 	CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.Response[sdp_go.CreateAPIKeyResponse], error)
 	GetAPIKey(context.Context, *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error)
+	UpdateAPIKey(context.Context, *connect_go.Request[sdp_go.UpdateAPIKeyRequest]) (*connect_go.Response[sdp_go.UpdateAPIKeyResponse], error)
 	ListAPIKeys(context.Context, *connect_go.Request[sdp_go.ListAPIKeysRequest]) (*connect_go.Response[sdp_go.ListAPIKeysResponse], error)
 	DeleteAPIKey(context.Context, *connect_go.Request[sdp_go.DeleteAPIKeyRequest]) (*connect_go.Response[sdp_go.DeleteAPIKeyResponse], error)
 	// Exchanges an Overmind API key for an Oauth access token. That token can
@@ -165,6 +181,11 @@ func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect_go.Handle
 		svc.GetAPIKey,
 		opts...,
 	)
+	apiKeyServiceUpdateAPIKeyHandler := connect_go.NewUnaryHandler(
+		ApiKeyServiceUpdateAPIKeyProcedure,
+		svc.UpdateAPIKey,
+		opts...,
+	)
 	apiKeyServiceListAPIKeysHandler := connect_go.NewUnaryHandler(
 		ApiKeyServiceListAPIKeysProcedure,
 		svc.ListAPIKeys,
@@ -186,6 +207,8 @@ func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect_go.Handle
 			apiKeyServiceCreateAPIKeyHandler.ServeHTTP(w, r)
 		case ApiKeyServiceGetAPIKeyProcedure:
 			apiKeyServiceGetAPIKeyHandler.ServeHTTP(w, r)
+		case ApiKeyServiceUpdateAPIKeyProcedure:
+			apiKeyServiceUpdateAPIKeyHandler.ServeHTTP(w, r)
 		case ApiKeyServiceListAPIKeysProcedure:
 			apiKeyServiceListAPIKeysHandler.ServeHTTP(w, r)
 		case ApiKeyServiceDeleteAPIKeyProcedure:
@@ -207,6 +230,10 @@ func (UnimplementedApiKeyServiceHandler) CreateAPIKey(context.Context, *connect_
 
 func (UnimplementedApiKeyServiceHandler) GetAPIKey(context.Context, *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("apikeys.ApiKeyService.GetAPIKey is not implemented"))
+}
+
+func (UnimplementedApiKeyServiceHandler) UpdateAPIKey(context.Context, *connect_go.Request[sdp_go.UpdateAPIKeyRequest]) (*connect_go.Response[sdp_go.UpdateAPIKeyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("apikeys.ApiKeyService.UpdateAPIKey is not implemented"))
 }
 
 func (UnimplementedApiKeyServiceHandler) ListAPIKeys(context.Context, *connect_go.Request[sdp_go.ListAPIKeysRequest]) (*connect_go.Response[sdp_go.ListAPIKeysResponse], error) {
