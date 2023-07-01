@@ -54,7 +54,7 @@ type ApiKeyServiceClient interface {
 	// Creates an API key, pending access token generation from Auth0. The key
 	// cannot be used until the user has been redirected to the given URL which
 	// allows Auth0 to actually generate an access token
-	CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.ServerStreamForClient[sdp_go.CreateAPIKeyResponse], error)
+	CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.Response[sdp_go.CreateAPIKeyResponse], error)
 	GetAPIKey(context.Context, *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error)
 	ListAPIKeys(context.Context, *connect_go.Request[sdp_go.ListAPIKeysRequest]) (*connect_go.Response[sdp_go.ListAPIKeysResponse], error)
 	DeleteAPIKey(context.Context, *connect_go.Request[sdp_go.DeleteAPIKeyRequest]) (*connect_go.Response[sdp_go.DeleteAPIKeyResponse], error)
@@ -111,8 +111,8 @@ type apiKeyServiceClient struct {
 }
 
 // CreateAPIKey calls apikeys.ApiKeyService.CreateAPIKey.
-func (c *apiKeyServiceClient) CreateAPIKey(ctx context.Context, req *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.ServerStreamForClient[sdp_go.CreateAPIKeyResponse], error) {
-	return c.createAPIKey.CallServerStream(ctx, req)
+func (c *apiKeyServiceClient) CreateAPIKey(ctx context.Context, req *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.Response[sdp_go.CreateAPIKeyResponse], error) {
+	return c.createAPIKey.CallUnary(ctx, req)
 }
 
 // GetAPIKey calls apikeys.ApiKeyService.GetAPIKey.
@@ -140,7 +140,7 @@ type ApiKeyServiceHandler interface {
 	// Creates an API key, pending access token generation from Auth0. The key
 	// cannot be used until the user has been redirected to the given URL which
 	// allows Auth0 to actually generate an access token
-	CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest], *connect_go.ServerStream[sdp_go.CreateAPIKeyResponse]) error
+	CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.Response[sdp_go.CreateAPIKeyResponse], error)
 	GetAPIKey(context.Context, *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error)
 	ListAPIKeys(context.Context, *connect_go.Request[sdp_go.ListAPIKeysRequest]) (*connect_go.Response[sdp_go.ListAPIKeysResponse], error)
 	DeleteAPIKey(context.Context, *connect_go.Request[sdp_go.DeleteAPIKeyRequest]) (*connect_go.Response[sdp_go.DeleteAPIKeyResponse], error)
@@ -155,7 +155,7 @@ type ApiKeyServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	apiKeyServiceCreateAPIKeyHandler := connect_go.NewServerStreamHandler(
+	apiKeyServiceCreateAPIKeyHandler := connect_go.NewUnaryHandler(
 		ApiKeyServiceCreateAPIKeyProcedure,
 		svc.CreateAPIKey,
 		opts...,
@@ -201,8 +201,8 @@ func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect_go.Handle
 // UnimplementedApiKeyServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedApiKeyServiceHandler struct{}
 
-func (UnimplementedApiKeyServiceHandler) CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest], *connect_go.ServerStream[sdp_go.CreateAPIKeyResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("apikeys.ApiKeyService.CreateAPIKey is not implemented"))
+func (UnimplementedApiKeyServiceHandler) CreateAPIKey(context.Context, *connect_go.Request[sdp_go.CreateAPIKeyRequest]) (*connect_go.Response[sdp_go.CreateAPIKeyResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("apikeys.ApiKeyService.CreateAPIKey is not implemented"))
 }
 
 func (UnimplementedApiKeyServiceHandler) GetAPIKey(context.Context, *connect_go.Request[sdp_go.GetAPIKeyRequest]) (*connect_go.Response[sdp_go.GetAPIKeyResponse], error) {
