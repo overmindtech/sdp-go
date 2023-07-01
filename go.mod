@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
-	github.com/bufbuild/connect-go v1.8.0
+	github.com/bufbuild/connect-go v1.9.0
 	github.com/getsentry/sentry-go v0.22.0
 	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats.go v1.27.1
@@ -12,7 +12,7 @@ require (
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.31.0
 )
 
 require (
