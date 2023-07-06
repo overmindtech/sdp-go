@@ -97,6 +97,9 @@ const (
 	// ChangesServiceGetAppSummaryProcedure is the fully-qualified name of the ChangesService's
 	// GetAppSummary RPC.
 	ChangesServiceGetAppSummaryProcedure = "/changes.ChangesService/GetAppSummary"
+	// ChangesServiceGetAppSummariesProcedure is the fully-qualified name of the ChangesService's
+	// GetAppSummaries RPC.
+	ChangesServiceGetAppSummariesProcedure = "/changes.ChangesService/GetAppSummaries"
 	// ChangesServiceListAppChangesProcedure is the fully-qualified name of the ChangesService's
 	// ListAppChanges RPC.
 	ChangesServiceListAppChangesProcedure = "/changes.ChangesService/ListAppChanges"
@@ -176,6 +179,8 @@ type ChangesServiceClient interface {
 	ListHomeChanges(context.Context, *connect_go.Request[sdp_go.ListHomeChangesRequest]) (*connect_go.Response[sdp_go.ListHomeChangesResponse], error)
 	// Gets a summary of an app, used when a user clicks on a given app
 	GetAppSummary(context.Context, *connect_go.Request[sdp_go.GetAppSummaryRequest]) (*connect_go.Response[sdp_go.GetAppSummaryResponse], error)
+	// Gets a summaries of a list of apps
+	GetAppSummaries(context.Context, *connect_go.Request[sdp_go.GetAppSummariesRequest]) (*connect_go.Response[sdp_go.GetAppSummariesResponse], error)
 	// Lists all changes affecting an app
 	ListAppChanges(context.Context, *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error)
 	// Lists all changes affecting an app, returning only a summary of each change
@@ -322,6 +327,11 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceGetAppSummaryProcedure,
 			opts...,
 		),
+		getAppSummaries: connect_go.NewClient[sdp_go.GetAppSummariesRequest, sdp_go.GetAppSummariesResponse](
+			httpClient,
+			baseURL+ChangesServiceGetAppSummariesProcedure,
+			opts...,
+		),
 		listAppChanges: connect_go.NewClient[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse](
 			httpClient,
 			baseURL+ChangesServiceListAppChangesProcedure,
@@ -384,6 +394,7 @@ type changesServiceClient struct {
 	listHomeApps             *connect_go.Client[sdp_go.ListHomeAppsRequest, sdp_go.ListHomeAppsResponse]
 	listHomeChanges          *connect_go.Client[sdp_go.ListHomeChangesRequest, sdp_go.ListHomeChangesResponse]
 	getAppSummary            *connect_go.Client[sdp_go.GetAppSummaryRequest, sdp_go.GetAppSummaryResponse]
+	getAppSummaries          *connect_go.Client[sdp_go.GetAppSummariesRequest, sdp_go.GetAppSummariesResponse]
 	listAppChanges           *connect_go.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
 	listAppChangesSummary    *connect_go.Client[sdp_go.ListAppChangesSummaryRequest, sdp_go.ListAppChangesSummaryResponse]
 	updateChangingItems      *connect_go.Client[sdp_go.UpdateChangingItemsRequest, sdp_go.CalculateBlastRadiusResponse]
@@ -503,6 +514,11 @@ func (c *changesServiceClient) GetAppSummary(ctx context.Context, req *connect_g
 	return c.getAppSummary.CallUnary(ctx, req)
 }
 
+// GetAppSummaries calls changes.ChangesService.GetAppSummaries.
+func (c *changesServiceClient) GetAppSummaries(ctx context.Context, req *connect_go.Request[sdp_go.GetAppSummariesRequest]) (*connect_go.Response[sdp_go.GetAppSummariesResponse], error) {
+	return c.getAppSummaries.CallUnary(ctx, req)
+}
+
 // ListAppChanges calls changes.ChangesService.ListAppChanges.
 func (c *changesServiceClient) ListAppChanges(ctx context.Context, req *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error) {
 	return c.listAppChanges.CallUnary(ctx, req)
@@ -595,6 +611,8 @@ type ChangesServiceHandler interface {
 	ListHomeChanges(context.Context, *connect_go.Request[sdp_go.ListHomeChangesRequest]) (*connect_go.Response[sdp_go.ListHomeChangesResponse], error)
 	// Gets a summary of an app, used when a user clicks on a given app
 	GetAppSummary(context.Context, *connect_go.Request[sdp_go.GetAppSummaryRequest]) (*connect_go.Response[sdp_go.GetAppSummaryResponse], error)
+	// Gets a summaries of a list of apps
+	GetAppSummaries(context.Context, *connect_go.Request[sdp_go.GetAppSummariesRequest]) (*connect_go.Response[sdp_go.GetAppSummariesResponse], error)
 	// Lists all changes affecting an app
 	ListAppChanges(context.Context, *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error)
 	// Lists all changes affecting an app, returning only a summary of each change
@@ -737,6 +755,11 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 		svc.GetAppSummary,
 		opts...,
 	)
+	changesServiceGetAppSummariesHandler := connect_go.NewUnaryHandler(
+		ChangesServiceGetAppSummariesProcedure,
+		svc.GetAppSummaries,
+		opts...,
+	)
 	changesServiceListAppChangesHandler := connect_go.NewUnaryHandler(
 		ChangesServiceListAppChangesProcedure,
 		svc.ListAppChanges,
@@ -818,6 +841,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 			changesServiceListHomeChangesHandler.ServeHTTP(w, r)
 		case ChangesServiceGetAppSummaryProcedure:
 			changesServiceGetAppSummaryHandler.ServeHTTP(w, r)
+		case ChangesServiceGetAppSummariesProcedure:
+			changesServiceGetAppSummariesHandler.ServeHTTP(w, r)
 		case ChangesServiceListAppChangesProcedure:
 			changesServiceListAppChangesHandler.ServeHTTP(w, r)
 		case ChangesServiceListAppChangesSummaryProcedure:
@@ -927,6 +952,10 @@ func (UnimplementedChangesServiceHandler) ListHomeChanges(context.Context, *conn
 
 func (UnimplementedChangesServiceHandler) GetAppSummary(context.Context, *connect_go.Request[sdp_go.GetAppSummaryRequest]) (*connect_go.Response[sdp_go.GetAppSummaryResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.GetAppSummary is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) GetAppSummaries(context.Context, *connect_go.Request[sdp_go.GetAppSummariesRequest]) (*connect_go.Response[sdp_go.GetAppSummariesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.GetAppSummaries is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) ListAppChanges(context.Context, *connect_go.Request[sdp_go.ListAppChangesRequest]) (*connect_go.Response[sdp_go.ListAppChangesResponse], error) {
