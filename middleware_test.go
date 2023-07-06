@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 )
 
@@ -53,33 +54,68 @@ func TestNewAuthMiddleware(t *testing.T) {
 	t.Parallel()
 
 	account := "foo"
-	config := AuthConfig{
-		BypassAuth:      true,
-		AccountOverride: &account,
-	}
 
-	handler := NewAuthMiddleware(config, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Context().Value(AuthBypassedContextKey{}) != true {
-			t.Error("expected auth bypassed to be set")
+	t.Run("with bypass auth", func(t *testing.T) {
+		config := AuthConfig{
+			BypassAuth:      true,
+			AccountOverride: &account,
 		}
 
-		// Read the custom claims from the context
-		claims := r.Context().Value(CustomClaimsContextKey{}).(*CustomClaims)
-		if claims.AccountName != account {
-			t.Errorf("expected account to be %s, but was %s", account, claims.AccountName)
+		handler := NewAuthMiddleware(config, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Context().Value(AuthBypassedContextKey{}) != true {
+				t.Error("expected auth bypassed to be set")
+			}
+
+			// Read the custom claims from the context
+			claims := r.Context().Value(CustomClaimsContextKey{}).(*CustomClaims)
+			if claims.AccountName != account {
+				t.Errorf("expected account to be %s, but was %s", account, claims.AccountName)
+			}
+		}))
+
+		// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+		// pass 'nil' as the third parameter.
+		req, err := http.NewRequest("GET", "/", nil)
+
+		if err != nil {
+			t.Fatal(err)
 		}
-	}))
 
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
-	req, err := http.NewRequest("GET", "/", nil)
+		// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+		rr := httptest.NewRecorder()
 
-	if err != nil {
-		t.Fatal(err)
-	}
+		handler.ServeHTTP(rr, req)
+	})
 
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	rr := httptest.NewRecorder()
+	t.Run("with bypass auth for paths", func(t *testing.T) {
+		config := AuthConfig{
+			BypassAuthForPaths: regexp.MustCompile("/health"),
+			AccountOverride:    &account,
+		}
 
-	handler.ServeHTTP(rr, req)
+		handler := NewAuthMiddleware(config, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Context().Value(AuthBypassedContextKey{}) != true {
+				t.Error("expected auth bypassed to be set")
+			}
+
+			// Read the custom claims from the context
+			claims := r.Context().Value(CustomClaimsContextKey{}).(*CustomClaims)
+			if claims.AccountName != account {
+				t.Errorf("expected account to be %s, but was %s", account, claims.AccountName)
+			}
+		}))
+
+		// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+		// pass 'nil' as the third parameter.
+		req, err := http.NewRequest("GET", "/health", nil)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+		rr := httptest.NewRecorder()
+
+		handler.ServeHTTP(rr, req)
+	})
 }

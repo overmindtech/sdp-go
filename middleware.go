@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -37,6 +38,13 @@ type AuthConfig struct {
 	// true. This should be used in conjunction with the `AccountOverride` field
 	// since there won't be a token to parse the account from
 	BypassAuth bool
+
+	// Bypasses auth for the given paths. This is a regular expression that is
+	// matched against the path of the request. If the regex matches then the
+	// request will be allowed through without auth. This should be used with
+	// `AccountOverride` in order to avoid the required context values not being
+	// set and therefore causing issues (probably nil pointer panics)
+	BypassAuthForPaths *regexp.Regexp
 
 	// Overrides the account name stored in the CustomClaimsContextKey
 	AccountOverride *string
@@ -99,11 +107,21 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 
-	if config.BypassAuth {
-		return bypassAuthHandler(*config.AccountOverride, processOverrides)
-	} else {
-		return ensureValidTokenHandler(processOverrides)
-	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var bypassPath bool
+
+		if config.BypassAuthForPaths != nil {
+			bypassPath = config.BypassAuthForPaths.MatchString(r.URL.Path)
+		}
+
+		if config.BypassAuth || bypassPath {
+			// If auth is disabled then bypass
+			bypassAuthHandler(*config.AccountOverride, processOverrides).ServeHTTP(w, r)
+		} else {
+			// Otherwise ensure the token is valid
+			ensureValidTokenHandler(processOverrides).ServeHTTP(w, r)
+		}
+	})
 }
 
 // AddBypassAuthConfig Adds the requires keys to the context so that
