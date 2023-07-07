@@ -109,14 +109,19 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var bypassPath bool
+		var accountOverride string
 
 		if config.BypassAuthForPaths != nil {
 			bypassPath = config.BypassAuthForPaths.MatchString(r.URL.Path)
 		}
 
+		if config.AccountOverride != nil {
+			accountOverride = *config.AccountOverride
+		}
+
 		if config.BypassAuth || bypassPath {
 			// If auth is disabled then bypass
-			bypassAuthHandler(*config.AccountOverride, processOverrides).ServeHTTP(w, r)
+			bypassAuthHandler(accountOverride, processOverrides).ServeHTTP(w, r)
 		} else {
 			// Otherwise ensure the token is valid
 			ensureValidTokenHandler(processOverrides).ServeHTTP(w, r)
