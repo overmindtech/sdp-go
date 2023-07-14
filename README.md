@@ -14,13 +14,13 @@ router.Handle(withCORS(
     sdp.EnsureValidTokenWithPattern(
         sdpconnect.NewBookmarksServiceHandler(
             &bookmarkHandler,
-            connect.WithInterceptors(otelconnect.NewInterceptor(otelconnect.WithTrustRemote())),
+            connect.WithInterceptors(otelconnect.NewInterceptor(otelconnect.WithTrustRemote(), otelconnect.WithoutTraceEvents())),
         ))))
 router.Handle(withCORS(
     sdp.EnsureValidTokenWithPattern(
         sdpconnect.NewSnapshotsServiceHandler(
             &snapshotHandler,
-            connect.WithInterceptors(otelconnect.NewInterceptor(otelconnect.WithTrustRemote())),
+            connect.WithInterceptors(otelconnect.NewInterceptor(otelconnect.WithTrustRemote(), otelconnect.WithoutTraceEvents())),
         ))))
 
 serverAddress := fmt.Sprintf(":%v", "8080")
