@@ -33,21 +33,23 @@ type ResponseSender struct {
 	// How often to send responses. The expected next update will be 230% of
 	// this value, allowing for one-and-a-bit missed responses before it is
 	// marked as stalled
-	ResponseInterval time.Duration
-	ResponseSubject  string
-	monitorRunning   sync.WaitGroup
-	monitorKill      chan *Response // Sending to this channel will kill the response sender goroutine and publish the sent message as last msg on the subject
-	responderName    string
-	connection       EncodedConnection
-	responseCtx      context.Context
+	ResponseInterval  time.Duration
+	ResponseSubject   string
+	monitorRunning    sync.WaitGroup
+	monitorKill       chan *Response // Sending to this channel will kill the response sender goroutine and publish the sent message as last msg on the subject
+	responderName     string
+	connection        EncodedConnection
+	responseCtx       context.Context
+	responseCtxCancel context.CancelFunc
 }
 
 // Start sends the first response on the given subject and connection to say
 // that the request is being worked on. It also starts a go routine to continue
 // sending responses until it is cancelled
-func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string) {
+func (rs *ResponseSender) Start(ctx context.Context, cancel context.CancelFunc, ec EncodedConnection, responderName string) {
 	rs.monitorKill = make(chan *Response, 1)
 	rs.responseCtx = ctx
+	rs.responseCtxCancel = cancel
 
 	// Set the default if it's not set
 	if rs.ResponseInterval == 0 {
@@ -82,7 +84,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 	rs.monitorRunning.Add(1)
 
 	// Start a goroutine to send further responses
-	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
+	go func(ctx context.Context, cancel context.CancelFunc, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
 		defer LogRecoverToReturn(&ctx, "ResponseSender ticker")
 		// confirm closure on exit
 		defer rs.monitorRunning.Done()
@@ -93,6 +95,8 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 		tick := time.NewTicker(respInterval)
 
 		for {
+			var err error
+
 			select {
 			case r := <-kill:
 				// If the context is cancelled then we don't want to do anything
@@ -100,11 +104,16 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				tick.Stop()
 
 				if r != nil {
-					ec.Publish(
+					err = ec.Publish(
 						ctx,
 						rs.ResponseSubject,
 						&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
 					)
+
+					if err != nil && cancel != nil {
+						// If we can't publish a response then cancel the whole query
+						cancel()
+					}
 				}
 				return
 			case <-ctx.Done():
@@ -114,14 +123,19 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 				return
 			case <-tick.C:
-				ec.Publish(
+				err = ec.Publish(
 					ctx,
 					rs.ResponseSubject,
 					&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
 				)
 			}
+
+			if err != nil && cancel != nil {
+				// If we can't publish a response then cancel the whole query
+				cancel()
+			}
 		}
-	}(ctx, rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
+	}(ctx, cancel, rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
 }
 
 // Kill Kills the response sender immediately. This should be used if something
@@ -136,6 +150,10 @@ func (rs *ResponseSender) killWithResponse(r *Response) {
 
 	// wait for the sender to be actually done
 	rs.monitorRunning.Wait()
+
+	if rs.responseCtxCancel != nil {
+		rs.responseCtxCancel()
+	}
 }
 
 // Done kills the responder but sends a final completion message
