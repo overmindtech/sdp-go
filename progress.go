@@ -95,6 +95,8 @@ func (rs *ResponseSender) Start(ctx context.Context, cancel context.CancelFunc, 
 		tick := time.NewTicker(respInterval)
 
 		for {
+			var err error
+
 			select {
 			case r := <-kill:
 				// If the context is cancelled then we don't want to do anything
@@ -102,13 +104,13 @@ func (rs *ResponseSender) Start(ctx context.Context, cancel context.CancelFunc, 
 				tick.Stop()
 
 				if r != nil {
-					err := ec.Publish(
+					err = ec.Publish(
 						ctx,
 						rs.ResponseSubject,
 						&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
 					)
 
-					if err != nil {
+					if err != nil && cancel != nil {
 						// If we can't publish a response then cancel the whole query
 						cancel()
 					}
@@ -121,11 +123,16 @@ func (rs *ResponseSender) Start(ctx context.Context, cancel context.CancelFunc, 
 
 				return
 			case <-tick.C:
-				ec.Publish(
+				err = ec.Publish(
 					ctx,
 					rs.ResponseSubject,
 					&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
 				)
+			}
+
+			if err != nil && cancel != nil {
+				// If we can't publish a response then cancel the whole query
+				cancel()
 			}
 		}
 	}(ctx, cancel, rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
@@ -138,13 +145,15 @@ func (rs *ResponseSender) Kill() {
 }
 
 func (rs *ResponseSender) killWithResponse(r *Response) {
-	defer rs.responseCtxCancel()
-
 	// send the stop signal to the goroutine from Start()
 	rs.monitorKill <- r
 
 	// wait for the sender to be actually done
 	rs.monitorRunning.Wait()
+
+	if rs.responseCtxCancel != nil {
+		rs.responseCtxCancel()
+	}
 }
 
 // Done kills the responder but sends a final completion message

@@ -20,7 +20,7 @@ func TestResponseNilPublisher(t *testing.T) {
 	}
 
 	// Start sending responses with a nil connection, should not panic
-	rs.Start(context.Background(), nil, "test")
+	rs.Start(context.Background(), nil, nil, "test")
 
 	// Give it enough time for ~10 responses
 	time.Sleep(100 * time.Millisecond)
@@ -40,7 +40,7 @@ func TestResponseSenderDone(t *testing.T) {
 	}
 
 	// Start sending responses
-	rs.Start(context.Background(), &tp, "test")
+	rs.Start(context.Background(), nil, &tp, "test")
 
 	// Give it enough time for ~10 responses
 	time.Sleep(100 * time.Millisecond)
@@ -85,7 +85,7 @@ func TestResponseSenderError(t *testing.T) {
 	}
 
 	// Start sending responses
-	rs.Start(context.Background(), &tp, "test")
+	rs.Start(context.Background(), nil, &tp, "test")
 
 	// Give it enough time for >10 responses
 	time.Sleep(120 * time.Millisecond)
@@ -130,7 +130,7 @@ func TestResponseSenderCancel(t *testing.T) {
 	}
 
 	// Start sending responses
-	rs.Start(context.Background(), &tp, "test")
+	rs.Start(context.Background(), nil, &tp, "test")
 
 	// Give it enough time for >10 responses
 	time.Sleep(120 * time.Millisecond)
@@ -167,7 +167,7 @@ func TestResponseSenderCancel(t *testing.T) {
 func TestDefaultResponseInterval(t *testing.T) {
 	rs := ResponseSender{}
 
-	rs.Start(context.Background(), &TestConnection{}, "")
+	rs.Start(context.Background(), nil, &TestConnection{}, "")
 	rs.Kill()
 
 	if rs.ResponseInterval != DefaultResponseInterval {
