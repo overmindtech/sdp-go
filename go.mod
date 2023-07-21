@@ -7,7 +7,7 @@ require (
 	github.com/bufbuild/connect-go v1.9.0
 	github.com/getsentry/sentry-go v0.22.0
 	github.com/google/uuid v1.3.0
-	github.com/nats-io/nats.go v1.27.1
+	github.com/nats-io/nats.go v1.28.0
 	github.com/sirupsen/logrus v1.9.3
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
