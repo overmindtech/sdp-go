@@ -262,7 +262,7 @@ func TestNATSConnect(t *testing.T) {
 		o := NATSOptions{
 			Servers: []string{
 				"nats://nats:4222",
-				"nats://localhost:4223",
+				"nats://localhost:4222",
 			},
 			NumRetries: 3,
 			RetryDelay: 100 * time.Millisecond,
@@ -281,7 +281,7 @@ func TestNATSConnect(t *testing.T) {
 		o := NATSOptions{
 			Servers: []string{
 				"nats://nats:4222",
-				"nats://localhost:4223",
+				"nats://localhost:4222",
 			},
 		}
 
@@ -298,7 +298,7 @@ func TestNATSConnect(t *testing.T) {
 		o := NATSOptions{
 			Servers: []string{
 				"nats://nats:4222",
-				"nats://localhost:4223",
+				"nats://localhost:4222",
 			},
 			NumRetries: -1,
 			RetryDelay: 100 * time.Millisecond,
