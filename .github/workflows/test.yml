@@ -13,7 +13,7 @@ jobs:
       nats:
         image: nats
         ports:
-          - 4222:4222
+          - 4222:4223
       nats-auth:
         image: ghcr.io/overmindtech/test-populated-nats:main
         # ports:
