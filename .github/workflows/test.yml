@@ -66,3 +66,7 @@ jobs:
 
       - name: Test
         run: go test ./... -race -timeout 2m
+        env:
+          OVERMIND_NTE_ALLPERMS_DOMAIN: ${{ secrets.OVERMIND_NTE_ALLPERMS_DOMAIN }}
+          OVERMIND_NTE_ALLPERMS_CLIENT_ID: ${{ secrets.OVERMIND_NTE_ALLPERMS_CLIENT_ID }}
+          OVERMIND_NTE_ALLPERMS_CLIENT_SECRET: ${{ secrets.OVERMIND_NTE_ALLPERMS_CLIENT_SECRET }}
