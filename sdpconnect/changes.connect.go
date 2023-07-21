@@ -79,9 +79,6 @@ const (
 	// ChangesServiceSimulateChangeProcedure is the fully-qualified name of the ChangesService's
 	// SimulateChange RPC.
 	ChangesServiceSimulateChangeProcedure = "/changes.ChangesService/SimulateChange"
-	// ChangesServiceGetChangesHomeProcedure is the fully-qualified name of the ChangesService's
-	// GetChangesHome RPC.
-	ChangesServiceGetChangesHomeProcedure = "/changes.ChangesService/GetChangesHome"
 	// ChangesServiceGetOnboardingProcedure is the fully-qualified name of the ChangesService's
 	// GetOnboarding RPC.
 	ChangesServiceGetOnboardingProcedure = "/changes.ChangesService/GetOnboarding"
@@ -169,8 +166,6 @@ type ChangesServiceClient interface {
 	// It will be moved to the `STATUS_DONE` state after the simulation is
 	// complete.
 	SimulateChange(context.Context, *connect_go.Request[sdp_go.SimulateChangeRequest]) (*connect_go.ServerStreamForClient[sdp_go.SimulateChangeResponse], error)
-	// Returns a list of change summaries, designed for use in the changes home page
-	GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error)
 	GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error)
 	UpdateOnboarding(context.Context, *connect_go.Request[sdp_go.UpdateOnboardingRequest]) (*connect_go.Response[sdp_go.UpdateOnboardingResponse], error)
 	// Lists all apps, designed for use in the apps home page
@@ -297,11 +292,6 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceSimulateChangeProcedure,
 			opts...,
 		),
-		getChangesHome: connect_go.NewClient[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse](
-			httpClient,
-			baseURL+ChangesServiceGetChangesHomeProcedure,
-			opts...,
-		),
 		getOnboarding: connect_go.NewClient[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse](
 			httpClient,
 			baseURL+ChangesServiceGetOnboardingProcedure,
@@ -388,7 +378,6 @@ type changesServiceClient struct {
 	startChange              *connect_go.Client[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse]
 	endChange                *connect_go.Client[sdp_go.EndChangeRequest, sdp_go.EndChangeResponse]
 	simulateChange           *connect_go.Client[sdp_go.SimulateChangeRequest, sdp_go.SimulateChangeResponse]
-	getChangesHome           *connect_go.Client[sdp_go.GetChangesHomeRequest, sdp_go.GetChangesHomeResponse]
 	getOnboarding            *connect_go.Client[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse]
 	updateOnboarding         *connect_go.Client[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse]
 	listHomeApps             *connect_go.Client[sdp_go.ListHomeAppsRequest, sdp_go.ListHomeAppsResponse]
@@ -482,11 +471,6 @@ func (c *changesServiceClient) EndChange(ctx context.Context, req *connect_go.Re
 // SimulateChange calls changes.ChangesService.SimulateChange.
 func (c *changesServiceClient) SimulateChange(ctx context.Context, req *connect_go.Request[sdp_go.SimulateChangeRequest]) (*connect_go.ServerStreamForClient[sdp_go.SimulateChangeResponse], error) {
 	return c.simulateChange.CallServerStream(ctx, req)
-}
-
-// GetChangesHome calls changes.ChangesService.GetChangesHome.
-func (c *changesServiceClient) GetChangesHome(ctx context.Context, req *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error) {
-	return c.getChangesHome.CallUnary(ctx, req)
 }
 
 // GetOnboarding calls changes.ChangesService.GetOnboarding.
@@ -601,8 +585,6 @@ type ChangesServiceHandler interface {
 	// It will be moved to the `STATUS_DONE` state after the simulation is
 	// complete.
 	SimulateChange(context.Context, *connect_go.Request[sdp_go.SimulateChangeRequest], *connect_go.ServerStream[sdp_go.SimulateChangeResponse]) error
-	// Returns a list of change summaries, designed for use in the changes home page
-	GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error)
 	GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error)
 	UpdateOnboarding(context.Context, *connect_go.Request[sdp_go.UpdateOnboardingRequest]) (*connect_go.Response[sdp_go.UpdateOnboardingResponse], error)
 	// Lists all apps, designed for use in the apps home page
@@ -725,11 +707,6 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 		svc.SimulateChange,
 		opts...,
 	)
-	changesServiceGetChangesHomeHandler := connect_go.NewUnaryHandler(
-		ChangesServiceGetChangesHomeProcedure,
-		svc.GetChangesHome,
-		opts...,
-	)
 	changesServiceGetOnboardingHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetOnboardingProcedure,
 		svc.GetOnboarding,
@@ -829,8 +806,6 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 			changesServiceEndChangeHandler.ServeHTTP(w, r)
 		case ChangesServiceSimulateChangeProcedure:
 			changesServiceSimulateChangeHandler.ServeHTTP(w, r)
-		case ChangesServiceGetChangesHomeProcedure:
-			changesServiceGetChangesHomeHandler.ServeHTTP(w, r)
 		case ChangesServiceGetOnboardingProcedure:
 			changesServiceGetOnboardingHandler.ServeHTTP(w, r)
 		case ChangesServiceUpdateOnboardingProcedure:
@@ -928,10 +903,6 @@ func (UnimplementedChangesServiceHandler) EndChange(context.Context, *connect_go
 
 func (UnimplementedChangesServiceHandler) SimulateChange(context.Context, *connect_go.Request[sdp_go.SimulateChangeRequest], *connect_go.ServerStream[sdp_go.SimulateChangeResponse]) error {
 	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.SimulateChange is not implemented"))
-}
-
-func (UnimplementedChangesServiceHandler) GetChangesHome(context.Context, *connect_go.Request[sdp_go.GetChangesHomeRequest]) (*connect_go.Response[sdp_go.GetChangesHomeResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.GetChangesHome is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) GetOnboarding(context.Context, *connect_go.Request[sdp_go.GetOnboardingRequest]) (*connect_go.Response[sdp_go.GetOnboardingResponse], error) {
