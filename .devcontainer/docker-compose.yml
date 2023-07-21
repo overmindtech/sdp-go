@@ -22,11 +22,49 @@ services:
     networks:
       - sdp-go
 
-  nats:
-    image: nats:latest
-    command: "-DV"
+  # Authenticted NATS for testing auth mechanisms
+  nats-auth:
+    image: ghcr.io/overmindtech/test-populated-nats:main
     networks:
       - sdp-go
 
+  # Unauthenticated NATS for simpler testing
+  nats:
+    image: nats
+    networks:
+      - sdp-go
+
+  api-server:
+    image: ghcr.io/overmindtech/test-populated-api-server:main
+    env_file:
+      - ./env/api-server.env
+    networks:
+      - sdp-go
+
+  apiserverdb:
+    image: postgres:15.2-alpine
+
+    restart: always
+    env_file:
+      - ./env/api-server.env
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - sdp-go
+    volumes:
+      # note that this is a parent dir of PGDIR to avoid permissions issues
+      # see https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata
+      - apiserverdb:/var/lib/postgresql/data
+
 networks:
   sdp-go:
+
+volumes:
+  apiserverdb:
