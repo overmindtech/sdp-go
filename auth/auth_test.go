@@ -17,8 +17,8 @@ import (
 )
 
 var tokenExchangeURLs = []string{
-	"http://api-server:8080",
-	"http://localhost:8080",
+	"http://api-server:8080/api",
+	"http://localhost:8080/api",
 }
 
 func TestBasicTokenClient(t *testing.T) {
