@@ -56,19 +56,27 @@ type AuthConfig struct {
 // HasScopes checks that the authenticated user in the request context has the
 // required scopes. If auth has been bypassed, this will always return true
 func HasScopes(ctx context.Context, requiredScopes ...string) bool {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.StringSlice("om.auth.requiredScopes", requiredScopes),
+	)
+
 	if ctx.Value(AuthBypassedContextKey{}) == true {
-		trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("om.auth.bypass", true))
+		span.SetAttributes(attribute.Bool("om.auth.bypass", true))
 
 		// Bypass all auth
 		return true
 	}
 
-	claims := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
-	trace.SpanFromContext(ctx).SetAttributes(
-		attribute.StringSlice("om.auth.requiredScopes", requiredScopes),
-	)
+	claims, ok := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
+	if !ok {
+		span.SetAttributes(attribute.String("om.auth.missing_claims", "all"))
+		return false
+	}
+
 	for _, scope := range requiredScopes {
 		if !claims.HasScope(scope) {
+			span.SetAttributes(attribute.String("om.auth.missing_claims", scope))
 			return false
 		}
 	}
