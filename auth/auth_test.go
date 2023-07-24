@@ -1,19 +1,24 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/nats-io/nkeys"
+	"github.com/overmindtech/sdp-go"
+	"github.com/overmindtech/sdp-go/sdpconnect"
 )
 
 var tokenExchangeURLs = []string{
-	"http://api-server:8080/api",
-	"http://localhost:8080/api",
+	"http://api-server:8080",
+	"http://localhost:8080",
 }
 
 func TestBasicTokenClient(t *testing.T) {
@@ -54,7 +59,7 @@ func TestBasicTokenClient(t *testing.T) {
 	}
 }
 
-func GetTestOAuthTokenClient(t *testing.T) *OAuthTokenClient {
+func GetTestOAuthTokenClient(t *testing.T) *natsTokenClient {
 	var domain string
 	var clientID string
 	var clientSecret string
@@ -117,6 +122,39 @@ func TestOAuthTokenClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
+}
+
+type testAPIKeyHandler struct {
+	sdpconnect.UnimplementedApiKeyServiceHandler
+}
+
+// Always return a valid token
+func (h *testAPIKeyHandler) ExchangeKeyForToken(ctx context.Context, req *connect.Request[sdp.ExchangeKeyForTokenRequest]) (*connect.Response[sdp.ExchangeKeyForTokenResponse], error) {
+	return &connect.Response[sdp.ExchangeKeyForTokenResponse]{
+		Msg: &sdp.ExchangeKeyForTokenResponse{
+			AccessToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2MjM5MDIyfQ.Tt0D8zOO3uzfbR1VLc3v7S1_jNrP9_crU1Gi_LpVinEXn4hndTWnI9rMd9r9D0iiv6U-CZAb9JKlun58MO3Pbf_S7apiLGHGE11coIMdk5OKuQFepwXPEk4ixs8_51wmWtJAKg7L5JJG6NuLGnGK8a53hzSHjoK80ROBqlsE9dJ4lpgigj8ZcL-xWpjS4TnUiGLHOvNDnHdqP5D_3DA1teWk9PNh9uU6Wn3U3ShH9rRCI9mKz9amdZ7QzH44J5Gsh2-uo0m2BtZILBE5_p-BeJ7op2RicEXbm69Vae8SPjkJLorBQxbO2lMG4y00q1n-wRDfg_eLFH8ZVC-5lpVXIw",
+		},
+	}, nil
+}
+
+func TestNewAPIKeyTokenSource(t *testing.T) {
+	_, handler := sdpconnect.NewApiKeyServiceHandler(&testAPIKeyHandler{})
+
+	testServer := httptest.NewServer(handler)
+	defer testServer.Close()
+
+	ts := NewAPIKeyTokenSource("test", testServer.URL)
+
+	token, err := ts.Token()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Make sure the expiry is correct
+	if token.Expiry.Unix() != 1516239022 {
+		t.Errorf("token expiry incorrect. Expected 1516239022, got %v", token.Expiry.Unix())
+	}
 }
 
 func GetWorkingTokenExchange() (string, error) {
