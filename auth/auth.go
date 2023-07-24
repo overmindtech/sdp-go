@@ -331,7 +331,7 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 	return ats.token, nil
 }
 
-func NewAPIKeyClient(oAuthTokenURL string, overmindAPIURL string, apiKey string) *natsTokenClient {
+func NewAPIKeyClient(overmindAPIURL string, apiKey string) *natsTokenClient {
 	// Create a token source that exchanges the API key for an OAuth token
 	tokenSource := NewAPIKeyTokenSource(apiKey, overmindAPIURL)
 	transport := oauth2.Transport{
