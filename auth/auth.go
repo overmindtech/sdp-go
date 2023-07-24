@@ -331,7 +331,19 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 	return ats.token, nil
 }
 
-func NewAPIKeyClient(overmindAPIURL string, apiKey string) *natsTokenClient {
+// NewAPIKeyClient Creates a new token client that authenticates to Overmind
+// using an API key. This is exchanged for an OAuth token, which is then used to
+// get a NATS token.
+//
+// The provided `overmindAPIURL` parameter should be the root URL of the
+// Overmind API, without the /api suffix e.g. https://api.prod.overmind.tech
+func NewAPIKeyClient(overmindAPIURL string, apiKey string) (*natsTokenClient, error) {
+	urlParsed, err := url.Parse(overmindAPIURL)
+
+	if err != nil {
+		return nil, fmt.Errorf("error parsing Overmind API URL: %w", err)
+	}
+
 	// Create a token source that exchanges the API key for an OAuth token
 	tokenSource := NewAPIKeyTokenSource(apiKey, overmindAPIURL)
 	transport := oauth2.Transport{
@@ -342,6 +354,9 @@ func NewAPIKeyClient(overmindAPIURL string, apiKey string) *natsTokenClient {
 		Transport: otelhttp.NewTransport(&transport),
 	}
 
+	// Set /api path for older APIs
+	urlParsed.Path = "/api"
+
 	// Create a client for the token exchange API
 	tokenExchangeClient := overmind.NewAPIClient(&overmind.Configuration{
 		DefaultHeader: make(map[string]string),
@@ -349,7 +364,7 @@ func NewAPIKeyClient(overmindAPIURL string, apiKey string) *natsTokenClient {
 		Debug:         false,
 		Servers: overmind.ServerConfigurations{
 			{
-				URL:         overmindAPIURL,
+				URL:         urlParsed.String(),
 				Description: "Overmind API",
 			},
 		},
@@ -359,5 +374,5 @@ func NewAPIKeyClient(overmindAPIURL string, apiKey string) *natsTokenClient {
 
 	return &natsTokenClient{
 		OvermindAPI: tokenExchangeClient,
-	}
+	}, nil
 }
