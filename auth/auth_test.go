@@ -34,7 +34,7 @@ func TestBasicTokenClient(t *testing.T) {
 
 	var token string
 
-	token, err = c.GetJWT()
+	token, err = c.GetJWTWithAccount("")
 
 	if err != nil {
 		t.Error(err)
@@ -92,7 +92,6 @@ func GetTestOAuthTokenClient(t *testing.T) *natsTokenClient {
 	flowConfig := ClientCredentialsConfig{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		Account:      "org_hdeUXbB55sMMvJLa",
 	}
 
 	return NewOAuthTokenClient(
@@ -107,7 +106,7 @@ func TestOAuthTokenClient(t *testing.T) {
 
 	var err error
 
-	_, err = c.GetJWT()
+	_, err = c.GetJWTWithAccount("")
 
 	if err != nil {
 		t.Error(err)
