@@ -105,7 +105,7 @@ type NATSOptions struct {
 
 // ToNatsOptions Converts the struct to connection string and a set of NATS
 // options
-func (o NATSOptions) ToNatsOptions() (string, []nats.Option) {
+func (o NATSOptions) ToNatsOptions(account string) (string, []nats.Option) {
 	serverString := strings.Join(o.Servers, ",")
 	options := make([]nats.Option, 0)
 
@@ -138,7 +138,9 @@ func (o NATSOptions) ToNatsOptions() (string, []nats.Option) {
 	}
 
 	if o.TokenClient != nil {
-		options = append(options, nats.UserJWT(o.TokenClient.GetJWT, o.TokenClient.Sign))
+		options = append(options, nats.UserJWT(func() (string, error) {
+			return o.TokenClient.GetJWTWithAccount(account)
+		}, o.TokenClient.Sign))
 	}
 
 	if o.DisconnectErrHandler != nil {
@@ -176,10 +178,16 @@ func (o NATSOptions) ToNatsOptions() (string, []nats.Option) {
 	return serverString, options
 }
 
-// Connect Connects to NATS using the supplied options, including retrying if
+// Connect Connects to NATS using the supplied options and the account name
+// baked into the underlying token client, including retrying if unavailable
+func (o NATSOptions) Connect(account string) (sdp.EncodedConnection, error) {
+	return o.ConnectAs("")
+}
+
+// ConnectAs Connects to NATS using the supplied options, including retrying if
 // unavailable
-func (o NATSOptions) Connect() (sdp.EncodedConnection, error) {
-	servers, opts := o.ToNatsOptions()
+func (o NATSOptions) ConnectAs(account string) (sdp.EncodedConnection, error) {
+	servers, opts := o.ToNatsOptions(account)
 
 	var triesLeft int
 
