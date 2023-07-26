@@ -64,6 +64,9 @@ const (
 	// ChangesServiceDeleteChangeProcedure is the fully-qualified name of the ChangesService's
 	// DeleteChange RPC.
 	ChangesServiceDeleteChangeProcedure = "/changes.ChangesService/DeleteChange"
+	// ChangesServiceGetChangeTimelineProcedure is the fully-qualified name of the ChangesService's
+	// GetChangeTimeline RPC.
+	ChangesServiceGetChangeTimelineProcedure = "/changes.ChangesService/GetChangeTimeline"
 	// ChangesServiceRefreshStateProcedure is the fully-qualified name of the ChangesService's
 	// RefreshState RPC.
 	ChangesServiceRefreshStateProcedure = "/changes.ChangesService/RefreshState"
@@ -144,6 +147,8 @@ type ChangesServiceClient interface {
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
 	DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error)
+	// Get the timeline of changes for a given change
+	GetChangeTimeline(context.Context, *connect_go.Request[sdp_go.GetChangeTimelineRequest]) (*connect_go.Response[sdp_go.GetChangeTimelineResponse], error)
 	// Ask the gateway to refresh all internal caches and status slots
 	// The RPC will return immediately doing all processing in the background
 	RefreshState(context.Context, *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error)
@@ -267,6 +272,11 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceDeleteChangeProcedure,
 			opts...,
 		),
+		getChangeTimeline: connect_go.NewClient[sdp_go.GetChangeTimelineRequest, sdp_go.GetChangeTimelineResponse](
+			httpClient,
+			baseURL+ChangesServiceGetChangeTimelineProcedure,
+			opts...,
+		),
 		refreshState: connect_go.NewClient[sdp_go.RefreshStateRequest, sdp_go.RefreshStateResponse](
 			httpClient,
 			baseURL+ChangesServiceRefreshStateProcedure,
@@ -373,6 +383,7 @@ type changesServiceClient struct {
 	getChange                *connect_go.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
 	updateChange             *connect_go.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
 	deleteChange             *connect_go.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
+	getChangeTimeline        *connect_go.Client[sdp_go.GetChangeTimelineRequest, sdp_go.GetChangeTimelineResponse]
 	refreshState             *connect_go.Client[sdp_go.RefreshStateRequest, sdp_go.RefreshStateResponse]
 	calculateBlastRadius     *connect_go.Client[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse]
 	startChange              *connect_go.Client[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse]
@@ -446,6 +457,11 @@ func (c *changesServiceClient) UpdateChange(ctx context.Context, req *connect_go
 // DeleteChange calls changes.ChangesService.DeleteChange.
 func (c *changesServiceClient) DeleteChange(ctx context.Context, req *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error) {
 	return c.deleteChange.CallUnary(ctx, req)
+}
+
+// GetChangeTimeline calls changes.ChangesService.GetChangeTimeline.
+func (c *changesServiceClient) GetChangeTimeline(ctx context.Context, req *connect_go.Request[sdp_go.GetChangeTimelineRequest]) (*connect_go.Response[sdp_go.GetChangeTimelineResponse], error) {
+	return c.getChangeTimeline.CallUnary(ctx, req)
 }
 
 // RefreshState calls changes.ChangesService.RefreshState.
@@ -563,6 +579,8 @@ type ChangesServiceHandler interface {
 	UpdateChange(context.Context, *connect_go.Request[sdp_go.UpdateChangeRequest]) (*connect_go.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
 	DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error)
+	// Get the timeline of changes for a given change
+	GetChangeTimeline(context.Context, *connect_go.Request[sdp_go.GetChangeTimelineRequest]) (*connect_go.Response[sdp_go.GetChangeTimelineResponse], error)
 	// Ask the gateway to refresh all internal caches and status slots
 	// The RPC will return immediately doing all processing in the background
 	RefreshState(context.Context, *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error)
@@ -682,6 +700,11 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 		svc.DeleteChange,
 		opts...,
 	)
+	changesServiceGetChangeTimelineHandler := connect_go.NewUnaryHandler(
+		ChangesServiceGetChangeTimelineProcedure,
+		svc.GetChangeTimeline,
+		opts...,
+	)
 	changesServiceRefreshStateHandler := connect_go.NewUnaryHandler(
 		ChangesServiceRefreshStateProcedure,
 		svc.RefreshState,
@@ -796,6 +819,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 			changesServiceUpdateChangeHandler.ServeHTTP(w, r)
 		case ChangesServiceDeleteChangeProcedure:
 			changesServiceDeleteChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceGetChangeTimelineProcedure:
+			changesServiceGetChangeTimelineHandler.ServeHTTP(w, r)
 		case ChangesServiceRefreshStateProcedure:
 			changesServiceRefreshStateHandler.ServeHTTP(w, r)
 		case ChangesServiceCalculateBlastRadiusProcedure:
@@ -883,6 +908,10 @@ func (UnimplementedChangesServiceHandler) UpdateChange(context.Context, *connect
 
 func (UnimplementedChangesServiceHandler) DeleteChange(context.Context, *connect_go.Request[sdp_go.DeleteChangeRequest]) (*connect_go.Response[sdp_go.DeleteChangeResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.DeleteChange is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) GetChangeTimeline(context.Context, *connect_go.Request[sdp_go.GetChangeTimelineRequest]) (*connect_go.Response[sdp_go.GetChangeTimelineResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.GetChangeTimeline is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) RefreshState(context.Context, *connect_go.Request[sdp_go.RefreshStateRequest]) (*connect_go.Response[sdp_go.RefreshStateResponse], error) {
