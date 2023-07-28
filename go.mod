@@ -6,8 +6,9 @@ require (
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
 	github.com/bufbuild/connect-go v1.9.0
 	github.com/getsentry/sentry-go v0.22.0
+	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.3.0
-	github.com/nats-io/jwt/v2 v2.3.0
+	github.com/nats-io/jwt/v2 v2.4.1
 	github.com/nats-io/nats.go v1.28.0
 	github.com/nats-io/nkeys v0.4.4
 	github.com/overmindtech/api-client v0.14.0
@@ -22,7 +23,6 @@ require (
 
 require (
 	github.com/felixge/httpsnoop v1.0.3 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
