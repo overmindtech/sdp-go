@@ -103,9 +103,30 @@ type NATSOptions struct {
 	RetryDelay           time.Duration       // Delay between connection attempts
 }
 
+// Creates a copy of the NATS options, **excluding** the token client as these
+// should not be re-used
+func (o NATSOptions) Copy() NATSOptions {
+	return NATSOptions{
+		Servers:              o.Servers,
+		ConnectionName:       o.ConnectionName,
+		MaxReconnects:        o.MaxReconnects,
+		ConnectionTimeout:    o.ConnectionTimeout,
+		ReconnectWait:        o.ReconnectWait,
+		ReconnectJitter:      o.ReconnectJitter,
+		DisconnectErrHandler: o.DisconnectErrHandler,
+		ReconnectHandler:     o.ReconnectHandler,
+		ClosedHandler:        o.ClosedHandler,
+		LameDuckModeHandler:  o.LameDuckModeHandler,
+		ErrorHandler:         o.ErrorHandler,
+		AdditionalOptions:    o.AdditionalOptions,
+		NumRetries:           o.NumRetries,
+		RetryDelay:           o.RetryDelay,
+	}
+}
+
 // ToNatsOptions Converts the struct to connection string and a set of NATS
 // options
-func (o NATSOptions) ToNatsOptions(account string) (string, []nats.Option) {
+func (o NATSOptions) ToNatsOptions() (string, []nats.Option) {
 	serverString := strings.Join(o.Servers, ",")
 	options := make([]nats.Option, 0)
 
@@ -139,7 +160,7 @@ func (o NATSOptions) ToNatsOptions(account string) (string, []nats.Option) {
 
 	if o.TokenClient != nil {
 		options = append(options, nats.UserJWT(func() (string, error) {
-			return o.TokenClient.GetJWTWithAccount(account)
+			return o.TokenClient.GetJWT()
 		}, o.TokenClient.Sign))
 	}
 
@@ -178,16 +199,10 @@ func (o NATSOptions) ToNatsOptions(account string) (string, []nats.Option) {
 	return serverString, options
 }
 
-// Connect Connects to NATS using the supplied options and the account name
-// baked into the underlying token client, including retrying if unavailable
-func (o NATSOptions) Connect(account string) (sdp.EncodedConnection, error) {
-	return o.ConnectAs("")
-}
-
 // ConnectAs Connects to NATS using the supplied options, including retrying if
 // unavailable
-func (o NATSOptions) ConnectAs(account string) (sdp.EncodedConnection, error) {
-	servers, opts := o.ToNatsOptions(account)
+func (o NATSOptions) Connect() (sdp.EncodedConnection, error) {
+	servers, opts := o.ToNatsOptions()
 
 	var triesLeft int
 
