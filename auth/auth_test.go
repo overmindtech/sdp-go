@@ -34,7 +34,7 @@ func TestBasicTokenClient(t *testing.T) {
 
 	var token string
 
-	token, err = c.GetJWTWithAccount("")
+	token, err = c.GetJWT()
 
 	if err != nil {
 		t.Error(err)
@@ -97,6 +97,7 @@ func GetTestOAuthTokenClient(t *testing.T) *natsTokenClient {
 	return NewOAuthTokenClient(
 		fmt.Sprintf("https://%v/oauth/token", domain),
 		exchangeURL,
+		"overmind-development",
 		flowConfig,
 	)
 }
@@ -106,7 +107,7 @@ func TestOAuthTokenClient(t *testing.T) {
 
 	var err error
 
-	_, err = c.GetJWTWithAccount("")
+	_, err = c.GetJWT()
 
 	if err != nil {
 		t.Error(err)

@@ -31,7 +31,7 @@ func TestToNatsOptions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		server, options := o.ToNatsOptions("")
+		server, options := o.ToNatsOptions()
 
 		if server != "" {
 			t.Error("Expected server to be empty")
@@ -121,7 +121,7 @@ func TestToNatsOptions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		server, options := o.ToNatsOptions("")
+		server, options := o.ToNatsOptions()
 
 		if server != "one,two" {
 			t.Errorf("Expected server to be one,two got %v", server)
@@ -202,7 +202,7 @@ func TestNATSConnect(t *testing.T) {
 
 		start := time.Now()
 
-		_, err := o.ConnectAs("")
+		_, err := o.Connect()
 
 		// Just sanity check the duration here, it should be less than 1s and it
 		// should be more than... Some larger number of seconds. This is very
@@ -226,7 +226,7 @@ func TestNATSConnect(t *testing.T) {
 	t.Run("with a bad URL, but a good token", func(t *testing.T) {
 		tk := GetTestOAuthTokenClient(t)
 
-		startToken, err := tk.GetJWTWithAccount("")
+		startToken, err := tk.GetJWT()
 
 		if err != nil {
 			t.Fatal(err)
@@ -239,12 +239,12 @@ func TestNATSConnect(t *testing.T) {
 			RetryDelay:  100 * time.Millisecond,
 		}
 
-		_, err = o.ConnectAs("")
+		_, err = o.Connect()
 
 		switch err.(type) {
 		case MaxRetriesError:
 			// Make sure we have only got one token, not three
-			currentToken, err := o.TokenClient.GetJWTWithAccount("")
+			currentToken, err := o.TokenClient.GetJWT()
 
 			if err != nil {
 				t.Fatal(err)
@@ -268,7 +268,7 @@ func TestNATSConnect(t *testing.T) {
 			RetryDelay: 100 * time.Millisecond,
 		}
 
-		conn, err := o.ConnectAs("")
+		conn, err := o.Connect()
 
 		if err != nil {
 			t.Fatal(err)
@@ -285,7 +285,7 @@ func TestNATSConnect(t *testing.T) {
 			},
 		}
 
-		conn, err := o.ConnectAs("")
+		conn, err := o.Connect()
 
 		if err != nil {
 			t.Fatal(err)
@@ -304,7 +304,7 @@ func TestNATSConnect(t *testing.T) {
 			RetryDelay: 100 * time.Millisecond,
 		}
 
-		conn, err := o.ConnectAs("")
+		conn, err := o.Connect()
 
 		if err != nil {
 			t.Error(err)
@@ -318,7 +318,7 @@ func TestTokenRefresh(t *testing.T) {
 	tk := GetTestOAuthTokenClient(t)
 
 	// Get a token
-	token, err := tk.GetJWTWithAccount("")
+	token, err := tk.GetJWT()
 
 	if err != nil {
 		t.Fatal(err)
@@ -346,7 +346,7 @@ func TestTokenRefresh(t *testing.T) {
 	}
 
 	// Get the token again
-	newToken, err := tk.GetJWTWithAccount("")
+	newToken, err := tk.GetJWT()
 
 	if err != nil {
 		t.Error(err)

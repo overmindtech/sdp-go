@@ -29,7 +29,7 @@ const UserAgentVersion = "0.1"
 // for a given set of NKeys
 type TokenClient interface {
 	// Returns a NATS token that can be used to connect
-	GetJWTWithAccount(account string) (string, error)
+	GetJWT() (string, error)
 
 	// Uses the NKeys associated with the token to sign some binary data
 	Sign([]byte) ([]byte, error)
@@ -54,7 +54,7 @@ func NewBasicTokenClient(token string, keys nkeys.KeyPair) *BasicTokenClient {
 	}
 }
 
-func (b *BasicTokenClient) GetJWTWithAccount(account string) (string, error) {
+func (b *BasicTokenClient) GetJWT() (string, error) {
 	return b.staticToken, nil
 }
 
@@ -68,7 +68,7 @@ func (b *BasicTokenClient) Sign(in []byte) ([]byte, error) {
 type ClientCredentialsConfig struct {
 	// The ClientID of the application that we'll be authenticating as
 	ClientID string
-	// ClientSecret that cirresponds to the ClientID
+	// ClientSecret that corresponds to the ClientID
 	ClientSecret string
 }
 
@@ -79,9 +79,10 @@ type ClientCredentialsConfig struct {
 // URL of the NATS token exchange API that will be used e.g.
 // https://api.server.test/v1
 //
-// Tokens will be for the org specified under `org`. Note that the client must
-// have admin rights for this
-func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, flowConfig ClientCredentialsConfig) *natsTokenClient {
+// Tokens will be minted under the specified account as long as the client has
+// admin permissions, if not, the account that is attached to the client via
+// Auth0 metadata will be used
+func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, account string, flowConfig ClientCredentialsConfig) *natsTokenClient {
 	conf := &clientcredentials.Config{
 		ClientID:     flowConfig.ClientID,
 		ClientSecret: flowConfig.ClientSecret,
@@ -115,6 +116,7 @@ func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, flowConfig
 	nClient := overmind.NewAPIClient(tokenExchangeConf)
 
 	return &natsTokenClient{
+		Account:     account,
 		OvermindAPI: nClient,
 	}
 }
@@ -123,6 +125,10 @@ func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, flowConfig
 // required nonce to prove ownership of the NKeys. Satisfies the `TokenClient`
 // interface
 type natsTokenClient struct {
+	// The name of the account to impersonate. If this is omitted then the
+	// account will be determined based on the account included in the resulting
+	// token.
+	Account string
 
 	// An authenticated client for the Overmind API
 	OvermindAPI *overmind.APIClient
@@ -144,7 +150,7 @@ func (n *natsTokenClient) generateKeys() error {
 }
 
 // generateJWT Gets a new JWT from the auth API
-func (n *natsTokenClient) generateJWT(ctx context.Context, account string) error {
+func (n *natsTokenClient) generateJWT(ctx context.Context) error {
 	if n.OvermindAPI == nil {
 		return errors.New("no Overmind API client configured")
 	}
@@ -176,7 +182,7 @@ func (n *natsTokenClient) generateJWT(ctx context.Context, account string) error
 	}
 
 	// Create the request for a NATS token
-	if account == "" {
+	if n.Account == "" {
 		// Use the regular API and let the client authentication determine what our org should be
 		n.jwt, response, err = n.OvermindAPI.CoreApi.CreateToken(ctx).TokenRequestData(overmind.TokenRequestData{
 			UserPubKey: pubKey,
@@ -184,7 +190,7 @@ func (n *natsTokenClient) generateJWT(ctx context.Context, account string) error
 		}).Execute()
 	} else {
 		// Explicitly request an org
-		n.jwt, response, err = n.OvermindAPI.AdminApi.AdminCreateToken(ctx, account).TokenRequestData(overmind.TokenRequestData{
+		n.jwt, response, err = n.OvermindAPI.AdminApi.AdminCreateToken(ctx, n.Account).TokenRequestData(overmind.TokenRequestData{
 			UserPubKey: pubKey,
 			UserName:   hostname,
 		}).Execute()
@@ -203,13 +209,13 @@ func (n *natsTokenClient) generateJWT(ctx context.Context, account string) error
 	return nil
 }
 
-func (n *natsTokenClient) GetJWTWithAccount(account string) (string, error) {
+func (n *natsTokenClient) GetJWT() (string, error) {
 	ctx, span := tracer.Start(context.Background(), "connect.GetJWT")
 	defer span.End()
 
 	// If we don't yet have a JWT, generate one
 	if n.jwt == "" {
-		err := n.generateJWT(ctx, account)
+		err := n.generateJWT(ctx)
 
 		if err != nil {
 			span.SetStatus(codes.Error, err.Error())
@@ -232,7 +238,7 @@ func (n *natsTokenClient) GetJWTWithAccount(account string) (string, error) {
 
 	if vr.IsBlocking(true) {
 		// Regenerate the token
-		err := n.generateJWT(ctx, account)
+		err := n.generateJWT(ctx)
 
 		if err != nil {
 			span.SetStatus(codes.Error, err.Error())
