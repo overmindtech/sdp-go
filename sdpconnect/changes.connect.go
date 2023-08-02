@@ -115,9 +115,6 @@ const (
 	// ChangesServiceListChangingItemsSummaryProcedure is the fully-qualified name of the
 	// ChangesService's ListChangingItemsSummary RPC.
 	ChangesServiceListChangingItemsSummaryProcedure = "/changes.ChangesService/ListChangingItemsSummary"
-	// ChangesServiceGetChangeAuditLogProcedure is the fully-qualified name of the ChangesService's
-	// GetChangeAuditLog RPC.
-	ChangesServiceGetChangeAuditLogProcedure = "/changes.ChangesService/GetChangeAuditLog"
 	// ChangesServiceGetDiffProcedure is the fully-qualified name of the ChangesService's GetDiff RPC.
 	ChangesServiceGetDiffProcedure = "/changes.ChangesService/GetDiff"
 )
@@ -200,8 +197,6 @@ type ChangesServiceClient interface {
 	// this change. This includes the high level details of the item, and the
 	// status (e.g. changed, deleted) but not the diff itself
 	ListChangingItemsSummary(context.Context, *connect_go.Request[sdp_go.ListChangingItemsSummaryRequest]) (*connect_go.Response[sdp_go.ListChangingItemsSummaryResponse], error)
-	// Gets the audit log for a given change
-	GetChangeAuditLog(context.Context, *connect_go.Request[sdp_go.GetChangeAuditLogRequest]) (*connect_go.Response[sdp_go.GetChangeAuditLogResponse], error)
 	// Gets the full diff of everything that changed as part of this "change".
 	// This includes all items and also edges between them
 	GetDiff(context.Context, *connect_go.Request[sdp_go.GetDiffRequest]) (*connect_go.Response[sdp_go.GetDiffResponse], error)
@@ -357,11 +352,6 @@ func NewChangesServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+ChangesServiceListChangingItemsSummaryProcedure,
 			opts...,
 		),
-		getChangeAuditLog: connect_go.NewClient[sdp_go.GetChangeAuditLogRequest, sdp_go.GetChangeAuditLogResponse](
-			httpClient,
-			baseURL+ChangesServiceGetChangeAuditLogProcedure,
-			opts...,
-		),
 		getDiff: connect_go.NewClient[sdp_go.GetDiffRequest, sdp_go.GetDiffResponse](
 			httpClient,
 			baseURL+ChangesServiceGetDiffProcedure,
@@ -400,7 +390,6 @@ type changesServiceClient struct {
 	updateChangingItems      *connect_go.Client[sdp_go.UpdateChangingItemsRequest, sdp_go.CalculateBlastRadiusResponse]
 	getAffectedApps          *connect_go.Client[sdp_go.GetAffectedAppsRequest, sdp_go.GetAffectedAppsResponse]
 	listChangingItemsSummary *connect_go.Client[sdp_go.ListChangingItemsSummaryRequest, sdp_go.ListChangingItemsSummaryResponse]
-	getChangeAuditLog        *connect_go.Client[sdp_go.GetChangeAuditLogRequest, sdp_go.GetChangeAuditLogResponse]
 	getDiff                  *connect_go.Client[sdp_go.GetDiffRequest, sdp_go.GetDiffResponse]
 }
 
@@ -544,11 +533,6 @@ func (c *changesServiceClient) ListChangingItemsSummary(ctx context.Context, req
 	return c.listChangingItemsSummary.CallUnary(ctx, req)
 }
 
-// GetChangeAuditLog calls changes.ChangesService.GetChangeAuditLog.
-func (c *changesServiceClient) GetChangeAuditLog(ctx context.Context, req *connect_go.Request[sdp_go.GetChangeAuditLogRequest]) (*connect_go.Response[sdp_go.GetChangeAuditLogResponse], error) {
-	return c.getChangeAuditLog.CallUnary(ctx, req)
-}
-
 // GetDiff calls changes.ChangesService.GetDiff.
 func (c *changesServiceClient) GetDiff(ctx context.Context, req *connect_go.Request[sdp_go.GetDiffRequest]) (*connect_go.Response[sdp_go.GetDiffResponse], error) {
 	return c.getDiff.CallUnary(ctx, req)
@@ -632,8 +616,6 @@ type ChangesServiceHandler interface {
 	// this change. This includes the high level details of the item, and the
 	// status (e.g. changed, deleted) but not the diff itself
 	ListChangingItemsSummary(context.Context, *connect_go.Request[sdp_go.ListChangingItemsSummaryRequest]) (*connect_go.Response[sdp_go.ListChangingItemsSummaryResponse], error)
-	// Gets the audit log for a given change
-	GetChangeAuditLog(context.Context, *connect_go.Request[sdp_go.GetChangeAuditLogRequest]) (*connect_go.Response[sdp_go.GetChangeAuditLogResponse], error)
 	// Gets the full diff of everything that changed as part of this "change".
 	// This includes all items and also edges between them
 	GetDiff(context.Context, *connect_go.Request[sdp_go.GetDiffRequest]) (*connect_go.Response[sdp_go.GetDiffResponse], error)
@@ -785,11 +767,6 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 		svc.ListChangingItemsSummary,
 		opts...,
 	)
-	changesServiceGetChangeAuditLogHandler := connect_go.NewUnaryHandler(
-		ChangesServiceGetChangeAuditLogProcedure,
-		svc.GetChangeAuditLog,
-		opts...,
-	)
 	changesServiceGetDiffHandler := connect_go.NewUnaryHandler(
 		ChangesServiceGetDiffProcedure,
 		svc.GetDiff,
@@ -853,8 +830,6 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect_go.Hand
 			changesServiceGetAffectedAppsHandler.ServeHTTP(w, r)
 		case ChangesServiceListChangingItemsSummaryProcedure:
 			changesServiceListChangingItemsSummaryHandler.ServeHTTP(w, r)
-		case ChangesServiceGetChangeAuditLogProcedure:
-			changesServiceGetChangeAuditLogHandler.ServeHTTP(w, r)
 		case ChangesServiceGetDiffProcedure:
 			changesServiceGetDiffHandler.ServeHTTP(w, r)
 		default:
@@ -976,10 +951,6 @@ func (UnimplementedChangesServiceHandler) GetAffectedApps(context.Context, *conn
 
 func (UnimplementedChangesServiceHandler) ListChangingItemsSummary(context.Context, *connect_go.Request[sdp_go.ListChangingItemsSummaryRequest]) (*connect_go.Response[sdp_go.ListChangingItemsSummaryResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.ListChangingItemsSummary is not implemented"))
-}
-
-func (UnimplementedChangesServiceHandler) GetChangeAuditLog(context.Context, *connect_go.Request[sdp_go.GetChangeAuditLogRequest]) (*connect_go.Response[sdp_go.GetChangeAuditLogResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("changes.ChangesService.GetChangeAuditLog is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) GetDiff(context.Context, *connect_go.Request[sdp_go.GetDiffRequest]) (*connect_go.Response[sdp_go.GetDiffResponse], error) {
