@@ -260,7 +260,7 @@ func TestCopy(t *testing.T) {
 		t.Run("Copying an item", func(t *testing.T) {
 			itemA.Copy(&itemB)
 
-			CompareItems(&itemA, &itemB, t)
+			AssertItemsEqual(&itemA, &itemB, t)
 		})
 	})
 
@@ -294,7 +294,7 @@ func TestCopy(t *testing.T) {
 		t.Run("Copying an item", func(t *testing.T) {
 			itemA.Copy(&itemB)
 
-			CompareItems(&itemA, &itemB, t)
+			AssertItemsEqual(&itemA, &itemB, t)
 		})
 	})
 
@@ -313,13 +313,13 @@ func TestCopy(t *testing.T) {
 		t.Run("Copying an item", func(t *testing.T) {
 			itemA.Copy(&itemB)
 
-			CompareItems(&itemA, &itemB, t)
+			AssertItemsEqual(&itemA, &itemB, t)
 		})
 	})
 
 }
 
-func CompareItems(itemA *Item, itemB *Item, t *testing.T) {
+func AssertItemsEqual(itemA *Item, itemB *Item, t *testing.T) {
 	if itemA.Scope != itemB.Scope {
 		t.Error("Scope did not match")
 	}
