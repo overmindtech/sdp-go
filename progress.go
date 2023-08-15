@@ -86,7 +86,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 	rs.monitorRunning.Add(1)
 
 	// Start a goroutine to send further responses
-	go func(ctx context.Context, respInterval time.Duration, ec EncodedConnection, r *Response, kill chan *Response) {
+	go func() {
 		defer LogRecoverToReturn(&ctx, "ResponseSender ticker")
 		// confirm closure on exit
 		defer rs.monitorRunning.Done()
@@ -94,38 +94,25 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 		if ec == nil {
 			return
 		}
-		tick := time.NewTicker(respInterval)
+		tick := time.NewTicker(rs.ResponseInterval)
 
 		for {
 			var err error
 
 			select {
-			case r := <-kill:
-				// If the context is cancelled then we don't want to do anything
-				// other than exit
+			case <-rs.monitorKill:
 				tick.Stop()
 
-				if r != nil {
-					err = ec.Publish(
-						ctx,
-						rs.ResponseSubject,
-						&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
-					)
-
-					log.WithError(err).Error("Error publishing final response")
-				}
 				return
 			case <-ctx.Done():
-				// If the context is cancelled then we don't want to do anything
-				// other than exit
 				tick.Stop()
 
 				return
 			case <-tick.C:
-				err = ec.Publish(
+				err = rs.connection.Publish(
 					ctx,
 					rs.ResponseSubject,
-					&QueryResponse{ResponseType: &QueryResponse_Response{Response: r}},
+					&QueryResponse{ResponseType: &QueryResponse_Response{Response: &resp}},
 				)
 
 				if err != nil {
@@ -133,7 +120,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				}
 			}
 		}
-	}(ctx, rs.ResponseInterval, rs.connection, &resp, rs.monitorKill)
+	}()
 }
 
 // Kill Kills the response sender immediately. This should be used if something
@@ -143,11 +130,20 @@ func (rs *ResponseSender) Kill() {
 }
 
 func (rs *ResponseSender) killWithResponse(r *Response) {
-	// send the stop signal to the goroutine from Start()
-	rs.monitorKill <- r
+	// close the channel to kill the sender
+	close(rs.monitorKill)
 
 	// wait for the sender to be actually done
 	rs.monitorRunning.Wait()
+
+	if rs.connection != nil {
+		// Send the final response
+		rs.connection.Publish(context.Background(), rs.ResponseSubject, &QueryResponse{
+			ResponseType: &QueryResponse_Response{
+				Response: r,
+			},
+		})
+	}
 }
 
 // Done kills the responder but sends a final completion message
