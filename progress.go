@@ -136,12 +136,14 @@ func (rs *ResponseSender) killWithResponse(r *Response) {
 	// wait for the sender to be actually done
 	rs.monitorRunning.Wait()
 
-	// Send the final response
-	rs.connection.Publish(context.Background(), rs.ResponseSubject, &QueryResponse{
-		ResponseType: &QueryResponse_Response{
-			Response: r,
-		},
-	})
+	if rs.connection != nil {
+		// Send the final response
+		rs.connection.Publish(context.Background(), rs.ResponseSubject, &QueryResponse{
+			ResponseType: &QueryResponse_Response{
+				Response: r,
+			},
+		})
+	}
 }
 
 // Done kills the responder but sends a final completion message
