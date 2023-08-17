@@ -137,12 +137,14 @@ func (rs *ResponseSender) killWithResponse(r *Response) {
 	rs.monitorRunning.Wait()
 
 	if rs.connection != nil {
-		// Send the final response
-		rs.connection.Publish(context.Background(), rs.ResponseSubject, &QueryResponse{
-			ResponseType: &QueryResponse_Response{
-				Response: r,
-			},
-		})
+		if r != nil {
+			// Send the final response
+			rs.connection.Publish(context.Background(), rs.ResponseSubject, &QueryResponse{
+				ResponseType: &QueryResponse_Response{
+					Response: r,
+				},
+			})
+		}
 	}
 }
 
