@@ -83,7 +83,7 @@ const (
 	// calculated. The blast radius can be calculated using the
 	// `CalculateBlastRadius` RPC.
 	ChangeStatus_CHANGE_STATUS_UNSPECIFIED ChangeStatus = 0
-	// The blast radius has been calculated, but the chnage has not yet started.
+	// The blast radius has been calculated, but the change has not yet started.
 	// The change can be started using the `StartChange` RPC.
 	ChangeStatus_CHANGE_STATUS_DEFINING ChangeStatus = 1
 	// The change is in progress. The change can be ended using the `EndChange`
