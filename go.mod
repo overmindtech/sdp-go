@@ -1,6 +1,6 @@
 module github.com/overmindtech/sdp-go
 
-go 1.20
+go 1.21
 
 require (
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
