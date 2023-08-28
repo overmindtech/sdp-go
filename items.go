@@ -334,6 +334,14 @@ func (r *Query) ParseUuid() uuid.UUID {
 	return reqUUID
 }
 
+func (e *QueryError) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(e.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
 // ToAttributes Converts a map[string]interface{} to an ItemAttributes object
 func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
 	if m == nil {
