@@ -334,8 +334,40 @@ func (r *Query) ParseUuid() uuid.UUID {
 	return reqUUID
 }
 
-func (e *QueryError) GetUUIDParsed() *uuid.UUID {
-	u, err := uuid.FromBytes(e.GetUUID())
+func (x *QueryError) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *CancelQuery) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *UndoQuery) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *Expand) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetUUID())
 	if err != nil {
 		return nil
 	}
