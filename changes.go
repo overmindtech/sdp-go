@@ -132,8 +132,72 @@ func (ob *OnboardingProperties) GetChangeUUIDParsed() *uuid.UUID {
 	return &u
 }
 
-func (ci *UpdateChangingItemsRequest) GetChangeUUIDParsed() *uuid.UUID {
-	u, err := uuid.FromBytes(ci.GetChangeUUID())
+func (x *GetChangeTimelineRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *GetDiffRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *ListChangingItemsSummaryRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *GetAffectedAppsRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *UpdateChangingItemsRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *CalculateBlastRadiusRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *StartChangeRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *EndChangeRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
+func (x *SimulateChangeRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
 	if err != nil {
 		return nil
 	}
