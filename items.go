@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -256,7 +257,7 @@ func (a *ItemAttributes) Set(name string, value interface{}) error {
 	}
 
 	// Ensure that this interface will be able to be converted to a struct value
-	sanitizedValue := sanitizeInterface(value)
+	sanitizedValue := sanitizeInterface(value, false)
 	structValue, err := structpb.NewValue(sanitizedValue)
 
 	if err != nil {
@@ -309,7 +310,8 @@ func (q *Query) Copy(dest *Query) {
 	}
 }
 
-// TimeoutContext returns a context and cancel function representing the timeout for this request
+// TimeoutContext returns a context and cancel function representing the timeout
+// for this request
 func (q *Query) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if q == nil || q.Timeout == nil {
 		return context.WithCancel(ctx)
@@ -323,7 +325,8 @@ func (q *Query) TimeoutContext(ctx context.Context) (context.Context, context.Ca
 	return context.WithTimeout(ctx, q.Timeout.AsDuration())
 }
 
-// ParseUuid returns this request's UUID. If there's an error parsing it, generates and stores a fresh one
+// ParseUuid returns this request's UUID. If there's an error parsing it,
+// generates and stores a fresh one
 func (r *Query) ParseUuid() uuid.UUID {
 	// Extract and parse the UUID
 	reqUUID, uuidErr := uuid.FromBytes(r.UUID)
@@ -374,8 +377,20 @@ func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
 	return &u
 }
 
+// Converts a map[string]interface{} to an ItemAttributes object, sorting all
+// slices alphabetically.This should be used when the item doesn't contain array
+// attributes that are explicitly sorted, especially if these are sometimes
+// returned in a different order
+func ToAttributesSorted(m map[string]interface{}) (*ItemAttributes, error) {
+	return toAttributes(m, true)
+}
+
 // ToAttributes Converts a map[string]interface{} to an ItemAttributes object
 func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
+	return toAttributes(m, false)
+}
+
+func toAttributes(m map[string]interface{}, sort bool) (*ItemAttributes, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -383,17 +398,16 @@ func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
 	var s map[string]*structpb.Value
 	var err error
 
-	// str, err = structpb.NewStruct()
 	s = make(map[string]*structpb.Value)
 
-	// Loop of the map
+	// Loop over the map
 	for k, v := range m {
 		if v == nil {
 			// If the value is nil then ignore
 			continue
 		}
 
-		sanitizedValue := sanitizeInterface(v)
+		sanitizedValue := sanitizeInterface(v, sort)
 		structValue, err := structpb.NewValue(sanitizedValue)
 
 		if err != nil {
@@ -431,7 +445,7 @@ func ToAttributesViaJson(v interface{}) (*ItemAttributes, error) {
 	return ToAttributes(m)
 }
 
-// sanitizeInterface Ensures that en interface is ina format that can be
+// sanitizeInterface Ensures that en interface is in a format that can be
 // converted to a protobuf value. The structpb.ToValue() function expects things
 // to be in one of the following formats:
 //
@@ -454,7 +468,7 @@ func ToAttributesViaJson(v interface{}) (*ItemAttributes, error) {
 // function does its best to example the available data type to ensure that as
 // long as the data can in theory be represented by a protobuf struct, the
 // conversion will work.
-func sanitizeInterface(i interface{}) interface{} {
+func sanitizeInterface(i interface{}, sortArrays bool) interface{} {
 	v := reflect.ValueOf(i)
 	t := v.Type()
 
@@ -491,8 +505,8 @@ func sanitizeInterface(i interface{}) interface{} {
 		return v.Float()
 	case reflect.String:
 		return fmt.Sprint(v)
-	case reflect.Array:
-		// We need to check the type if each element in the array and do
+	case reflect.Array, reflect.Slice:
+		// We need to check the type of each element in the array and do
 		// conversion on that
 
 		// returnSlice Returns the array in the format that protobuf can deal with
@@ -501,17 +515,11 @@ func sanitizeInterface(i interface{}) interface{} {
 		returnSlice = make([]interface{}, v.Len())
 
 		for index := 0; index < v.Len(); index++ {
-			returnSlice[index] = sanitizeInterface(v.Index(index).Interface())
+			returnSlice[index] = sanitizeInterface(v.Index(index).Interface(), sortArrays)
 		}
 
-		return returnSlice
-	case reflect.Slice:
-		var returnSlice []interface{}
-
-		returnSlice = make([]interface{}, v.Len())
-
-		for index := 0; index < v.Len(); index++ {
-			returnSlice[index] = sanitizeInterface(v.Index(index).Interface())
+		if sortArrays {
+			sortInterfaceArray(returnSlice)
 		}
 
 		return returnSlice
@@ -530,7 +538,7 @@ func sanitizeInterface(i interface{}) interface{} {
 
 			// Only use the item if it isn't zero
 			if !reflect.DeepEqual(mapValueInterface, zeroValueInterface) {
-				value := sanitizeInterface(v.MapIndex(mapKey).Interface())
+				value := sanitizeInterface(v.MapIndex(mapKey).Interface(), sortArrays)
 
 				returnMap[stringKey] = value
 			}
@@ -544,7 +552,7 @@ func sanitizeInterface(i interface{}) interface{} {
 			// If it's a time we just want to print in ISO8601
 			return x.Format(time.RFC3339Nano)
 		case time.Duration:
-			// If it's duration we want to print in a parseable format
+			// If it's duration we want to print in a parsable format
 			return x.String()
 		default:
 			// In the case of a struct we basically want to turn it into a
@@ -575,7 +583,7 @@ func sanitizeInterface(i interface{}) interface{} {
 				}
 			}
 
-			return sanitizeInterface(returnMap)
+			return sanitizeInterface(returnMap, sortArrays)
 		}
 	case reflect.Ptr:
 		// Get the zero value for this field
@@ -586,12 +594,20 @@ func sanitizeInterface(i interface{}) interface{} {
 			return nil
 		}
 
-		return sanitizeInterface(v.Elem().Interface())
+		return sanitizeInterface(v.Elem().Interface(), sortArrays)
 	default:
 		// If we don't recognize the type then we need to see what the
 		// underlying type is and see if we can convert that
 		return i
 	}
+}
+
+// Sorts an interface slice by converting each item to a string and sorting
+// these strings
+func sortInterfaceArray(input []interface{}) {
+	sort.Slice(input, func(i, j int) bool {
+		return fmt.Sprint(input[i]) < fmt.Sprint(input[j])
+	})
 }
 
 func hashSum(b []byte) string {
