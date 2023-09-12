@@ -87,7 +87,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	// Start a goroutine to send further responses
 	go func() {
-		defer LogRecoverToReturn(&ctx, "ResponseSender ticker")
+		defer LogRecoverToReturn(ctx, "ResponseSender ticker")
 		// confirm closure on exit
 		defer rs.monitorRunning.Done()
 
@@ -116,7 +116,7 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 				)
 
 				if err != nil {
-					log.WithError(err).Error("Error publishing response")
+					log.WithContext(ctx).WithError(err).Error("Error publishing response")
 				}
 			}
 		}
@@ -369,7 +369,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 				// This *should* never happen but I am seeing it happen
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
-				log.WithFields(log.Fields{
+				log.WithContext(ctx).WithFields(log.Fields{
 					"Type":                 item.Type,
 					"Scope":                item.Scope,
 					"UniqueAttributeValue": item.UniqueAttributeValue(),
@@ -407,7 +407,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 				// This *should* never happen but I am seeing it happen
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
-				log.WithFields(log.Fields{
+				log.WithContext(ctx).WithFields(log.Fields{
 					"UUID":          err.UUID,
 					"ErrorType":     err.ErrorType,
 					"ErrorString":   err.ErrorString,
@@ -465,7 +465,7 @@ func (qp *QueryProgress) markStarted() {
 
 	if qp.StartTimeout != 0 {
 		go func(ctx context.Context) {
-			defer LogRecoverToReturn(&ctx, "QueryProgress startTimeout")
+			defer LogRecoverToReturn(ctx, "QueryProgress startTimeout")
 			startTimeout := time.NewTimer(qp.StartTimeout)
 			select {
 			case <-startTimeout.C:
@@ -862,7 +862,7 @@ func (qp *QueryProgress) allDone() bool {
 // stall monitor from another thread in the case that another message is
 // received.
 func stallMonitor(ctx context.Context, timeout time.Duration, responder *Responder, qp *QueryProgress) {
-	defer LogRecoverToReturn(&ctx, "stallMonitor")
+	defer LogRecoverToReturn(ctx, "stallMonitor")
 	select {
 	case <-ctx.Done():
 		// If the context is cancelled then we don't want to do anything
