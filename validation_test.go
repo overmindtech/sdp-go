@@ -446,7 +446,7 @@ func newQuery() *Query {
 		},
 		Scope:       "global",
 		UUID:        u[:],
-		Timeout:     durationpb.New(time.Second),
+		Deadline:    timestamppb.New(time.Now().Add(1 * time.Second)),
 		IgnoreCache: false,
 	}
 }
@@ -478,8 +478,8 @@ func newResponse() *Response {
 
 func newReverseLinksRequest() *ReverseLinksRequest {
 	return &ReverseLinksRequest{
-		Item:    newReference(),
-		Timeout: durationpb.New(time.Second),
+		Item:     newReference(),
+		Deadline: timestamppb.New(time.Now().Add(1 * time.Second)),
 	}
 }
 
