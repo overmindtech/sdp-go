@@ -302,27 +302,21 @@ func (q *Query) Copy(dest *Query) {
 	dest.IgnoreCache = q.IgnoreCache
 	dest.UUID = q.UUID
 
-	if q.Timeout != nil {
-		dest.Timeout = &durationpb.Duration{
-			Seconds: q.Timeout.Seconds,
-			Nanos:   q.Timeout.Nanos,
-		}
+	if q.Deadline != nil {
+		// allocate a new value
+		dest.Deadline = timestamppb.New(q.Deadline.AsTime())
 	}
 }
 
 // TimeoutContext returns a context and cancel function representing the timeout
 // for this request
 func (q *Query) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	if q == nil || q.Timeout == nil {
+	// If there is no deadline, treat that as infinite
+	if q == nil || !q.Deadline.IsValid() {
 		return context.WithCancel(ctx)
 	}
 
-	// If the timeout is 0, treat that as infinite
-	if q.Timeout.Nanos == 0 && q.Timeout.Seconds == 0 {
-		return context.WithCancel(ctx)
-	}
-
-	return context.WithTimeout(ctx, q.Timeout.AsDuration())
+	return context.WithDeadline(ctx, q.Deadline.AsTime())
 }
 
 // ParseUuid returns this request's UUID. If there's an error parsing it,

@@ -434,7 +434,7 @@ func AssertItemsEqual(itemA *Item, itemB *Item, t *testing.T) {
 }
 
 func TestTimeoutContext(t *testing.T) {
-	r := Query{
+	q := Query{
 		Type:   "person",
 		Method: QueryMethod_GET,
 		Query:  "foo",
@@ -442,10 +442,10 @@ func TestTimeoutContext(t *testing.T) {
 			LinkDepth: 2,
 		},
 		IgnoreCache: false,
-		Timeout:     durationpb.New(10 * time.Millisecond),
+		Deadline:    timestamppb.New(time.Now().Add(10 * time.Millisecond)),
 	}
 
-	ctx, cancel := r.TimeoutContext(context.Background())
+	ctx, cancel := q.TimeoutContext(context.Background())
 	defer cancel()
 
 	select {

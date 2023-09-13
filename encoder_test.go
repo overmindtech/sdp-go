@@ -22,7 +22,7 @@ var query = Query{
 	},
 	Scope:   "test",
 	UUID:    _u[:],
-	Timeout: durationpb.New(10 * time.Second),
+	Deadline:    timestamppb.New(time.Now().Add(10 * time.Second)),
 }
 
 var itemAttributes = ItemAttributes{

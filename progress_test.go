@@ -11,6 +11,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestResponseNilPublisher(t *testing.T) {
@@ -720,7 +721,7 @@ func TestExecute(t *testing.T) {
 			Scope:       "global",
 			IgnoreCache: false,
 			UUID:        u[:],
-			Timeout:     durationpb.New(10 * time.Second),
+			Deadline:    timestamppb.New(time.Now().Add(10 * time.Second)),
 		}
 
 		rp := NewQueryProgress(&q)
@@ -745,7 +746,7 @@ func TestExecute(t *testing.T) {
 			Scope:       "global",
 			IgnoreCache: false,
 			UUID:        u[:],
-			Timeout:     durationpb.New(10 * time.Second),
+			Deadline:    timestamppb.New(time.Now().Add(10 * time.Second)),
 		}
 
 		rp := NewQueryProgress(&q)
