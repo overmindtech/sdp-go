@@ -463,30 +463,32 @@ func (qp *QueryProgress) markStarted() {
 	qp.started = true
 	qp.noResponderContext, qp.noRespondersCancel = context.WithCancel(context.Background())
 
-	if qp.StartTimeout != 0 {
-		go func(ctx context.Context) {
-			defer LogRecoverToReturn(ctx, "QueryProgress startTimeout")
-			startTimeout := time.NewTimer(qp.StartTimeout)
-			select {
-			case <-startTimeout.C:
-				qp.StartTimeoutElapsed.Store(true)
-
-				// Once the start timeout has elapsed, if there are no
-				// responders, or all of them are done, we can drain the
-				// connections and mark everything as done
-				qp.respondersMutex.RLock()
-				defer qp.respondersMutex.RUnlock()
-
-				if qp.numResponders() == 0 || qp.allDone() {
-					qp.Drain()
-				}
-			case <-ctx.Done():
-				startTimeout.Stop()
-			}
-		}(qp.noResponderContext)
+	var startTimeout *time.Timer
+	if qp.StartTimeout == 0 {
+		startTimeout = time.NewTimer(1 * time.Second)
 	} else {
-		qp.StartTimeoutElapsed.Store(true)
+		startTimeout = time.NewTimer(qp.StartTimeout)
 	}
+
+	go func(ctx context.Context) {
+		defer LogRecoverToReturn(ctx, "QueryProgress startTimeout")
+		select {
+		case <-startTimeout.C:
+			qp.StartTimeoutElapsed.Store(true)
+
+			// Once the start timeout has elapsed, if there are no
+			// responders, or all of them are done, we can drain the
+			// connections and mark everything as done
+			qp.respondersMutex.RLock()
+			defer qp.respondersMutex.RUnlock()
+
+			if qp.numResponders() == 0 || qp.allDone() {
+				qp.Drain()
+			}
+		case <-ctx.Done():
+			startTimeout.Stop()
+		}
+	}(qp.noResponderContext)
 }
 
 // Drain Tries to drain connections gracefully. If not though, connections are
