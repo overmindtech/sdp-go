@@ -133,22 +133,15 @@ func (ec *EncodedConnectionImpl) Drop() {
 	ec.Conn = nil
 }
 
-// Unmarshal Does a proto.Unmarshal and logs errors in a consistent way
+// Unmarshal Does a proto.Unmarshal and logs errors in a consistent way. The
+// user should still validate that the message is valid as it's possible to
+// unmarshal data from one message format into another without an error.
+// Validation should be based on the type that the data is being unmarshaled
+// into.
 func Unmarshal(ctx context.Context, b []byte, m proto.Message) error {
 	err := proto.Unmarshal(b, m)
 	if err != nil {
 		recordMessage(ctx, "Unmarshal err", "unknown", fmt.Sprint(reflect.TypeOf(err)), err.Error())
-		log.WithContext(ctx).Errorf("Error parsing message: %v", err)
-		trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
-		return err
-	}
-
-	// Check for possible type mismatch. If the wong type was provided it
-	// may have been able to partially decode the message, but there will be
-	// some remaining unknown fields. If there are some, fail.
-	if unk := m.ProtoReflect().GetUnknown(); unk != nil {
-		err = fmt.Errorf("unmarshal to %T had unknown fields, likely a type mismatch. Unknowns: %v", m, unk)
-		recordMessage(ctx, "Unmarshal unknown", "unknown", fmt.Sprint(reflect.TypeOf(m)), protojson.Format(m))
 		log.WithContext(ctx).Errorf("Error parsing message: %v", err)
 		trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("Error parsing message: %v", err))
 		return err
