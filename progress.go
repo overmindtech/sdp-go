@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -255,6 +256,7 @@ type QueryProgress struct {
 	chanMutex      sync.RWMutex
 	channelsClosed bool // Additional protection against send on closed chan. This isn't brilliant but I can't think of a better way at the moment
 	drain          sync.Once
+	drainStack     []byte
 
 	started   bool
 	cancelled bool
@@ -375,6 +377,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 					"UniqueAttributeValue": item.UniqueAttributeValue(),
 					"Item Timestamp":       itemTime.String(),
 					"Current Time":         time.Now().String(),
+					"Stack":                string(qp.drainStack),
 				}).Error("SDP-GO ERROR: An Item was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
 
 				span.SetStatus(codes.Error, "SDP-GO ERROR: An Item was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
@@ -499,6 +502,8 @@ func (qp *QueryProgress) Drain() {
 	qp.drain.Do(func() {
 		qp.subMutex.Lock()
 		defer qp.subMutex.Unlock()
+
+		qp.drainStack = debug.Stack()
 
 		if qp.noRespondersCancel != nil {
 			// Cancel the no responders watcher to release the resources
