@@ -879,6 +879,7 @@ func stallMonitor(ctx context.Context, timeout time.Duration, responder *Respond
 		// means that we haven't received a response in the expected
 		// time, we now need to mark that responder as STALLED
 		responder.SetState(ResponderState_STALLED)
+		log.WithContext(ctx).WithField("om.timeout", timeout).WithField("om.responder", responder.Name).Error("marking responder as stalled after timeout")
 
 		if qp.allDone() {
 			qp.Drain()
