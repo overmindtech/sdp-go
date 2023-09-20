@@ -53,12 +53,17 @@ type AuthConfig struct {
 	ScopeOverride *string
 }
 
-// HasScopes checks that the authenticated user in the request context has the
-// required scopes. If auth has been bypassed, this will always return true
+// HasScopes compatibility alias for HasAllScopes
 func HasScopes(ctx context.Context, requiredScopes ...string) bool {
+	return HasAllScopes(ctx, requiredScopes...)
+}
+
+// HasAllScopes checks that the authenticated user in the request context has all the
+// required scopes. If auth has been bypassed, this will always return true
+func HasAllScopes(ctx context.Context, requiredScopes ...string) bool {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		attribute.StringSlice("om.auth.requiredScopes", requiredScopes),
+		attribute.StringSlice("om.auth.requiredScopes.all", requiredScopes),
 	)
 
 	if ctx.Value(AuthBypassedContextKey{}) == true {
@@ -81,6 +86,36 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 		}
 	}
 	return true
+}
+
+// HasAnyScopes checks that the authenticated user in the request context has any of the
+// required scopes. If auth has been bypassed, this will always return true
+func HasAnyScopes(ctx context.Context, requiredScopes ...string) bool {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(
+		attribute.StringSlice("om.auth.requiredScopes.any", requiredScopes),
+	)
+
+	if ctx.Value(AuthBypassedContextKey{}) == true {
+		span.SetAttributes(attribute.Bool("om.auth.bypass", true))
+
+		// Bypass all auth
+		return true
+	}
+
+	claims, ok := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
+	if !ok {
+		span.SetAttributes(attribute.String("om.auth.missing_claims", "all"))
+		return false
+	}
+
+	for _, scope := range requiredScopes {
+		if claims.HasScope(scope) {
+			span.SetAttributes(attribute.String("om.auth.used_claim", scope))
+			return true
+		}
+	}
+	return false
 }
 
 var ErrNoClaims = errors.New("error extracting claims from token")
