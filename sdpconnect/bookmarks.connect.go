@@ -55,6 +55,7 @@ const (
 
 // BookmarksServiceClient is a client for the bookmarks.BookmarksService service.
 type BookmarksServiceClient interface {
+	// returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
 	ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error)
 	CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error)
 	GetBookmark(context.Context, *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error)
@@ -149,6 +150,7 @@ func (c *bookmarksServiceClient) GetAffectedBookmarks(ctx context.Context, req *
 
 // BookmarksServiceHandler is an implementation of the bookmarks.BookmarksService service.
 type BookmarksServiceHandler interface {
+	// returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
 	ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error)
 	CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error)
 	GetBookmark(context.Context, *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error)
