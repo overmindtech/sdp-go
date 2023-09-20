@@ -14,7 +14,7 @@ func TestHasScopes(t *testing.T) {
 
 		ctx := AddBypassAuthConfig(context.Background())
 
-		pass := HasScopes(ctx, "test")
+		pass := HasAllScopes(ctx, "test")
 
 		if !pass {
 			t.Error("expected to allow since auth is bypassed")
@@ -28,7 +28,21 @@ func TestHasScopes(t *testing.T) {
 		scope := "test foo bar"
 		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
 
-		pass := HasScopes(ctx, "test")
+		pass := HasAllScopes(ctx, "test")
+
+		if !pass {
+			t.Error("expected to allow since `test` scope is present")
+		}
+	})
+
+	t.Run("with multiple good scopes", func(t *testing.T) {
+		t.Parallel()
+
+		account := "foo"
+		scope := "test foo bar"
+		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
+
+		pass := HasAllScopes(ctx, "test", "foo")
 
 		if !pass {
 			t.Error("expected to allow since `test` scope is present")
@@ -42,10 +56,52 @@ func TestHasScopes(t *testing.T) {
 		scope := "test foo bar"
 		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
 
-		pass := HasScopes(ctx, "baz")
+		pass := HasAllScopes(ctx, "baz")
 
 		if pass {
 			t.Error("expected to deny since `baz` scope is not present")
+		}
+	})
+
+	t.Run("with one scope missing", func(t *testing.T) {
+		t.Parallel()
+
+		account := "foo"
+		scope := "test foo bar"
+		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
+
+		pass := HasAllScopes(ctx, "test", "baz")
+
+		if pass {
+			t.Error("expected to deny since `baz` scope is not present")
+		}
+	})
+
+	t.Run("with any scopes", func(t *testing.T) {
+		t.Parallel()
+
+		account := "foo"
+		scope := "test foo bar"
+		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
+
+		pass := HasAnyScopes(ctx, "fail", "foo")
+
+		if !pass {
+			t.Error("expected to allow since `foo` scope is present")
+		}
+	})
+
+	t.Run("without any scopes", func(t *testing.T) {
+		t.Parallel()
+
+		account := "foo"
+		scope := "test foo bar"
+		ctx := OverrideCustomClaims(context.Background(), &scope, &account)
+
+		pass := HasAnyScopes(ctx, "fail", "fail harder")
+
+		if pass {
+			t.Error("expected to deny since no matching scope is present")
 		}
 	})
 }
