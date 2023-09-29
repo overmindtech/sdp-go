@@ -2,7 +2,7 @@ package auth
 
 import (
 	"go.opentelemetry.io/otel"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -11,10 +11,8 @@ const (
 	instrumentationVersion = "0.0.1"
 )
 
-var (
-	tracer = otel.GetTracerProvider().Tracer(
-		instrumentationName,
-		trace.WithInstrumentationVersion(instrumentationVersion),
-		trace.WithSchemaURL(semconv.SchemaURL),
-	)
+var tracer = otel.GetTracerProvider().Tracer(
+	instrumentationName,
+	trace.WithInstrumentationVersion(instrumentationVersion),
+	trace.WithSchemaURL(semconv.SchemaURL),
 )
