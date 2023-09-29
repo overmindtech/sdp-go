@@ -96,18 +96,15 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 			return
 		}
 		tick := time.NewTicker(rs.ResponseInterval)
+		defer tick.Stop()
 
 		for {
 			var err error
 
 			select {
 			case <-rs.monitorKill:
-				tick.Stop()
-
 				return
 			case <-ctx.Done():
-				tick.Stop()
-
 				return
 			case <-tick.C:
 				err = rs.connection.Publish(
