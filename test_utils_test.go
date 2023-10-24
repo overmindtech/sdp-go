@@ -14,18 +14,20 @@ func TestRequest(t *testing.T) {
 	t.Run("with a regular subject", func(t *testing.T) {
 		// Create the responder
 		tc.Subscribe("test", func(msg *nats.Msg) {
-			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-				LinkedItemQueries: []*LinkedItemQuery{},
-				Error:             "testing",
+			tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
+				ResponseType: &GatewayResponse_Error{
+					Error: "testing",
+				},
 			})
 		})
 
-		request := ReverseLinksRequest{}
+		request := &GatewayRequest{}
 
-		data, err := proto.Marshal(&request)
+		data, err := proto.Marshal(request)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		msg := nats.Msg{
 			Subject: "test",
 			Data:    data,
@@ -35,33 +37,34 @@ func TestRequest(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		response := ReverseLinksResponse{}
-		err = proto.Unmarshal(replyMsg.Data, &response)
-
+		response := &GatewayResponse{}
+		err = proto.Unmarshal(replyMsg.Data, response)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if response.Error != "testing" {
-			t.Errorf("expected error to be 'testing', got '%v'", response.Error)
+		if response.ResponseType.(*GatewayResponse_Error).Error != "testing" {
+			t.Errorf("expected error to be 'testing', got '%v'", response)
 		}
 	})
 
 	t.Run("with a > wildcard subject", func(t *testing.T) {
 		// Create the responder
 		tc.Subscribe("test.>", func(msg *nats.Msg) {
-			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-				LinkedItemQueries: []*LinkedItemQuery{},
-				Error:             "testing",
+			tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
+				ResponseType: &GatewayResponse_Error{
+					Error: "testing",
+				},
 			})
 		})
 
-		request := ReverseLinksRequest{}
+		request := &GatewayRequest{}
 
-		data, err := proto.Marshal(&request)
+		data, err := proto.Marshal(request)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		msg := nats.Msg{
 			Subject: "test.foo.bar",
 			Data:    data,
@@ -71,33 +74,34 @@ func TestRequest(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		response := ReverseLinksResponse{}
-		err = proto.Unmarshal(replyMsg.Data, &response)
-
+		response := &GatewayResponse{}
+		err = proto.Unmarshal(replyMsg.Data, response)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if response.Error != "testing" {
-			t.Errorf("expected error to be 'testing', got '%v'", response.Error)
+		if response.ResponseType.(*GatewayResponse_Error).Error != "testing" {
+			t.Errorf("expected error to be 'testing', got '%v'", response)
 		}
 	})
 
 	t.Run("with a * wildcard subject", func(t *testing.T) {
 		// Create the responder
 		tc.Subscribe("test.*.bar", func(msg *nats.Msg) {
-			tc.Publish(context.Background(), msg.Reply, &ReverseLinksResponse{
-				LinkedItemQueries: []*LinkedItemQuery{},
-				Error:             "testing",
+			tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
+				ResponseType: &GatewayResponse_Error{
+					Error: "testing",
+				},
 			})
 		})
 
-		request := ReverseLinksRequest{}
+		request := &GatewayRequest{}
 
-		data, err := proto.Marshal(&request)
+		data, err := proto.Marshal(request)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		msg := nats.Msg{
 			Subject: "test.foo.bar",
 			Data:    data,
@@ -107,15 +111,14 @@ func TestRequest(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		response := ReverseLinksResponse{}
-		err = proto.Unmarshal(replyMsg.Data, &response)
-
+		response := &GatewayResponse{}
+		err = proto.Unmarshal(replyMsg.Data, response)
 		if err != nil {
 			t.Error(err)
 		}
 
-		if response.Error != "testing" {
-			t.Errorf("expected error to be 'testing', got '%v'", response.Error)
+		if response.ResponseType.(*GatewayResponse_Error).Error != "testing" {
+			t.Errorf("expected error to be 'testing', got '%v'", response)
 		}
 	})
 
