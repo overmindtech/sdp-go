@@ -72,25 +72,6 @@ func (e *Edge) Validate() error {
 	return err
 }
 
-// Validate Ensures a ReverseLinksRequest is valid
-func (r *ReverseLinksRequest) Validate() error {
-	if r == nil {
-		return errors.New("reverseLinksRequest is nil")
-	}
-
-	if r.Item == nil {
-		return errors.New("reverseLinksRequest cannot have nil Item")
-	} else {
-		err := r.Item.Validate()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Validate Ensures a Response is valid
 func (r *Response) Validate() error {
 	if r == nil {
