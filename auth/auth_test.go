@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/nats-io/nkeys"
 	"github.com/overmindtech/sdp-go"
 	"github.com/overmindtech/sdp-go/sdpconnect"

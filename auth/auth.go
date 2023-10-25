@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	josejwt "github.com/go-jose/go-jose/v3/jwt"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
