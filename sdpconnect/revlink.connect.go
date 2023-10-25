@@ -5,9 +5,9 @@
 package sdpconnect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	sdp_go "github.com/overmindtech/sdp-go"
 	http "net/http"
 	strings "strings"
@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// RevlinkServiceName is the fully-qualified name of the RevlinkService service.
@@ -44,9 +44,9 @@ const (
 // RevlinkServiceClient is a client for the revlink.RevlinkService service.
 type RevlinkServiceClient interface {
 	// Gets reverse links for a given item
-	GetReverseLinks(context.Context, *connect_go.Request[sdp_go.GetReverseLinksRequest]) (*connect_go.Response[sdp_go.GetReverseLinksResponse], error)
+	GetReverseLinks(context.Context, *connect.Request[sdp_go.GetReverseLinksRequest]) (*connect.Response[sdp_go.GetReverseLinksResponse], error)
 	// Ingests a stream of gateway responses
-	IngestGatewayResponses(context.Context) *connect_go.ClientStreamForClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse]
+	IngestGatewayResponses(context.Context) *connect.ClientStreamForClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse]
 }
 
 // NewRevlinkServiceClient constructs a client for the revlink.RevlinkService service. By default,
@@ -56,15 +56,15 @@ type RevlinkServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewRevlinkServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) RevlinkServiceClient {
+func NewRevlinkServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RevlinkServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &revlinkServiceClient{
-		getReverseLinks: connect_go.NewClient[sdp_go.GetReverseLinksRequest, sdp_go.GetReverseLinksResponse](
+		getReverseLinks: connect.NewClient[sdp_go.GetReverseLinksRequest, sdp_go.GetReverseLinksResponse](
 			httpClient,
 			baseURL+RevlinkServiceGetReverseLinksProcedure,
 			opts...,
 		),
-		ingestGatewayResponses: connect_go.NewClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse](
+		ingestGatewayResponses: connect.NewClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse](
 			httpClient,
 			baseURL+RevlinkServiceIngestGatewayResponsesProcedure,
 			opts...,
@@ -74,26 +74,26 @@ func NewRevlinkServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // revlinkServiceClient implements RevlinkServiceClient.
 type revlinkServiceClient struct {
-	getReverseLinks        *connect_go.Client[sdp_go.GetReverseLinksRequest, sdp_go.GetReverseLinksResponse]
-	ingestGatewayResponses *connect_go.Client[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse]
+	getReverseLinks        *connect.Client[sdp_go.GetReverseLinksRequest, sdp_go.GetReverseLinksResponse]
+	ingestGatewayResponses *connect.Client[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse]
 }
 
 // GetReverseLinks calls revlink.RevlinkService.GetReverseLinks.
-func (c *revlinkServiceClient) GetReverseLinks(ctx context.Context, req *connect_go.Request[sdp_go.GetReverseLinksRequest]) (*connect_go.Response[sdp_go.GetReverseLinksResponse], error) {
+func (c *revlinkServiceClient) GetReverseLinks(ctx context.Context, req *connect.Request[sdp_go.GetReverseLinksRequest]) (*connect.Response[sdp_go.GetReverseLinksResponse], error) {
 	return c.getReverseLinks.CallUnary(ctx, req)
 }
 
 // IngestGatewayResponses calls revlink.RevlinkService.IngestGatewayResponses.
-func (c *revlinkServiceClient) IngestGatewayResponses(ctx context.Context) *connect_go.ClientStreamForClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse] {
+func (c *revlinkServiceClient) IngestGatewayResponses(ctx context.Context) *connect.ClientStreamForClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse] {
 	return c.ingestGatewayResponses.CallClientStream(ctx)
 }
 
 // RevlinkServiceHandler is an implementation of the revlink.RevlinkService service.
 type RevlinkServiceHandler interface {
 	// Gets reverse links for a given item
-	GetReverseLinks(context.Context, *connect_go.Request[sdp_go.GetReverseLinksRequest]) (*connect_go.Response[sdp_go.GetReverseLinksResponse], error)
+	GetReverseLinks(context.Context, *connect.Request[sdp_go.GetReverseLinksRequest]) (*connect.Response[sdp_go.GetReverseLinksResponse], error)
 	// Ingests a stream of gateway responses
-	IngestGatewayResponses(context.Context, *connect_go.ClientStream[sdp_go.IngestGatewayResponseRequest]) (*connect_go.Response[sdp_go.IngestGatewayResponsesResponse], error)
+	IngestGatewayResponses(context.Context, *connect.ClientStream[sdp_go.IngestGatewayResponseRequest]) (*connect.Response[sdp_go.IngestGatewayResponsesResponse], error)
 }
 
 // NewRevlinkServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -101,13 +101,13 @@ type RevlinkServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewRevlinkServiceHandler(svc RevlinkServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	revlinkServiceGetReverseLinksHandler := connect_go.NewUnaryHandler(
+func NewRevlinkServiceHandler(svc RevlinkServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	revlinkServiceGetReverseLinksHandler := connect.NewUnaryHandler(
 		RevlinkServiceGetReverseLinksProcedure,
 		svc.GetReverseLinks,
 		opts...,
 	)
-	revlinkServiceIngestGatewayResponsesHandler := connect_go.NewClientStreamHandler(
+	revlinkServiceIngestGatewayResponsesHandler := connect.NewClientStreamHandler(
 		RevlinkServiceIngestGatewayResponsesProcedure,
 		svc.IngestGatewayResponses,
 		opts...,
@@ -127,10 +127,10 @@ func NewRevlinkServiceHandler(svc RevlinkServiceHandler, opts ...connect_go.Hand
 // UnimplementedRevlinkServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedRevlinkServiceHandler struct{}
 
-func (UnimplementedRevlinkServiceHandler) GetReverseLinks(context.Context, *connect_go.Request[sdp_go.GetReverseLinksRequest]) (*connect_go.Response[sdp_go.GetReverseLinksResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("revlink.RevlinkService.GetReverseLinks is not implemented"))
+func (UnimplementedRevlinkServiceHandler) GetReverseLinks(context.Context, *connect.Request[sdp_go.GetReverseLinksRequest]) (*connect.Response[sdp_go.GetReverseLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("revlink.RevlinkService.GetReverseLinks is not implemented"))
 }
 
-func (UnimplementedRevlinkServiceHandler) IngestGatewayResponses(context.Context, *connect_go.ClientStream[sdp_go.IngestGatewayResponseRequest]) (*connect_go.Response[sdp_go.IngestGatewayResponsesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("revlink.RevlinkService.IngestGatewayResponses is not implemented"))
+func (UnimplementedRevlinkServiceHandler) IngestGatewayResponses(context.Context, *connect.ClientStream[sdp_go.IngestGatewayResponseRequest]) (*connect.Response[sdp_go.IngestGatewayResponsesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("revlink.RevlinkService.IngestGatewayResponses is not implemented"))
 }

@@ -5,9 +5,9 @@
 package sdpconnect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	sdp_go "github.com/overmindtech/sdp-go"
 	http "net/http"
 	strings "strings"
@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// InviteServiceName is the fully-qualified name of the InviteService service.
@@ -46,9 +46,9 @@ const (
 
 // InviteServiceClient is a client for the invites.InviteService service.
 type InviteServiceClient interface {
-	CreateInvite(context.Context, *connect_go.Request[sdp_go.CreateInviteRequest]) (*connect_go.Response[sdp_go.CreateInviteResponse], error)
-	ListInvites(context.Context, *connect_go.Request[sdp_go.ListInvitesRequest]) (*connect_go.Response[sdp_go.ListInvitesResponse], error)
-	RevokeInvite(context.Context, *connect_go.Request[sdp_go.RevokeInviteRequest]) (*connect_go.Response[sdp_go.RevokeInviteResponse], error)
+	CreateInvite(context.Context, *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error)
+	ListInvites(context.Context, *connect.Request[sdp_go.ListInvitesRequest]) (*connect.Response[sdp_go.ListInvitesResponse], error)
+	RevokeInvite(context.Context, *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error)
 }
 
 // NewInviteServiceClient constructs a client for the invites.InviteService service. By default, it
@@ -58,20 +58,20 @@ type InviteServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewInviteServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) InviteServiceClient {
+func NewInviteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) InviteServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &inviteServiceClient{
-		createInvite: connect_go.NewClient[sdp_go.CreateInviteRequest, sdp_go.CreateInviteResponse](
+		createInvite: connect.NewClient[sdp_go.CreateInviteRequest, sdp_go.CreateInviteResponse](
 			httpClient,
 			baseURL+InviteServiceCreateInviteProcedure,
 			opts...,
 		),
-		listInvites: connect_go.NewClient[sdp_go.ListInvitesRequest, sdp_go.ListInvitesResponse](
+		listInvites: connect.NewClient[sdp_go.ListInvitesRequest, sdp_go.ListInvitesResponse](
 			httpClient,
 			baseURL+InviteServiceListInvitesProcedure,
 			opts...,
 		),
-		revokeInvite: connect_go.NewClient[sdp_go.RevokeInviteRequest, sdp_go.RevokeInviteResponse](
+		revokeInvite: connect.NewClient[sdp_go.RevokeInviteRequest, sdp_go.RevokeInviteResponse](
 			httpClient,
 			baseURL+InviteServiceRevokeInviteProcedure,
 			opts...,
@@ -81,31 +81,31 @@ func NewInviteServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 
 // inviteServiceClient implements InviteServiceClient.
 type inviteServiceClient struct {
-	createInvite *connect_go.Client[sdp_go.CreateInviteRequest, sdp_go.CreateInviteResponse]
-	listInvites  *connect_go.Client[sdp_go.ListInvitesRequest, sdp_go.ListInvitesResponse]
-	revokeInvite *connect_go.Client[sdp_go.RevokeInviteRequest, sdp_go.RevokeInviteResponse]
+	createInvite *connect.Client[sdp_go.CreateInviteRequest, sdp_go.CreateInviteResponse]
+	listInvites  *connect.Client[sdp_go.ListInvitesRequest, sdp_go.ListInvitesResponse]
+	revokeInvite *connect.Client[sdp_go.RevokeInviteRequest, sdp_go.RevokeInviteResponse]
 }
 
 // CreateInvite calls invites.InviteService.CreateInvite.
-func (c *inviteServiceClient) CreateInvite(ctx context.Context, req *connect_go.Request[sdp_go.CreateInviteRequest]) (*connect_go.Response[sdp_go.CreateInviteResponse], error) {
+func (c *inviteServiceClient) CreateInvite(ctx context.Context, req *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error) {
 	return c.createInvite.CallUnary(ctx, req)
 }
 
 // ListInvites calls invites.InviteService.ListInvites.
-func (c *inviteServiceClient) ListInvites(ctx context.Context, req *connect_go.Request[sdp_go.ListInvitesRequest]) (*connect_go.Response[sdp_go.ListInvitesResponse], error) {
+func (c *inviteServiceClient) ListInvites(ctx context.Context, req *connect.Request[sdp_go.ListInvitesRequest]) (*connect.Response[sdp_go.ListInvitesResponse], error) {
 	return c.listInvites.CallUnary(ctx, req)
 }
 
 // RevokeInvite calls invites.InviteService.RevokeInvite.
-func (c *inviteServiceClient) RevokeInvite(ctx context.Context, req *connect_go.Request[sdp_go.RevokeInviteRequest]) (*connect_go.Response[sdp_go.RevokeInviteResponse], error) {
+func (c *inviteServiceClient) RevokeInvite(ctx context.Context, req *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error) {
 	return c.revokeInvite.CallUnary(ctx, req)
 }
 
 // InviteServiceHandler is an implementation of the invites.InviteService service.
 type InviteServiceHandler interface {
-	CreateInvite(context.Context, *connect_go.Request[sdp_go.CreateInviteRequest]) (*connect_go.Response[sdp_go.CreateInviteResponse], error)
-	ListInvites(context.Context, *connect_go.Request[sdp_go.ListInvitesRequest]) (*connect_go.Response[sdp_go.ListInvitesResponse], error)
-	RevokeInvite(context.Context, *connect_go.Request[sdp_go.RevokeInviteRequest]) (*connect_go.Response[sdp_go.RevokeInviteResponse], error)
+	CreateInvite(context.Context, *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error)
+	ListInvites(context.Context, *connect.Request[sdp_go.ListInvitesRequest]) (*connect.Response[sdp_go.ListInvitesResponse], error)
+	RevokeInvite(context.Context, *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error)
 }
 
 // NewInviteServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -113,18 +113,18 @@ type InviteServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	inviteServiceCreateInviteHandler := connect_go.NewUnaryHandler(
+func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	inviteServiceCreateInviteHandler := connect.NewUnaryHandler(
 		InviteServiceCreateInviteProcedure,
 		svc.CreateInvite,
 		opts...,
 	)
-	inviteServiceListInvitesHandler := connect_go.NewUnaryHandler(
+	inviteServiceListInvitesHandler := connect.NewUnaryHandler(
 		InviteServiceListInvitesProcedure,
 		svc.ListInvites,
 		opts...,
 	)
-	inviteServiceRevokeInviteHandler := connect_go.NewUnaryHandler(
+	inviteServiceRevokeInviteHandler := connect.NewUnaryHandler(
 		InviteServiceRevokeInviteProcedure,
 		svc.RevokeInvite,
 		opts...,
@@ -146,14 +146,14 @@ func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect_go.Handle
 // UnimplementedInviteServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedInviteServiceHandler struct{}
 
-func (UnimplementedInviteServiceHandler) CreateInvite(context.Context, *connect_go.Request[sdp_go.CreateInviteRequest]) (*connect_go.Response[sdp_go.CreateInviteResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("invites.InviteService.CreateInvite is not implemented"))
+func (UnimplementedInviteServiceHandler) CreateInvite(context.Context, *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("invites.InviteService.CreateInvite is not implemented"))
 }
 
-func (UnimplementedInviteServiceHandler) ListInvites(context.Context, *connect_go.Request[sdp_go.ListInvitesRequest]) (*connect_go.Response[sdp_go.ListInvitesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("invites.InviteService.ListInvites is not implemented"))
+func (UnimplementedInviteServiceHandler) ListInvites(context.Context, *connect.Request[sdp_go.ListInvitesRequest]) (*connect.Response[sdp_go.ListInvitesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("invites.InviteService.ListInvites is not implemented"))
 }
 
-func (UnimplementedInviteServiceHandler) RevokeInvite(context.Context, *connect_go.Request[sdp_go.RevokeInviteRequest]) (*connect_go.Response[sdp_go.RevokeInviteResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("invites.InviteService.RevokeInvite is not implemented"))
+func (UnimplementedInviteServiceHandler) RevokeInvite(context.Context, *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("invites.InviteService.RevokeInvite is not implemented"))
 }

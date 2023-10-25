@@ -5,9 +5,9 @@
 package sdpconnect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	sdp_go "github.com/overmindtech/sdp-go"
 	http "net/http"
 	strings "strings"
@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// BookmarksServiceName is the fully-qualified name of the BookmarksService service.
@@ -56,13 +56,13 @@ const (
 // BookmarksServiceClient is a client for the bookmarks.BookmarksService service.
 type BookmarksServiceClient interface {
 	// returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
-	ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error)
-	CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error)
-	GetBookmark(context.Context, *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error)
-	UpdateBookmark(context.Context, *connect_go.Request[sdp_go.UpdateBookmarkRequest]) (*connect_go.Response[sdp_go.UpdateBookmarkResponse], error)
-	DeleteBookmark(context.Context, *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error)
+	ListBookmarks(context.Context, *connect.Request[sdp_go.ListBookmarksRequest]) (*connect.Response[sdp_go.ListBookmarkResponse], error)
+	CreateBookmark(context.Context, *connect.Request[sdp_go.CreateBookmarkRequest]) (*connect.Response[sdp_go.CreateBookmarkResponse], error)
+	GetBookmark(context.Context, *connect.Request[sdp_go.GetBookmarkRequest]) (*connect.Response[sdp_go.GetBookmarkResponse], error)
+	UpdateBookmark(context.Context, *connect.Request[sdp_go.UpdateBookmarkRequest]) (*connect.Response[sdp_go.UpdateBookmarkResponse], error)
+	DeleteBookmark(context.Context, *connect.Request[sdp_go.DeleteBookmarkRequest]) (*connect.Response[sdp_go.DeleteBookmarkResponse], error)
 	// a helper method to find all affected apps for a given blast radius snapshot
-	GetAffectedBookmarks(context.Context, *connect_go.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect_go.Response[sdp_go.GetAffectedBookmarksResponse], error)
+	GetAffectedBookmarks(context.Context, *connect.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect.Response[sdp_go.GetAffectedBookmarksResponse], error)
 }
 
 // NewBookmarksServiceClient constructs a client for the bookmarks.BookmarksService service. By
@@ -72,35 +72,35 @@ type BookmarksServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewBookmarksServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) BookmarksServiceClient {
+func NewBookmarksServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) BookmarksServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &bookmarksServiceClient{
-		listBookmarks: connect_go.NewClient[sdp_go.ListBookmarksRequest, sdp_go.ListBookmarkResponse](
+		listBookmarks: connect.NewClient[sdp_go.ListBookmarksRequest, sdp_go.ListBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceListBookmarksProcedure,
 			opts...,
 		),
-		createBookmark: connect_go.NewClient[sdp_go.CreateBookmarkRequest, sdp_go.CreateBookmarkResponse](
+		createBookmark: connect.NewClient[sdp_go.CreateBookmarkRequest, sdp_go.CreateBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceCreateBookmarkProcedure,
 			opts...,
 		),
-		getBookmark: connect_go.NewClient[sdp_go.GetBookmarkRequest, sdp_go.GetBookmarkResponse](
+		getBookmark: connect.NewClient[sdp_go.GetBookmarkRequest, sdp_go.GetBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceGetBookmarkProcedure,
 			opts...,
 		),
-		updateBookmark: connect_go.NewClient[sdp_go.UpdateBookmarkRequest, sdp_go.UpdateBookmarkResponse](
+		updateBookmark: connect.NewClient[sdp_go.UpdateBookmarkRequest, sdp_go.UpdateBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceUpdateBookmarkProcedure,
 			opts...,
 		),
-		deleteBookmark: connect_go.NewClient[sdp_go.DeleteBookmarkRequest, sdp_go.DeleteBookmarkResponse](
+		deleteBookmark: connect.NewClient[sdp_go.DeleteBookmarkRequest, sdp_go.DeleteBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceDeleteBookmarkProcedure,
 			opts...,
 		),
-		getAffectedBookmarks: connect_go.NewClient[sdp_go.GetAffectedBookmarksRequest, sdp_go.GetAffectedBookmarksResponse](
+		getAffectedBookmarks: connect.NewClient[sdp_go.GetAffectedBookmarksRequest, sdp_go.GetAffectedBookmarksResponse](
 			httpClient,
 			baseURL+BookmarksServiceGetAffectedBookmarksProcedure,
 			opts...,
@@ -110,54 +110,54 @@ func NewBookmarksServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 
 // bookmarksServiceClient implements BookmarksServiceClient.
 type bookmarksServiceClient struct {
-	listBookmarks        *connect_go.Client[sdp_go.ListBookmarksRequest, sdp_go.ListBookmarkResponse]
-	createBookmark       *connect_go.Client[sdp_go.CreateBookmarkRequest, sdp_go.CreateBookmarkResponse]
-	getBookmark          *connect_go.Client[sdp_go.GetBookmarkRequest, sdp_go.GetBookmarkResponse]
-	updateBookmark       *connect_go.Client[sdp_go.UpdateBookmarkRequest, sdp_go.UpdateBookmarkResponse]
-	deleteBookmark       *connect_go.Client[sdp_go.DeleteBookmarkRequest, sdp_go.DeleteBookmarkResponse]
-	getAffectedBookmarks *connect_go.Client[sdp_go.GetAffectedBookmarksRequest, sdp_go.GetAffectedBookmarksResponse]
+	listBookmarks        *connect.Client[sdp_go.ListBookmarksRequest, sdp_go.ListBookmarkResponse]
+	createBookmark       *connect.Client[sdp_go.CreateBookmarkRequest, sdp_go.CreateBookmarkResponse]
+	getBookmark          *connect.Client[sdp_go.GetBookmarkRequest, sdp_go.GetBookmarkResponse]
+	updateBookmark       *connect.Client[sdp_go.UpdateBookmarkRequest, sdp_go.UpdateBookmarkResponse]
+	deleteBookmark       *connect.Client[sdp_go.DeleteBookmarkRequest, sdp_go.DeleteBookmarkResponse]
+	getAffectedBookmarks *connect.Client[sdp_go.GetAffectedBookmarksRequest, sdp_go.GetAffectedBookmarksResponse]
 }
 
 // ListBookmarks calls bookmarks.BookmarksService.ListBookmarks.
-func (c *bookmarksServiceClient) ListBookmarks(ctx context.Context, req *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error) {
+func (c *bookmarksServiceClient) ListBookmarks(ctx context.Context, req *connect.Request[sdp_go.ListBookmarksRequest]) (*connect.Response[sdp_go.ListBookmarkResponse], error) {
 	return c.listBookmarks.CallUnary(ctx, req)
 }
 
 // CreateBookmark calls bookmarks.BookmarksService.CreateBookmark.
-func (c *bookmarksServiceClient) CreateBookmark(ctx context.Context, req *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error) {
+func (c *bookmarksServiceClient) CreateBookmark(ctx context.Context, req *connect.Request[sdp_go.CreateBookmarkRequest]) (*connect.Response[sdp_go.CreateBookmarkResponse], error) {
 	return c.createBookmark.CallUnary(ctx, req)
 }
 
 // GetBookmark calls bookmarks.BookmarksService.GetBookmark.
-func (c *bookmarksServiceClient) GetBookmark(ctx context.Context, req *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error) {
+func (c *bookmarksServiceClient) GetBookmark(ctx context.Context, req *connect.Request[sdp_go.GetBookmarkRequest]) (*connect.Response[sdp_go.GetBookmarkResponse], error) {
 	return c.getBookmark.CallUnary(ctx, req)
 }
 
 // UpdateBookmark calls bookmarks.BookmarksService.UpdateBookmark.
-func (c *bookmarksServiceClient) UpdateBookmark(ctx context.Context, req *connect_go.Request[sdp_go.UpdateBookmarkRequest]) (*connect_go.Response[sdp_go.UpdateBookmarkResponse], error) {
+func (c *bookmarksServiceClient) UpdateBookmark(ctx context.Context, req *connect.Request[sdp_go.UpdateBookmarkRequest]) (*connect.Response[sdp_go.UpdateBookmarkResponse], error) {
 	return c.updateBookmark.CallUnary(ctx, req)
 }
 
 // DeleteBookmark calls bookmarks.BookmarksService.DeleteBookmark.
-func (c *bookmarksServiceClient) DeleteBookmark(ctx context.Context, req *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error) {
+func (c *bookmarksServiceClient) DeleteBookmark(ctx context.Context, req *connect.Request[sdp_go.DeleteBookmarkRequest]) (*connect.Response[sdp_go.DeleteBookmarkResponse], error) {
 	return c.deleteBookmark.CallUnary(ctx, req)
 }
 
 // GetAffectedBookmarks calls bookmarks.BookmarksService.GetAffectedBookmarks.
-func (c *bookmarksServiceClient) GetAffectedBookmarks(ctx context.Context, req *connect_go.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect_go.Response[sdp_go.GetAffectedBookmarksResponse], error) {
+func (c *bookmarksServiceClient) GetAffectedBookmarks(ctx context.Context, req *connect.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect.Response[sdp_go.GetAffectedBookmarksResponse], error) {
 	return c.getAffectedBookmarks.CallUnary(ctx, req)
 }
 
 // BookmarksServiceHandler is an implementation of the bookmarks.BookmarksService service.
 type BookmarksServiceHandler interface {
 	// returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
-	ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error)
-	CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error)
-	GetBookmark(context.Context, *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error)
-	UpdateBookmark(context.Context, *connect_go.Request[sdp_go.UpdateBookmarkRequest]) (*connect_go.Response[sdp_go.UpdateBookmarkResponse], error)
-	DeleteBookmark(context.Context, *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error)
+	ListBookmarks(context.Context, *connect.Request[sdp_go.ListBookmarksRequest]) (*connect.Response[sdp_go.ListBookmarkResponse], error)
+	CreateBookmark(context.Context, *connect.Request[sdp_go.CreateBookmarkRequest]) (*connect.Response[sdp_go.CreateBookmarkResponse], error)
+	GetBookmark(context.Context, *connect.Request[sdp_go.GetBookmarkRequest]) (*connect.Response[sdp_go.GetBookmarkResponse], error)
+	UpdateBookmark(context.Context, *connect.Request[sdp_go.UpdateBookmarkRequest]) (*connect.Response[sdp_go.UpdateBookmarkResponse], error)
+	DeleteBookmark(context.Context, *connect.Request[sdp_go.DeleteBookmarkRequest]) (*connect.Response[sdp_go.DeleteBookmarkResponse], error)
 	// a helper method to find all affected apps for a given blast radius snapshot
-	GetAffectedBookmarks(context.Context, *connect_go.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect_go.Response[sdp_go.GetAffectedBookmarksResponse], error)
+	GetAffectedBookmarks(context.Context, *connect.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect.Response[sdp_go.GetAffectedBookmarksResponse], error)
 }
 
 // NewBookmarksServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -165,33 +165,33 @@ type BookmarksServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewBookmarksServiceHandler(svc BookmarksServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	bookmarksServiceListBookmarksHandler := connect_go.NewUnaryHandler(
+func NewBookmarksServiceHandler(svc BookmarksServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	bookmarksServiceListBookmarksHandler := connect.NewUnaryHandler(
 		BookmarksServiceListBookmarksProcedure,
 		svc.ListBookmarks,
 		opts...,
 	)
-	bookmarksServiceCreateBookmarkHandler := connect_go.NewUnaryHandler(
+	bookmarksServiceCreateBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceCreateBookmarkProcedure,
 		svc.CreateBookmark,
 		opts...,
 	)
-	bookmarksServiceGetBookmarkHandler := connect_go.NewUnaryHandler(
+	bookmarksServiceGetBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceGetBookmarkProcedure,
 		svc.GetBookmark,
 		opts...,
 	)
-	bookmarksServiceUpdateBookmarkHandler := connect_go.NewUnaryHandler(
+	bookmarksServiceUpdateBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceUpdateBookmarkProcedure,
 		svc.UpdateBookmark,
 		opts...,
 	)
-	bookmarksServiceDeleteBookmarkHandler := connect_go.NewUnaryHandler(
+	bookmarksServiceDeleteBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceDeleteBookmarkProcedure,
 		svc.DeleteBookmark,
 		opts...,
 	)
-	bookmarksServiceGetAffectedBookmarksHandler := connect_go.NewUnaryHandler(
+	bookmarksServiceGetAffectedBookmarksHandler := connect.NewUnaryHandler(
 		BookmarksServiceGetAffectedBookmarksProcedure,
 		svc.GetAffectedBookmarks,
 		opts...,
@@ -219,26 +219,26 @@ func NewBookmarksServiceHandler(svc BookmarksServiceHandler, opts ...connect_go.
 // UnimplementedBookmarksServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedBookmarksServiceHandler struct{}
 
-func (UnimplementedBookmarksServiceHandler) ListBookmarks(context.Context, *connect_go.Request[sdp_go.ListBookmarksRequest]) (*connect_go.Response[sdp_go.ListBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.ListBookmarks is not implemented"))
+func (UnimplementedBookmarksServiceHandler) ListBookmarks(context.Context, *connect.Request[sdp_go.ListBookmarksRequest]) (*connect.Response[sdp_go.ListBookmarkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("bookmarks.BookmarksService.ListBookmarks is not implemented"))
 }
 
-func (UnimplementedBookmarksServiceHandler) CreateBookmark(context.Context, *connect_go.Request[sdp_go.CreateBookmarkRequest]) (*connect_go.Response[sdp_go.CreateBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.CreateBookmark is not implemented"))
+func (UnimplementedBookmarksServiceHandler) CreateBookmark(context.Context, *connect.Request[sdp_go.CreateBookmarkRequest]) (*connect.Response[sdp_go.CreateBookmarkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("bookmarks.BookmarksService.CreateBookmark is not implemented"))
 }
 
-func (UnimplementedBookmarksServiceHandler) GetBookmark(context.Context, *connect_go.Request[sdp_go.GetBookmarkRequest]) (*connect_go.Response[sdp_go.GetBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.GetBookmark is not implemented"))
+func (UnimplementedBookmarksServiceHandler) GetBookmark(context.Context, *connect.Request[sdp_go.GetBookmarkRequest]) (*connect.Response[sdp_go.GetBookmarkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("bookmarks.BookmarksService.GetBookmark is not implemented"))
 }
 
-func (UnimplementedBookmarksServiceHandler) UpdateBookmark(context.Context, *connect_go.Request[sdp_go.UpdateBookmarkRequest]) (*connect_go.Response[sdp_go.UpdateBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.UpdateBookmark is not implemented"))
+func (UnimplementedBookmarksServiceHandler) UpdateBookmark(context.Context, *connect.Request[sdp_go.UpdateBookmarkRequest]) (*connect.Response[sdp_go.UpdateBookmarkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("bookmarks.BookmarksService.UpdateBookmark is not implemented"))
 }
 
-func (UnimplementedBookmarksServiceHandler) DeleteBookmark(context.Context, *connect_go.Request[sdp_go.DeleteBookmarkRequest]) (*connect_go.Response[sdp_go.DeleteBookmarkResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.DeleteBookmark is not implemented"))
+func (UnimplementedBookmarksServiceHandler) DeleteBookmark(context.Context, *connect.Request[sdp_go.DeleteBookmarkRequest]) (*connect.Response[sdp_go.DeleteBookmarkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("bookmarks.BookmarksService.DeleteBookmark is not implemented"))
 }
 
-func (UnimplementedBookmarksServiceHandler) GetAffectedBookmarks(context.Context, *connect_go.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect_go.Response[sdp_go.GetAffectedBookmarksResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("bookmarks.BookmarksService.GetAffectedBookmarks is not implemented"))
+func (UnimplementedBookmarksServiceHandler) GetAffectedBookmarks(context.Context, *connect.Request[sdp_go.GetAffectedBookmarksRequest]) (*connect.Response[sdp_go.GetAffectedBookmarksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("bookmarks.BookmarksService.GetAffectedBookmarks is not implemented"))
 }
