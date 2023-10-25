@@ -1,0 +1,308 @@
+package sdpws
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+	"sync"
+
+	"github.com/google/uuid"
+	"github.com/overmindtech/sdp-go"
+	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"google.golang.org/protobuf/proto"
+	"nhooyr.io/websocket"
+)
+
+// Client is the main driver for all interactions with a SDP/Gateway websocket.
+//
+// Internally it holds a map of all active requests, which are identified by a
+// UUID, to multiplex incoming responses to the correct caller. Note that the
+// request methods block until the response is received, so to send multiple
+// requests in parallel, call requestor methods in goroutines, e.g. using a conc
+// Pool:
+//
+// ```
+//
+//	pool := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+//	pool.Go(func() error {
+//	     items, err := client.Query(ctx, q)
+//	     if err != nil {
+//	         return err
+//	     }
+//	     // do something with items
+//	}
+//	// ...
+//	pool.Wait()
+//
+// ```
+//
+// Alternatively, pass in a GatewayMessageHandler to receive all messages as
+// they come in and send messages directly using `Send()` and then `Wait()` for
+// all request IDs.
+type Client struct {
+	conn *websocket.Conn
+
+	handler GatewayMessageHandler
+
+	requestMap   map[uuid.UUID]chan *sdp.GatewayResponse
+	requestMapMu sync.RWMutex
+
+	finishedRequestMap     map[uuid.UUID]bool
+	finishedRequestMapCond *sync.Cond
+	finishedRequestMapMu   sync.RWMutex
+
+	err   error
+	errMu sync.Mutex
+
+	closed     bool
+	closedCond *sync.Cond
+	closedMu   sync.Mutex
+}
+
+// Dial connects to the given URL and returns a new Client. Pass nil as handler
+// if you do not need per-message callbacks.
+//
+// To stop the client, cancel the provided context:
+//
+// ```
+// ctx, cancel := context.WithCancel(context.Background())
+// defer cancel()
+// client, err := sdpws.Dial(ctx, gatewayUrl, NewAuthenticatedClient(ctx, otelhttp.DefaultClient), nil)
+// ```
+func Dial(ctx context.Context, u string, httpClient *http.Client, handler GatewayMessageHandler) (*Client, error) {
+	if httpClient == nil {
+		httpClient = otelhttp.DefaultClient
+	}
+	options := &websocket.DialOptions{
+		HTTPClient: httpClient,
+	}
+
+	// nolint: bodyclose // nhooyr.io/websocket reads the body internally
+	conn, _, err := websocket.Dial(ctx, u, options)
+	if err != nil {
+		return nil, err
+	}
+
+	// the default, 32kB is too small for cert bundles and rds-db-cluster-parameter-groups
+	conn.SetReadLimit(2 * 1024 * 1024)
+
+	c := &Client{
+		conn:               conn,
+		handler:            handler,
+		requestMap:         make(map[uuid.UUID]chan *sdp.GatewayResponse),
+		finishedRequestMap: make(map[uuid.UUID]bool),
+	}
+	c.closedCond = sync.NewCond(&c.closedMu)
+	c.finishedRequestMapCond = sync.NewCond(&c.finishedRequestMapMu)
+
+	go c.receive(ctx)
+
+	return c, nil
+}
+
+func (c *Client) receive(ctx context.Context) {
+	defer sdp.LogRecoverToReturn(ctx, "sdpws.Client.receive")
+	for {
+		msg := &sdp.GatewayResponse{}
+
+		typ, r, err := c.conn.Reader(ctx)
+		if err != nil {
+			c.abort(ctx, fmt.Errorf("failed to initialise websocket reader: %w", err))
+			return
+		}
+		if typ != websocket.MessageBinary {
+			c.conn.Close(websocket.StatusUnsupportedData, "expected binary message")
+			c.abort(ctx, fmt.Errorf("expected binary message for protobuf but got: %v", typ))
+			return
+		}
+
+		b := new(bytes.Buffer)
+		_, err = b.ReadFrom(r)
+		if err != nil {
+			c.abort(ctx, fmt.Errorf("failed to read from websocket: %w", err))
+			return
+		}
+
+		err = proto.Unmarshal(b.Bytes(), msg)
+		if err != nil {
+			c.abort(ctx, fmt.Errorf("error unmarshaling message: %w", err))
+			return
+		}
+
+		switch msg.ResponseType.(type) {
+		case *sdp.GatewayResponse_NewItem:
+			item := msg.GetNewItem()
+			if c.handler != nil {
+				c.handler.NewItem(ctx, item)
+			}
+			r, ok := c.getRequestChan(uuid.UUID(item.Metadata.SourceQuery.UUID))
+			if ok {
+				r <- msg
+			}
+		case *sdp.GatewayResponse_NewEdge:
+			edge := msg.GetNewEdge()
+			if c.handler != nil {
+				c.handler.NewEdge(ctx, edge)
+			}
+			// TODO: edges are not attached to a specific query, so we can't send them to a request channel
+			//       maybe that's not a problem anyways?
+			// c, ok := c.getRequestChan(uuid.UUID(edge.Metadata.SourceQuery.UUID))
+			// if ok {
+			// 	c <- msg
+			// }
+		case *sdp.GatewayResponse_QueryError:
+			qe := msg.GetQueryError()
+			if c.handler != nil {
+				c.handler.QueryError(ctx, qe)
+			}
+			r, ok := c.getRequestChan(uuid.UUID(qe.UUID))
+			if ok {
+				r <- msg
+			}
+		case *sdp.GatewayResponse_QueryStatus:
+			qs := msg.GetQueryStatus()
+			if c.handler != nil {
+				c.handler.QueryStatus(ctx, qs)
+			}
+			r, ok := c.getRequestChan(uuid.UUID(qs.UUID))
+			if ok {
+				r <- msg
+			}
+
+			switch qs.Status {
+			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
+				c.finishRequestChan(uuid.UUID(qs.UUID))
+			}
+		default:
+			log.WithContext(ctx).WithField("response", msg).WithField("responseType", fmt.Sprintf("%T", msg.ResponseType)).Warn("unexpected response")
+		}
+	}
+}
+
+func (c *Client) send(ctx context.Context, msg *sdp.GatewayRequest) error {
+	log.WithContext(ctx).WithField("request", msg).Trace("writing request to websocket")
+	buf, err := proto.Marshal(msg)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("request", msg).Trace("error marshaling request")
+		c.abort(ctx, err)
+		return err
+	}
+
+	err = c.conn.Write(ctx, websocket.MessageBinary, buf)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("request", msg).Trace("error writing request to websocket")
+		c.abort(ctx, err)
+		return err
+	}
+	return nil
+}
+
+// Wait blocks until all specified requests have been finished.
+func (c *Client) Wait(ctx context.Context, reqIDs uuid.UUIDs) error {
+	if c.Closed() {
+		return errors.New("client closed")
+	}
+
+	for {
+		c.finishedRequestMapMu.RLock()
+		finished := true
+		for _, reqID := range reqIDs {
+			if !c.finishedRequestMap[reqID] {
+				finished = false
+				break
+			}
+		}
+		c.finishedRequestMapMu.RUnlock()
+		if finished {
+			return nil
+		}
+
+		c.finishedRequestMapMu.Lock()
+		c.finishedRequestMapCond.Wait()
+		c.finishedRequestMapMu.Unlock()
+	}
+}
+
+// abort stores the specified error and closes the connection.
+func (c *Client) abort(ctx context.Context, err error) {
+	log.WithContext(ctx).WithError(err).Trace("aborting client")
+	c.errMu.Lock()
+	c.err = errors.Join(c.err, err)
+	c.errMu.Unlock()
+
+	// call this outside of the lock to avoid deadlock should other parts of the
+	// code try to call abort() when crashing out of a read or write
+	err = c.conn.Close(websocket.StatusNormalClosure, "")
+
+	c.errMu.Lock()
+	c.err = errors.Join(c.err, err)
+	c.errMu.Unlock()
+
+	c.closedMu.Lock()
+	c.closed = true
+	c.closedCond.Broadcast()
+	c.closedMu.Unlock()
+
+	c.closeAllRequestChans()
+}
+
+// Close closes the connection and returns any errors from the underlying connection.
+func (c *Client) Close(ctx context.Context) error {
+	c.abort(ctx, nil)
+
+	c.errMu.Lock()
+	defer c.errMu.Unlock()
+	return c.err
+}
+
+func (c *Client) Closed() bool {
+	c.closedMu.Lock()
+	defer c.closedMu.Unlock()
+	return c.closed
+}
+
+func (c *Client) createRequestChan(u uuid.UUID) chan *sdp.GatewayResponse {
+	r := make(chan *sdp.GatewayResponse, 1)
+	c.requestMapMu.Lock()
+	defer c.requestMapMu.Unlock()
+	c.requestMap[u] = r
+	return r
+}
+
+func (c *Client) getRequestChan(u uuid.UUID) (chan *sdp.GatewayResponse, bool) {
+	c.requestMapMu.RLock()
+	defer c.requestMapMu.RUnlock()
+	r, ok := c.requestMap[u]
+	return r, ok
+}
+
+func (c *Client) finishRequestChan(u uuid.UUID) {
+	c.requestMapMu.Lock()
+	defer c.requestMapMu.Unlock()
+
+	c.finishedRequestMapMu.Lock()
+	defer c.finishedRequestMapMu.Unlock()
+
+	delete(c.requestMap, u)
+	c.finishedRequestMap[u] = true
+	c.finishedRequestMapCond.Broadcast()
+}
+
+func (c *Client) closeAllRequestChans() {
+	c.requestMapMu.Lock()
+	defer c.requestMapMu.Unlock()
+
+	c.finishedRequestMapMu.Lock()
+	defer c.finishedRequestMapMu.Unlock()
+
+	for k, v := range c.requestMap {
+		close(v)
+		c.finishedRequestMap[k] = true
+	}
+	// clear the map
+	c.requestMap = map[uuid.UUID]chan *sdp.GatewayResponse{}
+	c.finishedRequestMapCond.Broadcast()
+}
