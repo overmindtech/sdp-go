@@ -3,8 +3,8 @@ module github.com/overmindtech/sdp-go
 go 1.21
 
 require (
+	connectrpc.com/connect v1.12.0
 	github.com/auth0/go-jwt-middleware/v2 v2.1.0
-	github.com/bufbuild/connect-go v1.10.0
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.3.1

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/getsentry/sentry-go"
 	"github.com/nats-io/nats.go"
 	log "github.com/sirupsen/logrus"
