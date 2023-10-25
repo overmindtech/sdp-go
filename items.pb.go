@@ -1567,146 +1567,6 @@ func (x *Edge) GetBlastPropagation() *BlastPropagation {
 	return nil
 }
 
-// ReverseLinksRequest Is used to find linked item queries for item with
-// *inbound* rather than outbound links. This allows linking in reverse e.g.
-//
-//	ip -> load balancer
-//
-// where usually only:
-//
-//	load balancer -> ip
-//
-// would be possible
-type ReverseLinksRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The item that you would like to find reverse links for
-	Item *Reference `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	// set to true to only return links that propagate configuration change impact
-	FollowOnlyBlastPropagation bool `protobuf:"varint,3,opt,name=followOnlyBlastPropagation,proto3" json:"followOnlyBlastPropagation,omitempty"`
-	// The deadline for this request. When the deadline elapses, results become
-	// irrelevant for the requestor and any processing can stop. The deadline gets
-	// propagated to all related requests and processes. Note: there is currently
-	// a migration going on from timeouts to durations, so depending on which
-	// service is hit, either one is evaluated.
-	Deadline *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
-}
-
-func (x *ReverseLinksRequest) Reset() {
-	*x = ReverseLinksRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_items_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ReverseLinksRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReverseLinksRequest) ProtoMessage() {}
-
-func (x *ReverseLinksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_items_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReverseLinksRequest.ProtoReflect.Descriptor instead.
-func (*ReverseLinksRequest) Descriptor() ([]byte, []int) {
-	return file_items_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *ReverseLinksRequest) GetItem() *Reference {
-	if x != nil {
-		return x.Item
-	}
-	return nil
-}
-
-func (x *ReverseLinksRequest) GetFollowOnlyBlastPropagation() bool {
-	if x != nil {
-		return x.FollowOnlyBlastPropagation
-	}
-	return false
-}
-
-func (x *ReverseLinksRequest) GetDeadline() *timestamppb.Timestamp {
-	if x != nil {
-		return x.Deadline
-	}
-	return nil
-}
-
-// ReverseLinks Represents linked item queries that can be run and will result
-// in objects with *inbound* links to a given item
-type ReverseLinksResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The item queries that should be executed in order to find items that link
-	// to the requested item
-	LinkedItemQueries []*LinkedItemQuery `protobuf:"bytes,1,rep,name=linkedItemQueries,proto3" json:"linkedItemQueries,omitempty"`
-	// An error, if present. If not this will be an empty string
-	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-}
-
-func (x *ReverseLinksResponse) Reset() {
-	*x = ReverseLinksResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_items_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ReverseLinksResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReverseLinksResponse) ProtoMessage() {}
-
-func (x *ReverseLinksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_items_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReverseLinksResponse.ProtoReflect.Descriptor instead.
-func (*ReverseLinksResponse) Descriptor() ([]byte, []int) {
-	return file_items_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *ReverseLinksResponse) GetLinkedItemQueries() []*LinkedItemQuery {
-	if x != nil {
-		return x.LinkedItemQueries
-	}
-	return nil
-}
-
-func (x *ReverseLinksResponse) GetError() string {
-	if x != nil {
-		return x.Error
-	}
-	return ""
-}
-
 // Defines how this query should behave when finding new items
 type Query_RecursionBehaviour struct {
 	state         protoimpl.MessageState
@@ -1725,7 +1585,7 @@ type Query_RecursionBehaviour struct {
 func (x *Query_RecursionBehaviour) Reset() {
 	*x = Query_RecursionBehaviour{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_items_proto_msgTypes[20]
+		mi := &file_items_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1738,7 +1598,7 @@ func (x *Query_RecursionBehaviour) String() string {
 func (*Query_RecursionBehaviour) ProtoMessage() {}
 
 func (x *Query_RecursionBehaviour) ProtoReflect() protoreflect.Message {
-	mi := &file_items_proto_msgTypes[20]
+	mi := &file_items_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1948,38 +1808,19 @@ var file_items_proto_rawDesc = []byte{
 	0x62, 0x6c, 0x61, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x42, 0x6c, 0x61, 0x73, 0x74, 0x50, 0x72,
 	0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x10, 0x62, 0x6c, 0x61, 0x73, 0x74,
-	0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0xb3, 0x01, 0x0a, 0x13,
-	0x52, 0x65, 0x76, 0x65, 0x72, 0x73, 0x65, 0x4c, 0x69, 0x6e, 0x6b, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x12, 0x1e, 0x0a, 0x04, 0x69, 0x74, 0x65, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0a, 0x2e, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x04, 0x69,
-	0x74, 0x65, 0x6d, 0x12, 0x3e, 0x0a, 0x1a, 0x66, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x4f, 0x6e, 0x6c,
-	0x79, 0x42, 0x6c, 0x61, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x1a, 0x66, 0x6f, 0x6c, 0x6c, 0x6f, 0x77, 0x4f,
-	0x6e, 0x6c, 0x79, 0x42, 0x6c, 0x61, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x36, 0x0a, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d,
-	0x70, 0x52, 0x08, 0x64, 0x65, 0x61, 0x64, 0x6c, 0x69, 0x6e, 0x65, 0x4a, 0x04, 0x08, 0x02, 0x10,
-	0x03, 0x22, 0x6c, 0x0a, 0x14, 0x52, 0x65, 0x76, 0x65, 0x72, 0x73, 0x65, 0x4c, 0x69, 0x6e, 0x6b,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e, 0x0a, 0x11, 0x6c, 0x69, 0x6e,
-	0x6b, 0x65, 0x64, 0x49, 0x74, 0x65, 0x6d, 0x51, 0x75, 0x65, 0x72, 0x69, 0x65, 0x73, 0x18, 0x01,
-	0x20, 0x03, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x4c, 0x69, 0x6e, 0x6b, 0x65, 0x64, 0x49, 0x74, 0x65,
-	0x6d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x11, 0x6c, 0x69, 0x6e, 0x6b, 0x65, 0x64, 0x49, 0x74,
-	0x65, 0x6d, 0x51, 0x75, 0x65, 0x72, 0x69, 0x65, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72,
-	0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x2a,
-	0x65, 0x0a, 0x06, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x12, 0x0a, 0x0e, 0x48, 0x45, 0x41,
-	0x4c, 0x54, 0x48, 0x5f, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0d, 0x0a,
-	0x09, 0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f, 0x4f, 0x4b, 0x10, 0x01, 0x12, 0x12, 0x0a, 0x0e,
-	0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f, 0x57, 0x41, 0x52, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x02,
-	0x12, 0x10, 0x0a, 0x0c, 0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52,
-	0x10, 0x03, 0x12, 0x12, 0x0a, 0x0e, 0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f, 0x50, 0x45, 0x4e,
-	0x44, 0x49, 0x4e, 0x47, 0x10, 0x04, 0x2a, 0x2c, 0x0a, 0x0b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d,
-	0x65, 0x74, 0x68, 0x6f, 0x64, 0x12, 0x07, 0x0a, 0x03, 0x47, 0x45, 0x54, 0x10, 0x00, 0x12, 0x08,
-	0x0a, 0x04, 0x4c, 0x49, 0x53, 0x54, 0x10, 0x01, 0x12, 0x0a, 0x0a, 0x06, 0x53, 0x45, 0x41, 0x52,
-	0x43, 0x48, 0x10, 0x02, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
-	0x6f, 0x6d, 0x2f, 0x6f, 0x76, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x64, 0x74, 0x65, 0x63, 0x68, 0x2f,
-	0x73, 0x64, 0x70, 0x2d, 0x67, 0x6f, 0x3b, 0x73, 0x64, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x50, 0x72, 0x6f, 0x70, 0x61, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2a, 0x65, 0x0a, 0x06, 0x48,
+	0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x12, 0x0a, 0x0e, 0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f,
+	0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x48, 0x45, 0x41,
+	0x4c, 0x54, 0x48, 0x5f, 0x4f, 0x4b, 0x10, 0x01, 0x12, 0x12, 0x0a, 0x0e, 0x48, 0x45, 0x41, 0x4c,
+	0x54, 0x48, 0x5f, 0x57, 0x41, 0x52, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x10, 0x0a, 0x0c,
+	0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x03, 0x12, 0x12,
+	0x0a, 0x0e, 0x48, 0x45, 0x41, 0x4c, 0x54, 0x48, 0x5f, 0x50, 0x45, 0x4e, 0x44, 0x49, 0x4e, 0x47,
+	0x10, 0x04, 0x2a, 0x2c, 0x0a, 0x0b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x65, 0x74, 0x68, 0x6f,
+	0x64, 0x12, 0x07, 0x0a, 0x03, 0x47, 0x45, 0x54, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x4c, 0x49,
+	0x53, 0x54, 0x10, 0x01, 0x12, 0x0a, 0x0a, 0x06, 0x53, 0x45, 0x41, 0x52, 0x43, 0x48, 0x10, 0x02,
+	0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f,
+	0x76, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x64, 0x74, 0x65, 0x63, 0x68, 0x2f, 0x73, 0x64, 0x70, 0x2d,
+	0x67, 0x6f, 0x3b, 0x73, 0x64, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1995,7 +1836,7 @@ func file_items_proto_rawDescGZIP() []byte {
 }
 
 var file_items_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_items_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_items_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_items_proto_goTypes = []interface{}{
 	(Health)(0),                      // 0: Health
 	(QueryMethod)(0),                 // 1: QueryMethod
@@ -2018,14 +1859,12 @@ var file_items_proto_goTypes = []interface{}{
 	(*UndoExpand)(nil),               // 18: UndoExpand
 	(*Reference)(nil),                // 19: Reference
 	(*Edge)(nil),                     // 20: Edge
-	(*ReverseLinksRequest)(nil),      // 21: ReverseLinksRequest
-	(*ReverseLinksResponse)(nil),     // 22: ReverseLinksResponse
-	nil,                              // 23: Item.TagsEntry
-	(*Query_RecursionBehaviour)(nil), // 24: Query.RecursionBehaviour
-	(*structpb.Struct)(nil),          // 25: google.protobuf.Struct
-	(*timestamppb.Timestamp)(nil),    // 26: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),      // 27: google.protobuf.Duration
-	(*Response)(nil),                 // 28: Response
+	nil,                              // 21: Item.TagsEntry
+	(*Query_RecursionBehaviour)(nil), // 22: Query.RecursionBehaviour
+	(*structpb.Struct)(nil),          // 23: google.protobuf.Struct
+	(*timestamppb.Timestamp)(nil),    // 24: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),      // 25: google.protobuf.Duration
+	(*Response)(nil),                 // 26: Response
 }
 var file_items_proto_depIdxs = []int32{
 	11, // 0: LinkedItemQuery.query:type_name -> Query
@@ -2037,34 +1876,31 @@ var file_items_proto_depIdxs = []int32{
 	5,  // 6: Item.linkedItemQueries:type_name -> LinkedItemQuery
 	6,  // 7: Item.linkedItems:type_name -> LinkedItem
 	0,  // 8: Item.health:type_name -> Health
-	23, // 9: Item.tags:type_name -> Item.TagsEntry
-	25, // 10: ItemAttributes.attrStruct:type_name -> google.protobuf.Struct
+	21, // 9: Item.tags:type_name -> Item.TagsEntry
+	23, // 10: ItemAttributes.attrStruct:type_name -> google.protobuf.Struct
 	11, // 11: Metadata.sourceQuery:type_name -> Query
-	26, // 12: Metadata.timestamp:type_name -> google.protobuf.Timestamp
-	27, // 13: Metadata.sourceDuration:type_name -> google.protobuf.Duration
-	27, // 14: Metadata.sourceDurationPerItem:type_name -> google.protobuf.Duration
+	24, // 12: Metadata.timestamp:type_name -> google.protobuf.Timestamp
+	25, // 13: Metadata.sourceDuration:type_name -> google.protobuf.Duration
+	25, // 14: Metadata.sourceDurationPerItem:type_name -> google.protobuf.Duration
 	7,  // 15: Items.items:type_name -> Item
 	1,  // 16: Query.method:type_name -> QueryMethod
-	24, // 17: Query.recursionBehaviour:type_name -> Query.RecursionBehaviour
-	26, // 18: Query.deadline:type_name -> google.protobuf.Timestamp
+	22, // 17: Query.recursionBehaviour:type_name -> Query.RecursionBehaviour
+	24, // 18: Query.deadline:type_name -> google.protobuf.Timestamp
 	7,  // 19: QueryResponse.newItem:type_name -> Item
-	28, // 20: QueryResponse.response:type_name -> Response
+	26, // 20: QueryResponse.response:type_name -> Response
 	14, // 21: QueryResponse.error:type_name -> QueryError
 	2,  // 22: QueryStatus.status:type_name -> QueryStatus.Status
 	3,  // 23: QueryError.errorType:type_name -> QueryError.ErrorType
 	19, // 24: Expand.item:type_name -> Reference
-	26, // 25: Expand.deadline:type_name -> google.protobuf.Timestamp
+	24, // 25: Expand.deadline:type_name -> google.protobuf.Timestamp
 	19, // 26: Edge.from:type_name -> Reference
 	19, // 27: Edge.to:type_name -> Reference
 	4,  // 28: Edge.blastPropagation:type_name -> BlastPropagation
-	19, // 29: ReverseLinksRequest.item:type_name -> Reference
-	26, // 30: ReverseLinksRequest.deadline:type_name -> google.protobuf.Timestamp
-	5,  // 31: ReverseLinksResponse.linkedItemQueries:type_name -> LinkedItemQuery
-	32, // [32:32] is the sub-list for method output_type
-	32, // [32:32] is the sub-list for method input_type
-	32, // [32:32] is the sub-list for extension type_name
-	32, // [32:32] is the sub-list for extension extendee
-	0,  // [0:32] is the sub-list for field type_name
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_items_proto_init() }
@@ -2278,31 +2114,7 @@ func file_items_proto_init() {
 				return nil
 			}
 		}
-		file_items_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReverseLinksRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 		file_items_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReverseLinksResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_items_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Query_RecursionBehaviour); i {
 			case 0:
 				return &v.state
@@ -2327,7 +2139,7 @@ func file_items_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_items_proto_rawDesc,
 			NumEnums:      4,
-			NumMessages:   21,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
