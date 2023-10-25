@@ -207,52 +207,6 @@ func TestValidateEdge(t *testing.T) {
 	})
 }
 
-func TestValidateReverseLinksRequest(t *testing.T) {
-	t.Run("ReverseLinksRequest is fine", func(t *testing.T) {
-		r := newReverseLinksRequest()
-
-		err := r.Validate()
-
-		if err != nil {
-			t.Error(err)
-		}
-	})
-
-	t.Run("ReverseLinksRequest is nil", func(t *testing.T) {
-		var r *ReverseLinksRequest
-
-		err := r.Validate()
-
-		if err == nil {
-			t.Error("expected error")
-		}
-	})
-
-	t.Run("ReverseLinksRequest has nil Item", func(t *testing.T) {
-		r := newReverseLinksRequest()
-
-		r.Item = nil
-
-		err := r.Validate()
-
-		if err == nil {
-			t.Error("expected error")
-		}
-	})
-
-	t.Run("ReverseLinksRequest has invalid Item", func(t *testing.T) {
-		r := newReverseLinksRequest()
-
-		r.Item.Type = ""
-
-		err := r.Validate()
-
-		if err == nil {
-			t.Error("expected error")
-		}
-	})
-}
-
 func TestValidateResponse(t *testing.T) {
 	t.Run("Response is fine", func(t *testing.T) {
 		r := newResponse()
@@ -473,13 +427,6 @@ func newResponse() *Response {
 		State:        ResponderState_WORKING,
 		NextUpdateIn: durationpb.New(time.Second),
 		UUID:         u[:],
-	}
-}
-
-func newReverseLinksRequest() *ReverseLinksRequest {
-	return &ReverseLinksRequest{
-		Item:     newReference(),
-		Deadline: timestamppb.New(time.Now().Add(1 * time.Second)),
 	}
 }
 
