@@ -55,9 +55,11 @@ const (
 
 // BookmarksServiceClient is a client for the bookmarks.BookmarksService service.
 type BookmarksServiceClient interface {
-	// returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
+	// ListBookmarks returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
 	ListBookmarks(context.Context, *connect.Request[sdp_go.ListBookmarksRequest]) (*connect.Response[sdp_go.ListBookmarkResponse], error)
+	// CreateBookmark creates a new bookmark
 	CreateBookmark(context.Context, *connect.Request[sdp_go.CreateBookmarkRequest]) (*connect.Response[sdp_go.CreateBookmarkResponse], error)
+	// GetBookmark returns the bookmark with the given UUID. This can also return snapshots as bookmarks and will strip the stored items from the response.
 	GetBookmark(context.Context, *connect.Request[sdp_go.GetBookmarkRequest]) (*connect.Response[sdp_go.GetBookmarkResponse], error)
 	UpdateBookmark(context.Context, *connect.Request[sdp_go.UpdateBookmarkRequest]) (*connect.Response[sdp_go.UpdateBookmarkResponse], error)
 	DeleteBookmark(context.Context, *connect.Request[sdp_go.DeleteBookmarkRequest]) (*connect.Response[sdp_go.DeleteBookmarkResponse], error)
@@ -150,9 +152,11 @@ func (c *bookmarksServiceClient) GetAffectedBookmarks(ctx context.Context, req *
 
 // BookmarksServiceHandler is an implementation of the bookmarks.BookmarksService service.
 type BookmarksServiceHandler interface {
-	// returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
+	// ListBookmarks returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
 	ListBookmarks(context.Context, *connect.Request[sdp_go.ListBookmarksRequest]) (*connect.Response[sdp_go.ListBookmarkResponse], error)
+	// CreateBookmark creates a new bookmark
 	CreateBookmark(context.Context, *connect.Request[sdp_go.CreateBookmarkRequest]) (*connect.Response[sdp_go.CreateBookmarkResponse], error)
+	// GetBookmark returns the bookmark with the given UUID. This can also return snapshots as bookmarks and will strip the stored items from the response.
 	GetBookmark(context.Context, *connect.Request[sdp_go.GetBookmarkRequest]) (*connect.Response[sdp_go.GetBookmarkResponse], error)
 	UpdateBookmark(context.Context, *connect.Request[sdp_go.UpdateBookmarkRequest]) (*connect.Response[sdp_go.UpdateBookmarkResponse], error)
 	DeleteBookmark(context.Context, *connect.Request[sdp_go.DeleteBookmarkRequest]) (*connect.Response[sdp_go.DeleteBookmarkResponse], error)
