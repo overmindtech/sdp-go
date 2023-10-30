@@ -17,13 +17,16 @@ import (
 	"nhooyr.io/websocket"
 )
 
+// TestServer is a test server for the websocket client. Note that this can only
+// handle a single connection at a time.
 type testServer struct {
 	url string
 
 	conn   *websocket.Conn
 	connMu sync.Mutex
 
-	requests []*sdp.GatewayRequest
+	requests   []*sdp.GatewayRequest
+	requestsMu sync.Mutex
 }
 
 func newTestServer(ctx context.Context, t *testing.T) (*testServer, func()) {
@@ -76,7 +79,9 @@ func newTestServer(ctx context.Context, t *testing.T) (*testServer, func()) {
 				return
 			}
 
+			ts.requestsMu.Lock()
 			ts.requests = append(ts.requests, msg)
+			ts.requestsMu.Unlock()
 		}
 	})
 
@@ -148,6 +153,8 @@ func TestClient(t *testing.T) {
 
 		c.Wait(ctx, uuid.UUIDs{u})
 
+		ts.requestsMu.Lock()
+		defer ts.requestsMu.Unlock()
 		if len(ts.requests) != 1 {
 			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
 		}
