@@ -81,3 +81,47 @@ func (l *LoggingGatewayMessageHandler) BookmarkLoadResult(ctx context.Context, r
 func (l *LoggingGatewayMessageHandler) QueryStatus(ctx context.Context, status *sdp.QueryStatus) {
 	log.WithContext(ctx).WithField("status", status).Log(l.Level, "received query status")
 }
+
+type NoopGatewayMessageHandler struct{}
+
+// assert that NoopGatewayMessageHandler implements GatewayMessageHandler
+var _ GatewayMessageHandler = (*NoopGatewayMessageHandler)(nil)
+
+func (l *NoopGatewayMessageHandler) NewItem(ctx context.Context, item *sdp.Item) {
+}
+
+func (l *NoopGatewayMessageHandler) NewEdge(ctx context.Context, edge *sdp.Edge) {
+}
+
+func (l *NoopGatewayMessageHandler) Status(ctx context.Context, status *sdp.GatewayRequestStatus) {
+}
+
+func (l *NoopGatewayMessageHandler) Error(ctx context.Context, errorMessage string) {
+}
+
+func (l *NoopGatewayMessageHandler) QueryError(ctx context.Context, queryError *sdp.QueryError) {
+}
+
+func (l *NoopGatewayMessageHandler) DeleteItem(ctx context.Context, reference *sdp.Reference) {
+}
+
+func (l *NoopGatewayMessageHandler) DeleteEdge(ctx context.Context, edge *sdp.Edge) {
+}
+
+func (l *NoopGatewayMessageHandler) UpdateItem(ctx context.Context, item *sdp.Item) {
+}
+
+func (l *NoopGatewayMessageHandler) SnapshotStoreResult(ctx context.Context, result *sdp.SnapshotStoreResult) {
+}
+
+func (l *NoopGatewayMessageHandler) SnapshotLoadResult(ctx context.Context, result *sdp.SnapshotLoadResult) {
+}
+
+func (l *NoopGatewayMessageHandler) BookmarkStoreResult(ctx context.Context, result *sdp.BookmarkStoreResult) {
+}
+
+func (l *NoopGatewayMessageHandler) BookmarkLoadResult(ctx context.Context, result *sdp.BookmarkLoadResult) {
+}
+
+func (l *NoopGatewayMessageHandler) QueryStatus(ctx context.Context, status *sdp.QueryStatus) {
+}
