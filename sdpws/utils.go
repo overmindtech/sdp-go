@@ -109,7 +109,63 @@ readLoop:
 // TODO: UndoQuery
 // TODO: Expand
 // TODO: UndoExpand
-// TODO: StoreSnapshot
+
+func (c *Client) SendStoreSnapshot(ctx context.Context, s *sdp.StoreSnapshot) error {
+	if c.Closed() {
+		return errors.New("client closed")
+	}
+
+	log.WithContext(ctx).WithField("snapshot", s).Trace("storing snapshot via websocket")
+	err := c.send(ctx, &sdp.GatewayRequest{
+		RequestType: &sdp.GatewayRequest_StoreSnapshot{
+			StoreSnapshot: s,
+		},
+	})
+	return err
+}
+
+func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (uuid.UUID, error) {
+	if c.Closed() {
+		return uuid.UUID{}, errors.New("client closed")
+	}
+
+	u := uuid.New()
+	s := &sdp.StoreSnapshot{
+		Name:        name,
+		Description: description,
+		MsgID:       u[:],
+	}
+	r := c.createRequestChan(u)
+
+	err := c.SendStoreSnapshot(ctx, s)
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("error sending store snapshot request: %w", err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return uuid.UUID{}, fmt.Errorf("context canceled: %w", ctx.Err())
+		case resp, more := <-r:
+			if !more {
+				return uuid.UUID{}, errors.New("request channel closed")
+			}
+			switch resp.ResponseType.(type) {
+			case *sdp.GatewayResponse_SnapshotStoreResult:
+				ssr := resp.GetSnapshotStoreResult()
+				log.WithContext(ctx).WithField("Snapshot", s).WithField("snapshotstoreresult", ssr).Trace("received snapshot store result")
+				if ssr.Success {
+					return uuid.UUID(ssr.SnapshotID), nil
+				}
+				return uuid.UUID{}, fmt.Errorf("snapshot store failed: %v", ssr.ErrorMessage)
+			default:
+				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.ResponseType)).Warn("unexpected response")
+				return uuid.UUID{}, errors.New("unexpected response")
+			}
+		}
+	}
+}
+
 // TODO: LoadSnapshot
 
 func (c *Client) SendStoreBookmark(ctx context.Context, b *sdp.StoreBookmark) error {
