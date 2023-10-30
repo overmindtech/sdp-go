@@ -139,6 +139,7 @@ func (c *Client) receive(ctx context.Context) {
 				c.handler.NewItem(ctx, item)
 			}
 			c.postRequestChan(uuid.UUID(item.Metadata.SourceQuery.UUID), msg)
+
 		case *sdp.GatewayResponse_NewEdge:
 			edge := msg.GetNewEdge()
 			if c.handler != nil {
@@ -150,12 +151,66 @@ func (c *Client) receive(ctx context.Context) {
 			// if ok {
 			// 	c <- msg
 			// }
+
+		case *sdp.GatewayResponse_Status:
+			status := msg.GetStatus()
+			if c.handler != nil {
+				c.handler.Status(ctx, status)
+			}
+
 		case *sdp.GatewayResponse_QueryError:
 			qe := msg.GetQueryError()
 			if c.handler != nil {
 				c.handler.QueryError(ctx, qe)
 			}
 			c.postRequestChan(uuid.UUID(qe.UUID), msg)
+
+		case *sdp.GatewayResponse_DeleteItem:
+			item := msg.GetDeleteItem()
+			if c.handler != nil {
+				c.handler.DeleteItem(ctx, item)
+			}
+
+		case *sdp.GatewayResponse_DeleteEdge:
+			edge := msg.GetDeleteEdge()
+			if c.handler != nil {
+				c.handler.DeleteEdge(ctx, edge)
+			}
+
+		case *sdp.GatewayResponse_UpdateItem:
+			item := msg.GetUpdateItem()
+			if c.handler != nil {
+				c.handler.UpdateItem(ctx, item)
+			}
+
+		case *sdp.GatewayResponse_SnapshotStoreResult:
+			result := msg.GetSnapshotStoreResult()
+			if c.handler != nil {
+				c.handler.SnapshotStoreResult(ctx, result)
+			}
+			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+
+		case *sdp.GatewayResponse_SnapshotLoadResult:
+			result := msg.GetSnapshotLoadResult()
+			if c.handler != nil {
+				c.handler.SnapshotLoadResult(ctx, result)
+			}
+			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+
+		case *sdp.GatewayResponse_BookmarkStoreResult:
+			result := msg.GetBookmarkStoreResult()
+			if c.handler != nil {
+				c.handler.BookmarkStoreResult(ctx, result)
+			}
+			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+
+		case *sdp.GatewayResponse_BookmarkLoadResult:
+			result := msg.GetBookmarkLoadResult()
+			if c.handler != nil {
+				c.handler.BookmarkLoadResult(ctx, result)
+			}
+			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+
 		case *sdp.GatewayResponse_QueryStatus:
 			qs := msg.GetQueryStatus()
 			if c.handler != nil {
@@ -167,6 +222,7 @@ func (c *Client) receive(ctx context.Context) {
 			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
 				c.finishRequestChan(uuid.UUID(qs.UUID))
 			}
+
 		default:
 			log.WithContext(ctx).WithField("response", msg).WithField("responseType", fmt.Sprintf("%T", msg.ResponseType)).Warn("unexpected response")
 		}
