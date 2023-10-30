@@ -200,13 +200,19 @@ func (c *Client) send(ctx context.Context, msg *sdp.GatewayRequest) error {
 	return nil
 }
 
-// Wait blocks until all specified requests have been finished.
+// Wait blocks until all specified requests have been finished. Waiting on a
+// closed client returns immediately with no error.
 func (c *Client) Wait(ctx context.Context, reqIDs uuid.UUIDs) error {
-	if c.Closed() {
-		return errors.New("client closed")
-	}
-
 	for {
+		if c.Closed() {
+			return nil
+		}
+
+		// check for context cancellation
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		c.finishedRequestMapMu.RLock()
 		finished := true
 		for _, reqID := range reqIDs {
@@ -220,6 +226,7 @@ func (c *Client) Wait(ctx context.Context, reqIDs uuid.UUIDs) error {
 			return nil
 		}
 
+		// block until any request is finished or the connection closes
 		c.finishedRequestMapMu.Lock()
 		c.finishedRequestMapCond.Wait()
 		c.finishedRequestMapMu.Unlock()
