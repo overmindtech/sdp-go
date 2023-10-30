@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,8 +18,11 @@ import (
 )
 
 type testServer struct {
-	url      string
-	conn     *websocket.Conn
+	url string
+
+	conn   *websocket.Conn
+	connMu sync.Mutex
+
 	requests []*sdp.GatewayRequest
 }
 
@@ -34,7 +38,10 @@ func newTestServer(ctx context.Context, t *testing.T) (*testServer, func()) {
 			return
 		}
 		defer c.CloseNow()
+
+		ts.connMu.Lock()
 		ts.conn = c
+		ts.connMu.Unlock()
 
 		// ctx, cancel := context.WithTimeout(r.Context(), time.Second*10)
 		// defer cancel()
@@ -82,7 +89,9 @@ func newTestServer(ctx context.Context, t *testing.T) (*testServer, func()) {
 }
 
 func (ts *testServer) inject(ctx context.Context, msg *sdp.GatewayResponse) {
+	ts.connMu.Lock()
 	c := ts.conn
+	ts.connMu.Unlock()
 
 	buf, err := proto.Marshal(msg)
 	if err != nil {
