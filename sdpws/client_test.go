@@ -114,57 +114,6 @@ func (ts *testServer) inject(ctx context.Context, msg *sdp.GatewayResponse) {
 func TestClient(t *testing.T) {
 	defer goleak.VerifyNone(t)
 
-	t.Run("SendQuery", func(t *testing.T) {
-		defer goleak.VerifyNone(t)
-		ctx := context.Background()
-
-		ts, closeFn := newTestServer(ctx, t)
-		defer closeFn()
-
-		c, err := Dial(ctx, ts.url, nil, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			_ = c.Close(ctx)
-		}()
-
-		u := uuid.New()
-
-		q := &sdp.Query{
-			UUID:               u[:],
-			Type:               "",
-			Method:             0,
-			Query:              "",
-			RecursionBehaviour: &sdp.Query_RecursionBehaviour{},
-			Scope:              "",
-			IgnoreCache:        false,
-		}
-		c.SendQuery(ctx, q)
-
-		ts.inject(ctx, &sdp.GatewayResponse{
-			ResponseType: &sdp.GatewayResponse_QueryStatus{
-				QueryStatus: &sdp.QueryStatus{
-					UUID:   u[:],
-					Status: sdp.QueryStatus_FINISHED,
-				},
-			},
-		})
-
-		c.Wait(ctx, uuid.UUIDs{u})
-
-		ts.requestsMu.Lock()
-		defer ts.requestsMu.Unlock()
-		if len(ts.requests) != 1 {
-			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
-		}
-
-		recvQ, ok := ts.requests[0].RequestType.(*sdp.GatewayRequest_Query)
-		if !ok || uuid.UUID(recvQ.Query.UUID) != u {
-			t.Fatalf("expected query, got %v", ts.requests[0])
-		}
-	})
-
 	t.Run("Query", func(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx := context.Background()
@@ -208,6 +157,9 @@ func TestClient(t *testing.T) {
 		c.Query(ctx, q)
 		c.Wait(ctx, uuid.UUIDs{u})
 
+		ts.requestsMu.Lock()
+		defer ts.requestsMu.Unlock()
+
 		if len(ts.requests) != 1 {
 			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
 		}
@@ -215,6 +167,110 @@ func TestClient(t *testing.T) {
 		recvQ, ok := ts.requests[0].RequestType.(*sdp.GatewayRequest_Query)
 		if !ok || uuid.UUID(recvQ.Query.UUID) != u {
 			t.Fatalf("expected query, got %v", ts.requests[0])
+		}
+	})
+
+	t.Run("StoreSnapshot", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		ctx := context.Background()
+
+		ts, closeFn := newTestServer(ctx, t)
+		defer closeFn()
+
+		c, err := Dial(ctx, ts.url, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			_ = c.Close(ctx)
+		}()
+
+		u := uuid.New()
+
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			ts.requestsMu.Lock()
+			msgid := ts.requests[0].GetStoreSnapshot().MsgID
+			ts.requestsMu.Unlock()
+
+			ts.inject(ctx, &sdp.GatewayResponse{
+				ResponseType: &sdp.GatewayResponse_SnapshotStoreResult{
+					SnapshotStoreResult: &sdp.SnapshotStoreResult{
+						Success:      true,
+						ErrorMessage: "",
+						MsgID:        msgid,
+						SnapshotID:   u[:],
+					},
+				},
+			})
+		}()
+
+		// this will block until the above goroutine has injected the response
+		snapu, err := c.StoreSnapshot(ctx, "name", "description")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if snapu != u {
+			t.Errorf("expected snapshot id %v, got %v", u, snapu)
+		}
+
+		ts.requestsMu.Lock()
+		defer ts.requestsMu.Unlock()
+
+		if len(ts.requests) != 1 {
+			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
+		}
+	})
+
+	t.Run("StoreBookmark", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		ctx := context.Background()
+
+		ts, closeFn := newTestServer(ctx, t)
+		defer closeFn()
+
+		c, err := Dial(ctx, ts.url, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			_ = c.Close(ctx)
+		}()
+
+		u := uuid.New()
+
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			ts.requestsMu.Lock()
+			msgid := ts.requests[0].GetStoreBookmark().MsgID
+			ts.requestsMu.Unlock()
+
+			ts.inject(ctx, &sdp.GatewayResponse{
+				ResponseType: &sdp.GatewayResponse_BookmarkStoreResult{
+					BookmarkStoreResult: &sdp.BookmarkStoreResult{
+						Success:      true,
+						ErrorMessage: "",
+						MsgID:        msgid,
+						BookmarkID:   u[:],
+					},
+				},
+			})
+		}()
+
+		// this will block until the above goroutine has injected the response
+		snapu, err := c.StoreBookmark(ctx, "name", "description", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if snapu != u {
+			t.Errorf("expected bookmark id %v, got %v", u, snapu)
+		}
+
+		ts.requestsMu.Lock()
+		defer ts.requestsMu.Unlock()
+
+		if len(ts.requests) != 1 {
+			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
 		}
 	})
 }
