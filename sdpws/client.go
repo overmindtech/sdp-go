@@ -138,10 +138,7 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.NewItem(ctx, item)
 			}
-			r, ok := c.getRequestChan(uuid.UUID(item.Metadata.SourceQuery.UUID))
-			if ok {
-				r <- msg
-			}
+			c.postRequestChan(uuid.UUID(item.Metadata.SourceQuery.UUID), msg)
 		case *sdp.GatewayResponse_NewEdge:
 			edge := msg.GetNewEdge()
 			if c.handler != nil {
@@ -158,19 +155,13 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.QueryError(ctx, qe)
 			}
-			r, ok := c.getRequestChan(uuid.UUID(qe.UUID))
-			if ok {
-				r <- msg
-			}
+			c.postRequestChan(uuid.UUID(qe.UUID), msg)
 		case *sdp.GatewayResponse_QueryStatus:
 			qs := msg.GetQueryStatus()
 			if c.handler != nil {
 				c.handler.QueryStatus(ctx, qs)
 			}
-			r, ok := c.getRequestChan(uuid.UUID(qs.UUID))
-			if ok {
-				r <- msg
-			}
+			c.postRequestChan(uuid.UUID(qs.UUID), msg)
 
 			switch qs.Status {
 			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
@@ -279,11 +270,14 @@ func (c *Client) createRequestChan(u uuid.UUID) chan *sdp.GatewayResponse {
 	return r
 }
 
-func (c *Client) getRequestChan(u uuid.UUID) (chan *sdp.GatewayResponse, bool) {
+func (c *Client) postRequestChan(u uuid.UUID, msg *sdp.GatewayResponse) {
 	c.requestMapMu.RLock()
 	defer c.requestMapMu.RUnlock()
 	r, ok := c.requestMap[u]
-	return r, ok
+	if ok {
+		// this write has to happen under the lock to avoid panics when closing the channel
+		r <- msg
+	}
 }
 
 func (c *Client) finishRequestChan(u uuid.UUID) {
