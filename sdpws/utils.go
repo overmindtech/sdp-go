@@ -52,7 +52,7 @@ readLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, fmt.Errorf("context canceled: %w", ctx.Err())
 		case resp, more := <-r:
 			if !more {
 				break readLoop
@@ -104,3 +104,69 @@ readLoop:
 	c.finishRequestChan(uuid.UUID(q.UUID))
 	return items, nil
 }
+
+// TODO: CancelQuery
+// TODO: UndoQuery
+// TODO: Expand
+// TODO: UndoExpand
+// TODO: StoreSnapshot
+// TODO: LoadSnapshot
+
+func (c *Client) SendStoreBookmark(ctx context.Context, b *sdp.StoreBookmark) error {
+	if c.Closed() {
+		return errors.New("client closed")
+	}
+
+	log.WithContext(ctx).WithField("bookmark", b).Trace("storing bookmark via websocket")
+	err := c.send(ctx, &sdp.GatewayRequest{
+		RequestType: &sdp.GatewayRequest_StoreBookmark{
+			StoreBookmark: b,
+		},
+	})
+	return err
+}
+
+func (c *Client) StoreBookmark(ctx context.Context, name, description string, isSystem bool) (uuid.UUID, error) {
+	if c.Closed() {
+		return uuid.UUID{}, errors.New("client closed")
+	}
+
+	u := uuid.New()
+	b := &sdp.StoreBookmark{
+		Name:        name,
+		Description: description,
+		MsgID:       u[:],
+		IsSystem:    true,
+	}
+	r := c.createRequestChan(u)
+
+	err := c.SendStoreBookmark(ctx, b)
+	if err != nil {
+		return uuid.UUID{}, fmt.Errorf("error sending store bookmark request: %w", err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return uuid.UUID{}, fmt.Errorf("context canceled: %w", ctx.Err())
+		case resp, more := <-r:
+			if !more {
+				return uuid.UUID{}, errors.New("request channel closed")
+			}
+			switch resp.ResponseType.(type) {
+			case *sdp.GatewayResponse_BookmarkStoreResult:
+				bsr := resp.GetBookmarkStoreResult()
+				log.WithContext(ctx).WithField("bookmark", b).WithField("bookmarkstoreresult", bsr).Trace("received bookmark store result")
+				if bsr.Success {
+					return uuid.UUID(bsr.BookmarkID), nil
+				}
+				return uuid.UUID{}, fmt.Errorf("bookmark store failed: %v", bsr.ErrorMessage)
+			default:
+				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.ResponseType)).Warn("unexpected response")
+				return uuid.UUID{}, errors.New("unexpected response")
+			}
+		}
+	}
+}
+
+// TODO: LoadBookmark
