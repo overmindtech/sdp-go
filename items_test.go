@@ -253,6 +253,9 @@ func TestCopy(t *testing.T) {
 				SourceDurationPerItem: durationpb.New(10 * time.Millisecond),
 			},
 			Health: Health_HEALTH_ERROR.Enum(),
+			Tags: map[string]string{
+				"foo": "bar",
+			},
 		}
 
 		itemB := Item{}
@@ -370,6 +373,12 @@ func AssertItemsEqual(itemA *Item, itemB *Item, t *testing.T) {
 	if len(itemA.LinkedItems) > 0 {
 		if itemA.LinkedItems[0].Item.Type != itemB.LinkedItems[0].Item.Type {
 			t.Error("LinkedItemQueries[0].Type did not match")
+		}
+	}
+
+	for k, v := range itemA.Tags {
+		if itemB.Tags[k] != v {
+			t.Errorf("Tags[%v] did not match", k)
 		}
 	}
 
