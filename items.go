@@ -137,6 +137,14 @@ func (i *Item) Copy(dest *Item) {
 	} else {
 		dest.Health = i.Health.Enum()
 	}
+
+	if i.Tags != nil {
+		dest.Tags = make(map[string]string)
+
+		for k, v := range i.Tags {
+			dest.Tags[k] = v
+		}
+	}
 }
 
 // Hash Returns a 12 character hash for the item. This is likely but not
