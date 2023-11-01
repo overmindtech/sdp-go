@@ -112,6 +112,9 @@ const (
 	// ChangesServiceUpdateChangingItemsProcedure is the fully-qualified name of the ChangesService's
 	// UpdateChangingItems RPC.
 	ChangesServiceUpdateChangingItemsProcedure = "/changes.ChangesService/UpdateChangingItems"
+	// ChangesServiceUpdatePlannedChangesProcedure is the fully-qualified name of the ChangesService's
+	// UpdatePlannedChanges RPC.
+	ChangesServiceUpdatePlannedChangesProcedure = "/changes.ChangesService/UpdatePlannedChanges"
 	// ChangesServiceGetAffectedAppsProcedure is the fully-qualified name of the ChangesService's
 	// GetAffectedApps RPC.
 	ChangesServiceGetAffectedAppsProcedure = "/changes.ChangesService/GetAffectedApps"
@@ -194,6 +197,13 @@ type ChangesServiceClient interface {
 	// changingItemsBookmarkUUID in the change itself before triggering a blast
 	// radius calculation
 	UpdateChangingItems(context.Context, *connect.Request[sdp_go.UpdateChangingItemsRequest]) (*connect.ServerStreamForClient[sdp_go.CalculateBlastRadiusResponse], error)
+	// This sets the item diffs that are changing in a given change, and updates
+	// the blast radius. In the backend this will save the item diffs for later
+	// display and use the item's references to fabricate a bookmark, and set this
+	// as changingItemsBookmarkUUID in the change itself before triggering a blast
+	// radius calculation. Note that not all of the changing items have to exist
+	// in our current sources.
+	UpdatePlannedChanges(context.Context, *connect.Request[sdp_go.UpdatePlannedChangesRequest]) (*connect.ServerStreamForClient[sdp_go.CalculateBlastRadiusResponse], error)
 	// Returns a list of apps that are affected by this change. This is calculated
 	// by looking at the blast radius snapshot and finding all apps that have
 	// items in the snapshot.
@@ -352,6 +362,11 @@ func NewChangesServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			baseURL+ChangesServiceUpdateChangingItemsProcedure,
 			opts...,
 		),
+		updatePlannedChanges: connect.NewClient[sdp_go.UpdatePlannedChangesRequest, sdp_go.CalculateBlastRadiusResponse](
+			httpClient,
+			baseURL+ChangesServiceUpdatePlannedChangesProcedure,
+			opts...,
+		),
 		getAffectedApps: connect.NewClient[sdp_go.GetAffectedAppsRequest, sdp_go.GetAffectedAppsResponse](
 			httpClient,
 			baseURL+ChangesServiceGetAffectedAppsProcedure,
@@ -399,6 +414,7 @@ type changesServiceClient struct {
 	listAppChanges           *connect.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
 	listAppChangesSummary    *connect.Client[sdp_go.ListAppChangesSummaryRequest, sdp_go.ListAppChangesSummaryResponse]
 	updateChangingItems      *connect.Client[sdp_go.UpdateChangingItemsRequest, sdp_go.CalculateBlastRadiusResponse]
+	updatePlannedChanges     *connect.Client[sdp_go.UpdatePlannedChangesRequest, sdp_go.CalculateBlastRadiusResponse]
 	getAffectedApps          *connect.Client[sdp_go.GetAffectedAppsRequest, sdp_go.GetAffectedAppsResponse]
 	listChangingItemsSummary *connect.Client[sdp_go.ListChangingItemsSummaryRequest, sdp_go.ListChangingItemsSummaryResponse]
 	getDiff                  *connect.Client[sdp_go.GetDiffRequest, sdp_go.GetDiffResponse]
@@ -539,6 +555,11 @@ func (c *changesServiceClient) UpdateChangingItems(ctx context.Context, req *con
 	return c.updateChangingItems.CallServerStream(ctx, req)
 }
 
+// UpdatePlannedChanges calls changes.ChangesService.UpdatePlannedChanges.
+func (c *changesServiceClient) UpdatePlannedChanges(ctx context.Context, req *connect.Request[sdp_go.UpdatePlannedChangesRequest]) (*connect.ServerStreamForClient[sdp_go.CalculateBlastRadiusResponse], error) {
+	return c.updatePlannedChanges.CallServerStream(ctx, req)
+}
+
 // GetAffectedApps calls changes.ChangesService.GetAffectedApps.
 func (c *changesServiceClient) GetAffectedApps(ctx context.Context, req *connect.Request[sdp_go.GetAffectedAppsRequest]) (*connect.Response[sdp_go.GetAffectedAppsResponse], error) {
 	return c.getAffectedApps.CallUnary(ctx, req)
@@ -626,6 +647,13 @@ type ChangesServiceHandler interface {
 	// changingItemsBookmarkUUID in the change itself before triggering a blast
 	// radius calculation
 	UpdateChangingItems(context.Context, *connect.Request[sdp_go.UpdateChangingItemsRequest], *connect.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error
+	// This sets the item diffs that are changing in a given change, and updates
+	// the blast radius. In the backend this will save the item diffs for later
+	// display and use the item's references to fabricate a bookmark, and set this
+	// as changingItemsBookmarkUUID in the change itself before triggering a blast
+	// radius calculation. Note that not all of the changing items have to exist
+	// in our current sources.
+	UpdatePlannedChanges(context.Context, *connect.Request[sdp_go.UpdatePlannedChangesRequest], *connect.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error
 	// Returns a list of apps that are affected by this change. This is calculated
 	// by looking at the blast radius snapshot and finding all apps that have
 	// items in the snapshot.
@@ -780,6 +808,11 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 		svc.UpdateChangingItems,
 		opts...,
 	)
+	changesServiceUpdatePlannedChangesHandler := connect.NewServerStreamHandler(
+		ChangesServiceUpdatePlannedChangesProcedure,
+		svc.UpdatePlannedChanges,
+		opts...,
+	)
 	changesServiceGetAffectedAppsHandler := connect.NewUnaryHandler(
 		ChangesServiceGetAffectedAppsProcedure,
 		svc.GetAffectedApps,
@@ -851,6 +884,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 			changesServiceListAppChangesSummaryHandler.ServeHTTP(w, r)
 		case ChangesServiceUpdateChangingItemsProcedure:
 			changesServiceUpdateChangingItemsHandler.ServeHTTP(w, r)
+		case ChangesServiceUpdatePlannedChangesProcedure:
+			changesServiceUpdatePlannedChangesHandler.ServeHTTP(w, r)
 		case ChangesServiceGetAffectedAppsProcedure:
 			changesServiceGetAffectedAppsHandler.ServeHTTP(w, r)
 		case ChangesServiceListChangingItemsSummaryProcedure:
@@ -972,6 +1007,10 @@ func (UnimplementedChangesServiceHandler) ListAppChangesSummary(context.Context,
 
 func (UnimplementedChangesServiceHandler) UpdateChangingItems(context.Context, *connect.Request[sdp_go.UpdateChangingItemsRequest], *connect.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.UpdateChangingItems is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) UpdatePlannedChanges(context.Context, *connect.Request[sdp_go.UpdatePlannedChangesRequest], *connect.ServerStream[sdp_go.CalculateBlastRadiusResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.UpdatePlannedChanges is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) GetAffectedApps(context.Context, *connect.Request[sdp_go.GetAffectedAppsRequest]) (*connect.Response[sdp_go.GetAffectedAppsResponse], error) {
