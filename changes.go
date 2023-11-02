@@ -172,6 +172,14 @@ func (x *UpdateChangingItemsRequest) GetChangeUUIDParsed() *uuid.UUID {
 	return &u
 }
 
+func (x *UpdatePlannedChangesRequest) GetChangeUUIDParsed() *uuid.UUID {
+	u, err := uuid.FromBytes(x.GetChangeUUID())
+	if err != nil {
+		return nil
+	}
+	return &u
+}
+
 func (x *CalculateBlastRadiusRequest) GetChangeUUIDParsed() *uuid.UUID {
 	u, err := uuid.FromBytes(x.GetChangeUUID())
 	if err != nil {
