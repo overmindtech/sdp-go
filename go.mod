@@ -8,7 +8,7 @@ require (
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.4.0
-	github.com/nats-io/jwt/v2 v2.5.2
+	github.com/nats-io/jwt/v2 v2.5.3
 	github.com/nats-io/nats.go v1.31.0
 	github.com/nats-io/nkeys v0.4.6
 	github.com/overmindtech/api-client v0.14.0
