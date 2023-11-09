@@ -27,7 +27,7 @@ func (c *Client) SendQuery(ctx context.Context, q *sdp.Query) error {
 	if err != nil {
 		// c.send already aborts
 		// c.abort(ctx, err)
-		return err
+		return fmt.Errorf("error sending query: %w", err)
 	}
 	return nil
 }
@@ -121,7 +121,10 @@ func (c *Client) SendStoreSnapshot(ctx context.Context, s *sdp.StoreSnapshot) er
 			StoreSnapshot: s,
 		},
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("error sending store snapshot: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (uuid.UUID, error) {
@@ -139,7 +142,7 @@ func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (u
 
 	err := c.SendStoreSnapshot(ctx, s)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("error sending store snapshot request: %w", err)
+		return uuid.UUID{}, err
 	}
 
 	for {
@@ -179,7 +182,10 @@ func (c *Client) SendStoreBookmark(ctx context.Context, b *sdp.StoreBookmark) er
 			StoreBookmark: b,
 		},
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("error sending store bookmark: %w", err)
+	}
+	return nil
 }
 
 func (c *Client) StoreBookmark(ctx context.Context, name, description string, isSystem bool) (uuid.UUID, error) {
@@ -198,7 +204,7 @@ func (c *Client) StoreBookmark(ctx context.Context, name, description string, is
 
 	err := c.SendStoreBookmark(ctx, b)
 	if err != nil {
-		return uuid.UUID{}, fmt.Errorf("error sending store bookmark request: %w", err)
+		return uuid.UUID{}, err
 	}
 
 	for {

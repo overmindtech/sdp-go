@@ -136,8 +136,8 @@ func (q *Query) Validate() error {
 		return fmt.Errorf("query has empty Scope: %v", q)
 	}
 
-	if len(q.UUID) == 0 {
-		return fmt.Errorf("query has empty UUID: %v", q)
+	if len(q.UUID) != 16 {
+		return fmt.Errorf("query has invalid UUID: %v", q)
 	}
 
 	if q.Method == QueryMethod_GET {

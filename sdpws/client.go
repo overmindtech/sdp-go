@@ -230,7 +230,6 @@ func (c *Client) receive(ctx context.Context) {
 }
 
 func (c *Client) send(ctx context.Context, msg *sdp.GatewayRequest) error {
-	log.WithContext(ctx).WithField("request", msg).Trace("writing request to websocket")
 	buf, err := proto.Marshal(msg)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("request", msg).Trace("error marshaling request")
