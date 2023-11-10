@@ -227,7 +227,35 @@ func stringFromUuidBytes(b []byte) string {
 	return u.String()
 }
 
+func (r *Reference) ToMap() map[string]any {
+	return map[string]any{
+		"type":                 r.Type,
+		"uniqueAttributeValue": r.UniqueAttributeValue,
+		"scope":                r.Scope,
+	}
+}
+
+func (r *Risk) ToMap() map[string]any {
+	relatedItems := make([]map[string]any, len(r.RelatedItems))
+	for i, ri := range r.RelatedItems {
+		relatedItems[i] = ri.ToMap()
+	}
+
+	return map[string]any{
+		"uuid":         stringFromUuidBytes(r.UUID),
+		"title":        r.Title,
+		"severity":     r.Severity.String(),
+		"description":  r.Description,
+		"relatedItems": relatedItems,
+	}
+}
+
 func (cm *ChangeMetadata) ToMap() map[string]any {
+	risks := make([]map[string]any, len(cm.Risks))
+	for i, r := range cm.Risks {
+		risks[i] = r.ToMap()
+	}
+
 	return map[string]any{
 		"UUID":                stringFromUuidBytes(cm.UUID),
 		"createdAt":           cm.CreatedAt.AsTime(),
@@ -236,6 +264,7 @@ func (cm *ChangeMetadata) ToMap() map[string]any {
 		"creatorName":         cm.CreatorName,
 		"numAffectedApps":     cm.NumAffectedApps,
 		"numAffectedItems":    cm.NumAffectedItems,
+		"numAffectedEdges":    cm.NumAffectedEdges,
 		"numUnchangedItems":   cm.NumUnchangedItems,
 		"numCreatedItems":     cm.NumCreatedItems,
 		"numUpdatedItems":     cm.NumUpdatedItems,
@@ -245,13 +274,45 @@ func (cm *ChangeMetadata) ToMap() map[string]any {
 		"WarningHealthChange": cm.WarningHealthChange,
 		"ErrorHealthChange":   cm.ErrorHealthChange,
 		"PendingHealthChange": cm.PendingHealthChange,
+		"risks":               risks,
+		"numHighRisk":         cm.NumHighRisk,
+		"numMediumRisk":       cm.NumMediumRisk,
+		"numLowRisk":          cm.NumLowRisk,
 	}
 }
 
+func (i *Item) ToMap() map[string]any {
+	return map[string]any{
+		"type":                 i.Type,
+		"uniqueAttributeValue": i.UniqueAttributeValue(),
+		"scope":                i.Scope,
+		"attributes":           i.Attributes.AttrStruct.Fields,
+	}
+}
+func (id *ItemDiff) ToMap() map[string]any {
+	result := map[string]any{
+		"status": id.Status.String(),
+	}
+	if id.Item != nil {
+		result["item"] = id.Item.ToMap()
+	}
+	if id.Before != nil {
+		result["before"] = id.Before.ToMap()
+	}
+	if id.After != nil {
+		result["after"] = id.After.ToMap()
+	}
+	return result
+}
+
 func (cp *ChangeProperties) ToMap() map[string]any {
-	affectedApps := []string{}
-	for _, u := range cp.AffectedAppsUUID {
-		affectedApps = append(affectedApps, stringFromUuidBytes(u))
+	affectedApps := make([]string, len(cp.AffectedAppsUUID))
+	for i, u := range cp.AffectedAppsUUID {
+		affectedApps[i] = stringFromUuidBytes(u)
+	}
+	plannedChanges := make([]map[string]any, len(cp.PlannedChanges))
+	for i, id := range cp.PlannedChanges {
+		plannedChanges[i] = id.ToMap()
 	}
 
 	return map[string]any{
@@ -265,5 +326,6 @@ func (cp *ChangeProperties) ToMap() map[string]any {
 		"systemBeforeSnapshotUUID":  stringFromUuidBytes(cp.SystemBeforeSnapshotUUID),
 		"systemAfterSnapshotUUID":   stringFromUuidBytes(cp.SystemAfterSnapshotUUID),
 		"affectedAppsUUID":          affectedApps,
+		"plannedChanges":            plannedChanges,
 	}
 }
