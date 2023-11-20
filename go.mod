@@ -1,6 +1,6 @@
 module github.com/overmindtech/sdp-go
 
-go 1.21
+go 1.21.4
 
 require (
 	connectrpc.com/connect v1.12.0
