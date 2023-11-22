@@ -327,5 +327,7 @@ func (cp *ChangeProperties) ToMap() map[string]any {
 		"systemAfterSnapshotUUID":   stringFromUuidBytes(cp.SystemAfterSnapshotUUID),
 		"affectedAppsUUID":          affectedApps,
 		"plannedChanges":            plannedChanges,
+		"rawPlan":                   cp.RawPlan,
+		"codeChanges":               cp.CodeChanges,
 	}
 }
