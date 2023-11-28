@@ -61,6 +61,9 @@ const (
 	// ChangesServiceGetChangeProcedure is the fully-qualified name of the ChangesService's GetChange
 	// RPC.
 	ChangesServiceGetChangeProcedure = "/changes.ChangesService/GetChange"
+	// ChangesServiceGetChangeArchiveProcedure is the fully-qualified name of the ChangesService's
+	// GetChangeArchive RPC.
+	ChangesServiceGetChangeArchiveProcedure = "/changes.ChangesService/GetChangeArchive"
 	// ChangesServiceUpdateChangeProcedure is the fully-qualified name of the ChangesService's
 	// UpdateChange RPC.
 	ChangesServiceUpdateChangeProcedure = "/changes.ChangesService/UpdateChange"
@@ -148,6 +151,8 @@ type ChangesServiceClient interface {
 	CreateChange(context.Context, *connect.Request[sdp_go.CreateChangeRequest]) (*connect.Response[sdp_go.CreateChangeResponse], error)
 	// Gets the details of an existing change
 	GetChange(context.Context, *connect.Request[sdp_go.GetChangeRequest]) (*connect.Response[sdp_go.GetChangeResponse], error)
+	// Gets the all data of an existing change for archival
+	GetChangeArchive(context.Context, *connect.Request[sdp_go.GetChangeArchiveRequest]) (*connect.Response[sdp_go.GetChangeArchiveResponse], error)
 	// Updates an existing change
 	UpdateChange(context.Context, *connect.Request[sdp_go.UpdateChangeRequest]) (*connect.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
@@ -277,6 +282,11 @@ func NewChangesServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			baseURL+ChangesServiceGetChangeProcedure,
 			opts...,
 		),
+		getChangeArchive: connect.NewClient[sdp_go.GetChangeArchiveRequest, sdp_go.GetChangeArchiveResponse](
+			httpClient,
+			baseURL+ChangesServiceGetChangeArchiveProcedure,
+			opts...,
+		),
 		updateChange: connect.NewClient[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse](
 			httpClient,
 			baseURL+ChangesServiceUpdateChangeProcedure,
@@ -397,6 +407,7 @@ type changesServiceClient struct {
 	listChangesByStatus      *connect.Client[sdp_go.ListChangesByStatusRequest, sdp_go.ListChangesByStatusResponse]
 	createChange             *connect.Client[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse]
 	getChange                *connect.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
+	getChangeArchive         *connect.Client[sdp_go.GetChangeArchiveRequest, sdp_go.GetChangeArchiveResponse]
 	updateChange             *connect.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
 	deleteChange             *connect.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
 	getChangeTimeline        *connect.Client[sdp_go.GetChangeTimelineRequest, sdp_go.GetChangeTimelineResponse]
@@ -468,6 +479,11 @@ func (c *changesServiceClient) CreateChange(ctx context.Context, req *connect.Re
 // GetChange calls changes.ChangesService.GetChange.
 func (c *changesServiceClient) GetChange(ctx context.Context, req *connect.Request[sdp_go.GetChangeRequest]) (*connect.Response[sdp_go.GetChangeResponse], error) {
 	return c.getChange.CallUnary(ctx, req)
+}
+
+// GetChangeArchive calls changes.ChangesService.GetChangeArchive.
+func (c *changesServiceClient) GetChangeArchive(ctx context.Context, req *connect.Request[sdp_go.GetChangeArchiveRequest]) (*connect.Response[sdp_go.GetChangeArchiveResponse], error) {
+	return c.getChangeArchive.CallUnary(ctx, req)
 }
 
 // UpdateChange calls changes.ChangesService.UpdateChange.
@@ -598,6 +614,8 @@ type ChangesServiceHandler interface {
 	CreateChange(context.Context, *connect.Request[sdp_go.CreateChangeRequest]) (*connect.Response[sdp_go.CreateChangeResponse], error)
 	// Gets the details of an existing change
 	GetChange(context.Context, *connect.Request[sdp_go.GetChangeRequest]) (*connect.Response[sdp_go.GetChangeResponse], error)
+	// Gets the all data of an existing change for archival
+	GetChangeArchive(context.Context, *connect.Request[sdp_go.GetChangeArchiveRequest]) (*connect.Response[sdp_go.GetChangeArchiveResponse], error)
 	// Updates an existing change
 	UpdateChange(context.Context, *connect.Request[sdp_go.UpdateChangeRequest]) (*connect.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
@@ -721,6 +739,11 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 	changesServiceGetChangeHandler := connect.NewUnaryHandler(
 		ChangesServiceGetChangeProcedure,
 		svc.GetChange,
+		opts...,
+	)
+	changesServiceGetChangeArchiveHandler := connect.NewUnaryHandler(
+		ChangesServiceGetChangeArchiveProcedure,
+		svc.GetChangeArchive,
 		opts...,
 	)
 	changesServiceUpdateChangeHandler := connect.NewUnaryHandler(
@@ -850,6 +873,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 			changesServiceCreateChangeHandler.ServeHTTP(w, r)
 		case ChangesServiceGetChangeProcedure:
 			changesServiceGetChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceGetChangeArchiveProcedure:
+			changesServiceGetChangeArchiveHandler.ServeHTTP(w, r)
 		case ChangesServiceUpdateChangeProcedure:
 			changesServiceUpdateChangeHandler.ServeHTTP(w, r)
 		case ChangesServiceDeleteChangeProcedure:
@@ -939,6 +964,10 @@ func (UnimplementedChangesServiceHandler) CreateChange(context.Context, *connect
 
 func (UnimplementedChangesServiceHandler) GetChange(context.Context, *connect.Request[sdp_go.GetChangeRequest]) (*connect.Response[sdp_go.GetChangeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.GetChange is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) GetChangeArchive(context.Context, *connect.Request[sdp_go.GetChangeArchiveRequest]) (*connect.Response[sdp_go.GetChangeArchiveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.GetChangeArchive is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) UpdateChange(context.Context, *connect.Request[sdp_go.UpdateChangeRequest]) (*connect.Response[sdp_go.UpdateChangeResponse], error) {
