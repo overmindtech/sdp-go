@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/overmindtech/sdp-go"
 	log "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -60,26 +62,27 @@ readLoop:
 			switch resp.ResponseType.(type) {
 			case *sdp.GatewayResponse_NewItem:
 				item := resp.GetNewItem()
-				log.WithContext(ctx).WithField("query", q).WithField("item", item).Debug("received item")
+				log.WithContext(ctx).WithField("query", q).WithField("item", item).Trace("received item")
 				items = append(items, item)
 			case *sdp.GatewayResponse_QueryError:
 				qe := resp.GetQueryError()
-				log.WithContext(ctx).WithField("query", q).WithField("queryerror", qe).Trace("received query error")
-				// ignore query errors
-				// switch qe.ErrorType {
-				// case sdp.QueryError_OTHER:
-				// 	return nil, fmt.Errorf("query error: %v", qe.ErrorString)
-				// case sdp.QueryError_TIMEOUT:
-				// 	return nil, fmt.Errorf("query timeout: %v", qe.ErrorString)
-				// case sdp.QueryError_NOSCOPE:
-				// 	return nil, fmt.Errorf("query to wrong scope: %v", qe.ErrorString)
-				// case sdp.QueryError_NOTFOUND:
-				// 	continue readLoop
-				// }
-				continue readLoop
+				log.WithContext(ctx).WithField("query", q).WithField("queryError", qe).Trace("received query error")
+				switch qe.ErrorType {
+				case sdp.QueryError_OTHER, sdp.QueryError_TIMEOUT, sdp.QueryError_NOSCOPE:
+					// ignore query errors, query status will end us
+					continue readLoop
+				case sdp.QueryError_NOTFOUND:
+					// drain the channel, end the query
+					for resp := range r {
+						log.WithContext(ctx).WithField("message", resp).Trace("skipped message")
+					}
+					break readLoop
+				}
 			case *sdp.GatewayResponse_QueryStatus:
 				qs := resp.GetQueryStatus()
-				log.WithContext(ctx).WithField("query", q).WithField("querystatus", qs).Trace("received query status")
+				span := trace.SpanFromContext(ctx)
+				span.SetAttributes(attribute.String("om.sdp.lastQueryStatus", qs.String()))
+				log.WithContext(ctx).WithField("query", q).WithField("queryStatus", qs).Trace("received query status")
 				switch qs.Status {
 				case sdp.QueryStatus_FINISHED:
 					break readLoop
