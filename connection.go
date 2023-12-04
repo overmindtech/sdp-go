@@ -52,8 +52,8 @@ func recordMessage(ctx context.Context, name, subj, typ, msg string) {
 	if log.GetLevel() == log.TraceLevel {
 		span := trace.SpanFromContext(ctx)
 		span.AddEvent(name, trace.WithAttributes(
-			attribute.String("om.sdp.subject", subj),
-			attribute.String("om.sdp.message", msg),
+			attribute.String("ovm.sdp.subject", subj),
+			attribute.String("ovm.sdp.message", msg),
 		))
 	}
 }

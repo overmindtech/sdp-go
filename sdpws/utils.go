@@ -81,7 +81,7 @@ readLoop:
 			case *sdp.GatewayResponse_QueryStatus:
 				qs := resp.GetQueryStatus()
 				span := trace.SpanFromContext(ctx)
-				span.SetAttributes(attribute.String("om.sdp.lastQueryStatus", qs.String()))
+				span.SetAttributes(attribute.String("ovm.sdp.lastQueryStatus", qs.String()))
 				log.WithContext(ctx).WithField("query", q).WithField("queryStatus", qs).Trace("received query status")
 				switch qs.Status {
 				case sdp.QueryStatus_FINISHED:

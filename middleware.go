@@ -71,11 +71,11 @@ func HasScopes(ctx context.Context, requiredScopes ...string) bool {
 func HasAllScopes(ctx context.Context, requiredScopes ...string) bool {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		attribute.StringSlice("om.auth.requiredScopes.all", requiredScopes),
+		attribute.StringSlice("ovm.auth.requiredScopes.all", requiredScopes),
 	)
 
 	if ctx.Value(AuthBypassedContextKey{}) == true {
-		span.SetAttributes(attribute.Bool("om.auth.bypass", true))
+		span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
 
 		// Bypass all auth
 		return true
@@ -83,13 +83,13 @@ func HasAllScopes(ctx context.Context, requiredScopes ...string) bool {
 
 	claims, ok := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
 	if !ok {
-		span.SetAttributes(attribute.String("om.auth.missingClaims", "all"))
+		span.SetAttributes(attribute.String("ovm.auth.missingClaims", "all"))
 		return false
 	}
 
 	for _, scope := range requiredScopes {
 		if !claims.HasScope(scope) {
-			span.SetAttributes(attribute.String("om.auth.missingClaims", scope))
+			span.SetAttributes(attribute.String("ovm.auth.missingClaims", scope))
 			return false
 		}
 	}
@@ -101,11 +101,11 @@ func HasAllScopes(ctx context.Context, requiredScopes ...string) bool {
 func HasAnyScopes(ctx context.Context, requiredScopes ...string) bool {
 	span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
-		attribute.StringSlice("om.auth.requiredScopes.any", requiredScopes),
+		attribute.StringSlice("ovm.auth.requiredScopes.any", requiredScopes),
 	)
 
 	if ctx.Value(AuthBypassedContextKey{}) == true {
-		span.SetAttributes(attribute.Bool("om.auth.bypass", true))
+		span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
 
 		// Bypass all auth
 		return true
@@ -113,13 +113,13 @@ func HasAnyScopes(ctx context.Context, requiredScopes ...string) bool {
 
 	claims, ok := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
 	if !ok {
-		span.SetAttributes(attribute.String("om.auth.missingClaims", "all"))
+		span.SetAttributes(attribute.String("ovm.auth.missingClaims", "all"))
 		return false
 	}
 
 	for _, scope := range requiredScopes {
 		if claims.HasScope(scope) {
-			span.SetAttributes(attribute.String("om.auth.usedClaim", scope))
+			span.SetAttributes(attribute.String("ovm.auth.usedClaim", scope))
 			return true
 		}
 	}
@@ -322,10 +322,10 @@ func ensureValidTokenHandler(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, AccountNameContextKey{}, customClaims.AccountName)
 
 		trace.SpanFromContext(ctx).SetAttributes(
-			attribute.String("om.auth.accountName", customClaims.AccountName),
-			attribute.Int64("om.auth.expiry", claims.RegisteredClaims.Expiry),
-			attribute.String("om.auth.scopes", customClaims.Scope),
-			attribute.String("om.auth.subject", claims.RegisteredClaims.Subject),
+			attribute.String("ovm.auth.accountName", customClaims.AccountName),
+			attribute.Int64("ovm.auth.expiry", claims.RegisteredClaims.Expiry),
+			attribute.String("ovm.auth.scopes", customClaims.Scope),
+			attribute.String("ovm.auth.subject", claims.RegisteredClaims.Subject),
 		)
 
 		r = r.Clone(ctx)
