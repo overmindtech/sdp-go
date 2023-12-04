@@ -349,11 +349,11 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 
 		if item == nil {
 			span.SetAttributes(
-				attribute.String("om.item", "nil"),
+				attribute.String("ovm.item", "nil"),
 			)
 		} else {
 			span.SetAttributes(
-				attribute.String("om.item", item.GloballyUniqueName()),
+				attribute.String("ovm.item", item.GloballyUniqueName()),
 			)
 
 			qp.chanMutex.RLock()
@@ -392,13 +392,13 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 			span := trace.SpanFromContext(ctx)
 			span.SetStatus(codes.Error, err.Error())
 			span.SetAttributes(
-				attribute.Int64("om.sdp.errorsProcessed", *qp.errorsProcessed),
-				attribute.String("om.sdp.errorString", err.ErrorString),
-				attribute.String("om.sdp.ErrorType", err.ErrorType.String()),
-				attribute.String("om.scope", err.Scope),
-				attribute.String("om.type", err.ItemType),
-				attribute.String("om.sdp.SourceName", err.SourceName),
-				attribute.String("om.sdp.ResponderName", err.ResponderName),
+				attribute.Int64("ovm.sdp.errorsProcessed", *qp.errorsProcessed),
+				attribute.String("ovm.sdp.errorString", err.ErrorString),
+				attribute.String("ovm.sdp.errorType", err.ErrorType.String()),
+				attribute.String("ovm.scope", err.Scope),
+				attribute.String("ovm.type", err.ItemType),
+				attribute.String("ovm.sdp.sourceName", err.SourceName),
+				attribute.String("ovm.sdp.responderName", err.ResponderName),
 			)
 
 			qp.chanMutex.RLock()
@@ -646,7 +646,7 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 	defer qp.respondersMutex.Unlock()
 
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.String("om.response", protojson.Format(response)))
+	span.SetAttributes(attribute.String("ovm.sdp.response", protojson.Format(response)))
 
 	responder, exists := qp.responders[response.Responder]
 
@@ -876,7 +876,7 @@ func stallMonitor(ctx context.Context, timeout time.Duration, responder *Respond
 		// means that we haven't received a response in the expected
 		// time, we now need to mark that responder as STALLED
 		responder.SetState(ResponderState_STALLED)
-		log.WithContext(ctx).WithField("om.timeout", timeout).WithField("om.responder", responder.Name).Error("marking responder as stalled after timeout")
+		log.WithContext(ctx).WithField("ovm.timeout", timeout).WithField("ovm.responder", responder.Name).Error("marking responder as stalled after timeout")
 
 		if qp.allDone() {
 			qp.Drain()

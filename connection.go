@@ -44,16 +44,16 @@ var _ EncodedConnection = (*EncodedConnectionImpl)(nil)
 
 func recordMessage(ctx context.Context, name, subj, typ, msg string) {
 	log.WithContext(ctx).WithFields(log.Fields{
-		"msg type": typ,
-		"subj":     subj,
-		"msg":      msg,
+		"msg":  msg,
+		"subj": subj,
+		"typ":  typ,
 	}).Trace(name)
 	// avoid spamming honeycomb
 	if log.GetLevel() == log.TraceLevel {
 		span := trace.SpanFromContext(ctx)
 		span.AddEvent(name, trace.WithAttributes(
-			attribute.String("om.sdp.subject", subj),
-			attribute.String("om.sdp.message", msg),
+			attribute.String("ovm.sdp.subject", subj),
+			attribute.String("ovm.sdp.message", msg),
 		))
 	}
 }

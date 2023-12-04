@@ -136,8 +136,8 @@ func LogRecoverToReturn(ctx context.Context, loc string) {
 
 	if ctx != nil {
 		span := trace.SpanFromContext(ctx)
-		span.SetAttributes(attribute.String("om.panic.loc", loc))
-		span.SetAttributes(attribute.String("om.panic.stack", stack))
+		span.SetAttributes(attribute.String("ovm.panic.loc", loc))
+		span.SetAttributes(attribute.String("ovm.panic.stack", stack))
 		log.WithContext(ctx).WithFields(log.Fields{"loc": loc, "stack": stack}).Error(msg)
 	} else {
 		log.WithFields(log.Fields{"loc": loc, "stack": stack}).Error(msg)
