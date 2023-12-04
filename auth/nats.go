@@ -42,9 +42,8 @@ var ReconnectHandlerDefault = func(c *nats.Conn) {
 
 	if c != nil {
 		fields["reconnects"] = c.Reconnects
-		fields["ServerID"] = c.ConnectedServerId()
-		fields["URL"] = c.ConnectedUrl()
-
+		fields["serverId"] = c.ConnectedServerId()
+		fields["url"] = c.ConnectedUrl()
 	}
 
 	log.WithFields(fields).Info("NATS reconnected")
@@ -226,9 +225,7 @@ func (o NATSOptions) Connect() (sdp.EncodedConnection, error) {
 		)
 
 		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err.Error(),
-			}).Error("Error connecting to NATS")
+			log.WithError(err).Error("Error connecting to NATS")
 
 			triesLeft--
 			time.Sleep(o.RetryDelay)

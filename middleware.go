@@ -83,13 +83,13 @@ func HasAllScopes(ctx context.Context, requiredScopes ...string) bool {
 
 	claims, ok := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
 	if !ok {
-		span.SetAttributes(attribute.String("om.auth.missing_claims", "all"))
+		span.SetAttributes(attribute.String("om.auth.missingClaims", "all"))
 		return false
 	}
 
 	for _, scope := range requiredScopes {
 		if !claims.HasScope(scope) {
-			span.SetAttributes(attribute.String("om.auth.missing_claims", scope))
+			span.SetAttributes(attribute.String("om.auth.missingClaims", scope))
 			return false
 		}
 	}
@@ -113,13 +113,13 @@ func HasAnyScopes(ctx context.Context, requiredScopes ...string) bool {
 
 	claims, ok := ctx.Value(CustomClaimsContextKey{}).(*CustomClaims)
 	if !ok {
-		span.SetAttributes(attribute.String("om.auth.missing_claims", "all"))
+		span.SetAttributes(attribute.String("om.auth.missingClaims", "all"))
 		return false
 	}
 
 	for _, scope := range requiredScopes {
 		if claims.HasScope(scope) {
-			span.SetAttributes(attribute.String("om.auth.used_claim", scope))
+			span.SetAttributes(attribute.String("om.auth.usedClaim", scope))
 			return true
 		}
 	}

@@ -159,7 +159,7 @@ func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (u
 			switch resp.ResponseType.(type) {
 			case *sdp.GatewayResponse_SnapshotStoreResult:
 				ssr := resp.GetSnapshotStoreResult()
-				log.WithContext(ctx).WithField("Snapshot", s).WithField("snapshotstoreresult", ssr).Trace("received snapshot store result")
+				log.WithContext(ctx).WithField("Snapshot", s).WithField("snapshotStoreResult", ssr).Trace("received snapshot store result")
 				if ssr.Success {
 					return uuid.UUID(ssr.SnapshotID), nil
 				}
@@ -221,7 +221,7 @@ func (c *Client) StoreBookmark(ctx context.Context, name, description string, is
 			switch resp.ResponseType.(type) {
 			case *sdp.GatewayResponse_BookmarkStoreResult:
 				bsr := resp.GetBookmarkStoreResult()
-				log.WithContext(ctx).WithField("bookmark", b).WithField("bookmarkstoreresult", bsr).Trace("received bookmark store result")
+				log.WithContext(ctx).WithField("bookmark", b).WithField("bookmarkStoreResult", bsr).Trace("received bookmark store result")
 				if bsr.Success {
 					return uuid.UUID(bsr.BookmarkID), nil
 				}

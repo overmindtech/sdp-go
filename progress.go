@@ -394,11 +394,11 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 			span.SetAttributes(
 				attribute.Int64("om.sdp.errorsProcessed", *qp.errorsProcessed),
 				attribute.String("om.sdp.errorString", err.ErrorString),
-				attribute.String("om.sdp.ErrorType", err.ErrorType.String()),
+				attribute.String("om.sdp.errorType", err.ErrorType.String()),
 				attribute.String("om.scope", err.Scope),
 				attribute.String("om.type", err.ItemType),
-				attribute.String("om.sdp.SourceName", err.SourceName),
-				attribute.String("om.sdp.ResponderName", err.ResponderName),
+				attribute.String("om.sdp.sourceName", err.SourceName),
+				attribute.String("om.sdp.responderName", err.ResponderName),
 			)
 
 			qp.chanMutex.RLock()
@@ -646,7 +646,7 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 	defer qp.respondersMutex.Unlock()
 
 	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.String("om.response", protojson.Format(response)))
+	span.SetAttributes(attribute.String("om.sdp.response", protojson.Format(response)))
 
 	responder, exists := qp.responders[response.Responder]
 

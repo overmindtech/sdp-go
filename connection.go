@@ -44,9 +44,9 @@ var _ EncodedConnection = (*EncodedConnectionImpl)(nil)
 
 func recordMessage(ctx context.Context, name, subj, typ, msg string) {
 	log.WithContext(ctx).WithFields(log.Fields{
-		"msg type": typ,
-		"subj":     subj,
-		"msg":      msg,
+		"msg":  msg,
+		"subj": subj,
+		"typ":  typ,
 	}).Trace(name)
 	// avoid spamming honeycomb
 	if log.GetLevel() == log.TraceLevel {
