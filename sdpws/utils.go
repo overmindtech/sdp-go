@@ -50,6 +50,7 @@ func (c *Client) Query(ctx context.Context, q *sdp.Query) ([]*sdp.Item, error) {
 
 	items := make([]*sdp.Item, 0)
 
+	var otherErr *sdp.QueryError
 readLoop:
 	for {
 		select {
@@ -69,14 +70,13 @@ readLoop:
 				log.WithContext(ctx).WithField("query", q).WithField("queryError", qe).Trace("received query error")
 				switch qe.ErrorType {
 				case sdp.QueryError_OTHER, sdp.QueryError_TIMEOUT, sdp.QueryError_NOSCOPE:
-					// ignore query errors, query status will end us
+					// record that we received an error, but continue reading
+					// if we receive any item, mapping was still successful
+					otherErr = qe
 					continue readLoop
 				case sdp.QueryError_NOTFOUND:
-					// drain the channel, end the query
-					for resp := range r {
-						log.WithContext(ctx).WithField("message", resp).Trace("skipped message")
-					}
-					break readLoop
+					// never record not found as an error
+					continue readLoop
 				}
 			case *sdp.GatewayResponse_QueryStatus:
 				qs := resp.GetQueryStatus()
@@ -90,8 +90,8 @@ readLoop:
 					return nil, errors.New("query cancelled")
 				case sdp.QueryStatus_ERRORED:
 					// if we already received items, we can ignore the error
-					if len(items) == 0 {
-						err = errors.New("query errored")
+					if len(items) == 0 && otherErr != nil {
+						err = fmt.Errorf("query errored: %v", otherErr.String())
 						// query errors should not abort the connection
 						// c.abort(ctx, err)
 						return nil, err
