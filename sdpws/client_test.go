@@ -200,6 +200,15 @@ func TestClient(t *testing.T) {
 		go func() {
 			time.Sleep(100 * time.Millisecond)
 			ts.inject(ctx, &sdp.GatewayResponse{
+				ResponseType: &sdp.GatewayResponse_QueryStatus{
+					QueryStatus: &sdp.QueryStatus{
+						UUID:   u[:],
+						Status: sdp.QueryStatus_STARTED,
+					},
+				},
+			})
+			time.Sleep(100 * time.Millisecond)
+			ts.inject(ctx, &sdp.GatewayResponse{
 				ResponseType: &sdp.GatewayResponse_QueryError{
 					QueryError: &sdp.QueryError{
 						UUID:          u[:],
