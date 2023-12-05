@@ -170,6 +170,76 @@ func TestClient(t *testing.T) {
 		}
 	})
 
+	t.Run("QueryNotFound", func(t *testing.T) {
+		defer goleak.VerifyNone(t)
+		ctx := context.Background()
+
+		ts, closeFn := newTestServer(ctx, t)
+		defer closeFn()
+
+		c, err := Dial(ctx, ts.url, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			_ = c.Close(ctx)
+		}()
+
+		u := uuid.New()
+
+		q := &sdp.Query{
+			UUID:               u[:],
+			Type:               "",
+			Method:             0,
+			Query:              "",
+			RecursionBehaviour: &sdp.Query_RecursionBehaviour{},
+			Scope:              "",
+			IgnoreCache:        false,
+		}
+
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			ts.inject(ctx, &sdp.GatewayResponse{
+				ResponseType: &sdp.GatewayResponse_QueryError{
+					QueryError: &sdp.QueryError{
+						UUID:          u[:],
+						ErrorType:     sdp.QueryError_NOTFOUND,
+						ErrorString:   "not found",
+						Scope:         "scope",
+						SourceName:    "src name",
+						ItemType:      "item type",
+						ResponderName: "responder name",
+					},
+				},
+			})
+			time.Sleep(100 * time.Millisecond)
+			ts.inject(ctx, &sdp.GatewayResponse{
+				ResponseType: &sdp.GatewayResponse_QueryStatus{
+					QueryStatus: &sdp.QueryStatus{
+						UUID:   u[:],
+						Status: sdp.QueryStatus_ERRORED,
+					},
+				},
+			})
+		}()
+
+		// this will block until the above goroutine has injected the response
+		c.Query(ctx, q)
+		c.Wait(ctx, uuid.UUIDs{u})
+
+		ts.requestsMu.Lock()
+		defer ts.requestsMu.Unlock()
+
+		if len(ts.requests) != 1 {
+			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
+		}
+
+		recvQ, ok := ts.requests[0].RequestType.(*sdp.GatewayRequest_Query)
+		if !ok || uuid.UUID(recvQ.Query.UUID) != u {
+			t.Fatalf("expected query, got %v", ts.requests[0])
+		}
+	})
+
 	t.Run("StoreSnapshot", func(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx := context.Background()
