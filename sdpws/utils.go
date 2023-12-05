@@ -39,7 +39,10 @@ func (c *Client) Query(ctx context.Context, q *sdp.Query) ([]*sdp.Item, error) {
 		return nil, errors.New("client closed")
 	}
 
-	r := c.createRequestChan(uuid.UUID(q.UUID))
+	u := uuid.UUID(q.UUID)
+
+	r := c.createRequestChan(u)
+	defer c.finishRequestChan(u)
 
 	err := c.SendQuery(ctx, q)
 	if err != nil {
@@ -104,7 +107,6 @@ readLoop:
 		}
 	}
 
-	c.finishRequestChan(uuid.UUID(q.UUID))
 	return items, nil
 }
 
