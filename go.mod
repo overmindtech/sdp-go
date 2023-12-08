@@ -4,7 +4,7 @@ go 1.21.4
 
 require (
 	connectrpc.com/connect v1.12.0
-	github.com/auth0/go-jwt-middleware/v2 v2.1.0
+	github.com/auth0/go-jwt-middleware/v2 v2.2.0
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/google/uuid v1.4.0
@@ -34,8 +34,10 @@ require (
 	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 )
