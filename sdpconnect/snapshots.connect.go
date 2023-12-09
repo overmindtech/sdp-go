@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// SnapshotsServiceName is the fully-qualified name of the SnapshotsService service.
@@ -53,6 +53,17 @@ const (
 	SnapshotsServiceGetInitialDataProcedure = "/snapshots.SnapshotsService/GetInitialData"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	snapshotsServiceServiceDescriptor              = sdp_go.File_snapshots_proto.Services().ByName("SnapshotsService")
+	snapshotsServiceListSnapshotsMethodDescriptor  = snapshotsServiceServiceDescriptor.Methods().ByName("ListSnapshots")
+	snapshotsServiceCreateSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("CreateSnapshot")
+	snapshotsServiceGetSnapshotMethodDescriptor    = snapshotsServiceServiceDescriptor.Methods().ByName("GetSnapshot")
+	snapshotsServiceUpdateSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("UpdateSnapshot")
+	snapshotsServiceDeleteSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("DeleteSnapshot")
+	snapshotsServiceGetInitialDataMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("GetInitialData")
+)
+
 // SnapshotsServiceClient is a client for the snapshots.SnapshotsService service.
 type SnapshotsServiceClient interface {
 	ListSnapshots(context.Context, *connect.Request[sdp_go.ListSnapshotsRequest]) (*connect.Response[sdp_go.ListSnapshotResponse], error)
@@ -77,32 +88,38 @@ func NewSnapshotsServiceClient(httpClient connect.HTTPClient, baseURL string, op
 		listSnapshots: connect.NewClient[sdp_go.ListSnapshotsRequest, sdp_go.ListSnapshotResponse](
 			httpClient,
 			baseURL+SnapshotsServiceListSnapshotsProcedure,
-			opts...,
+			connect.WithSchema(snapshotsServiceListSnapshotsMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		createSnapshot: connect.NewClient[sdp_go.CreateSnapshotRequest, sdp_go.CreateSnapshotResponse](
 			httpClient,
 			baseURL+SnapshotsServiceCreateSnapshotProcedure,
-			opts...,
+			connect.WithSchema(snapshotsServiceCreateSnapshotMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		getSnapshot: connect.NewClient[sdp_go.GetSnapshotRequest, sdp_go.GetSnapshotResponse](
 			httpClient,
 			baseURL+SnapshotsServiceGetSnapshotProcedure,
-			opts...,
+			connect.WithSchema(snapshotsServiceGetSnapshotMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		updateSnapshot: connect.NewClient[sdp_go.UpdateSnapshotRequest, sdp_go.UpdateSnapshotResponse](
 			httpClient,
 			baseURL+SnapshotsServiceUpdateSnapshotProcedure,
-			opts...,
+			connect.WithSchema(snapshotsServiceUpdateSnapshotMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		deleteSnapshot: connect.NewClient[sdp_go.DeleteSnapshotRequest, sdp_go.DeleteSnapshotResponse](
 			httpClient,
 			baseURL+SnapshotsServiceDeleteSnapshotProcedure,
-			opts...,
+			connect.WithSchema(snapshotsServiceDeleteSnapshotMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		getInitialData: connect.NewClient[sdp_go.GetInitialDataRequest, sdp_go.GetInitialDataResponse](
 			httpClient,
 			baseURL+SnapshotsServiceGetInitialDataProcedure,
-			opts...,
+			connect.WithSchema(snapshotsServiceGetInitialDataMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -167,32 +184,38 @@ func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect.Han
 	snapshotsServiceListSnapshotsHandler := connect.NewUnaryHandler(
 		SnapshotsServiceListSnapshotsProcedure,
 		svc.ListSnapshots,
-		opts...,
+		connect.WithSchema(snapshotsServiceListSnapshotsMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	snapshotsServiceCreateSnapshotHandler := connect.NewUnaryHandler(
 		SnapshotsServiceCreateSnapshotProcedure,
 		svc.CreateSnapshot,
-		opts...,
+		connect.WithSchema(snapshotsServiceCreateSnapshotMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	snapshotsServiceGetSnapshotHandler := connect.NewUnaryHandler(
 		SnapshotsServiceGetSnapshotProcedure,
 		svc.GetSnapshot,
-		opts...,
+		connect.WithSchema(snapshotsServiceGetSnapshotMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	snapshotsServiceUpdateSnapshotHandler := connect.NewUnaryHandler(
 		SnapshotsServiceUpdateSnapshotProcedure,
 		svc.UpdateSnapshot,
-		opts...,
+		connect.WithSchema(snapshotsServiceUpdateSnapshotMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	snapshotsServiceDeleteSnapshotHandler := connect.NewUnaryHandler(
 		SnapshotsServiceDeleteSnapshotProcedure,
 		svc.DeleteSnapshot,
-		opts...,
+		connect.WithSchema(snapshotsServiceDeleteSnapshotMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	snapshotsServiceGetInitialDataHandler := connect.NewUnaryHandler(
 		SnapshotsServiceGetInitialDataProcedure,
 		svc.GetInitialData,
-		opts...,
+		connect.WithSchema(snapshotsServiceGetInitialDataMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/snapshots.SnapshotsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

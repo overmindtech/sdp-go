@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// Auth0SupportName is the fully-qualified name of the Auth0Support service.
@@ -38,6 +38,13 @@ const (
 	// Auth0SupportKeepaliveSourcesProcedure is the fully-qualified name of the Auth0Support's
 	// KeepaliveSources RPC.
 	Auth0SupportKeepaliveSourcesProcedure = "/auth0support.Auth0Support/KeepaliveSources"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	auth0SupportServiceDescriptor                = sdp_go.File_auth0support_proto.Services().ByName("Auth0Support")
+	auth0SupportCreateUserMethodDescriptor       = auth0SupportServiceDescriptor.Methods().ByName("CreateUser")
+	auth0SupportKeepaliveSourcesMethodDescriptor = auth0SupportServiceDescriptor.Methods().ByName("KeepaliveSources")
 )
 
 // Auth0SupportClient is a client for the auth0support.Auth0Support service.
@@ -63,12 +70,14 @@ func NewAuth0SupportClient(httpClient connect.HTTPClient, baseURL string, opts .
 		createUser: connect.NewClient[sdp_go.Auth0CreateUserRequest, sdp_go.Auth0CreateUserResponse](
 			httpClient,
 			baseURL+Auth0SupportCreateUserProcedure,
-			opts...,
+			connect.WithSchema(auth0SupportCreateUserMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		keepaliveSources: connect.NewClient[sdp_go.AdminKeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse](
 			httpClient,
 			baseURL+Auth0SupportKeepaliveSourcesProcedure,
-			opts...,
+			connect.WithSchema(auth0SupportKeepaliveSourcesMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -108,12 +117,14 @@ func NewAuth0SupportHandler(svc Auth0SupportHandler, opts ...connect.HandlerOpti
 	auth0SupportCreateUserHandler := connect.NewUnaryHandler(
 		Auth0SupportCreateUserProcedure,
 		svc.CreateUser,
-		opts...,
+		connect.WithSchema(auth0SupportCreateUserMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	auth0SupportKeepaliveSourcesHandler := connect.NewUnaryHandler(
 		Auth0SupportKeepaliveSourcesProcedure,
 		svc.KeepaliveSources,
-		opts...,
+		connect.WithSchema(auth0SupportKeepaliveSourcesMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/auth0support.Auth0Support/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

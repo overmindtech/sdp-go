@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// BookmarksServiceName is the fully-qualified name of the BookmarksService service.
@@ -53,6 +53,17 @@ const (
 	BookmarksServiceGetAffectedBookmarksProcedure = "/bookmarks.BookmarksService/GetAffectedBookmarks"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	bookmarksServiceServiceDescriptor                    = sdp_go.File_bookmarks_proto.Services().ByName("BookmarksService")
+	bookmarksServiceListBookmarksMethodDescriptor        = bookmarksServiceServiceDescriptor.Methods().ByName("ListBookmarks")
+	bookmarksServiceCreateBookmarkMethodDescriptor       = bookmarksServiceServiceDescriptor.Methods().ByName("CreateBookmark")
+	bookmarksServiceGetBookmarkMethodDescriptor          = bookmarksServiceServiceDescriptor.Methods().ByName("GetBookmark")
+	bookmarksServiceUpdateBookmarkMethodDescriptor       = bookmarksServiceServiceDescriptor.Methods().ByName("UpdateBookmark")
+	bookmarksServiceDeleteBookmarkMethodDescriptor       = bookmarksServiceServiceDescriptor.Methods().ByName("DeleteBookmark")
+	bookmarksServiceGetAffectedBookmarksMethodDescriptor = bookmarksServiceServiceDescriptor.Methods().ByName("GetAffectedBookmarks")
+)
+
 // BookmarksServiceClient is a client for the bookmarks.BookmarksService service.
 type BookmarksServiceClient interface {
 	// ListBookmarks returns all bookmarks of the current user. note that this does not include the actual bookmark data, use GetBookmark for that
@@ -80,32 +91,38 @@ func NewBookmarksServiceClient(httpClient connect.HTTPClient, baseURL string, op
 		listBookmarks: connect.NewClient[sdp_go.ListBookmarksRequest, sdp_go.ListBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceListBookmarksProcedure,
-			opts...,
+			connect.WithSchema(bookmarksServiceListBookmarksMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		createBookmark: connect.NewClient[sdp_go.CreateBookmarkRequest, sdp_go.CreateBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceCreateBookmarkProcedure,
-			opts...,
+			connect.WithSchema(bookmarksServiceCreateBookmarkMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		getBookmark: connect.NewClient[sdp_go.GetBookmarkRequest, sdp_go.GetBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceGetBookmarkProcedure,
-			opts...,
+			connect.WithSchema(bookmarksServiceGetBookmarkMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		updateBookmark: connect.NewClient[sdp_go.UpdateBookmarkRequest, sdp_go.UpdateBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceUpdateBookmarkProcedure,
-			opts...,
+			connect.WithSchema(bookmarksServiceUpdateBookmarkMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		deleteBookmark: connect.NewClient[sdp_go.DeleteBookmarkRequest, sdp_go.DeleteBookmarkResponse](
 			httpClient,
 			baseURL+BookmarksServiceDeleteBookmarkProcedure,
-			opts...,
+			connect.WithSchema(bookmarksServiceDeleteBookmarkMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		getAffectedBookmarks: connect.NewClient[sdp_go.GetAffectedBookmarksRequest, sdp_go.GetAffectedBookmarksResponse](
 			httpClient,
 			baseURL+BookmarksServiceGetAffectedBookmarksProcedure,
-			opts...,
+			connect.WithSchema(bookmarksServiceGetAffectedBookmarksMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -173,32 +190,38 @@ func NewBookmarksServiceHandler(svc BookmarksServiceHandler, opts ...connect.Han
 	bookmarksServiceListBookmarksHandler := connect.NewUnaryHandler(
 		BookmarksServiceListBookmarksProcedure,
 		svc.ListBookmarks,
-		opts...,
+		connect.WithSchema(bookmarksServiceListBookmarksMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	bookmarksServiceCreateBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceCreateBookmarkProcedure,
 		svc.CreateBookmark,
-		opts...,
+		connect.WithSchema(bookmarksServiceCreateBookmarkMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	bookmarksServiceGetBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceGetBookmarkProcedure,
 		svc.GetBookmark,
-		opts...,
+		connect.WithSchema(bookmarksServiceGetBookmarkMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	bookmarksServiceUpdateBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceUpdateBookmarkProcedure,
 		svc.UpdateBookmark,
-		opts...,
+		connect.WithSchema(bookmarksServiceUpdateBookmarkMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	bookmarksServiceDeleteBookmarkHandler := connect.NewUnaryHandler(
 		BookmarksServiceDeleteBookmarkProcedure,
 		svc.DeleteBookmark,
-		opts...,
+		connect.WithSchema(bookmarksServiceDeleteBookmarkMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	bookmarksServiceGetAffectedBookmarksHandler := connect.NewUnaryHandler(
 		BookmarksServiceGetAffectedBookmarksProcedure,
 		svc.GetAffectedBookmarks,
-		opts...,
+		connect.WithSchema(bookmarksServiceGetAffectedBookmarksMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/bookmarks.BookmarksService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

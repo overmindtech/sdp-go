@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// ApiKeyServiceName is the fully-qualified name of the ApiKeyService service.
@@ -52,6 +52,17 @@ const (
 	ApiKeyServiceExchangeKeyForTokenProcedure = "/apikeys.ApiKeyService/ExchangeKeyForToken"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	apiKeyServiceServiceDescriptor                   = sdp_go.File_apikey_proto.Services().ByName("ApiKeyService")
+	apiKeyServiceCreateAPIKeyMethodDescriptor        = apiKeyServiceServiceDescriptor.Methods().ByName("CreateAPIKey")
+	apiKeyServiceGetAPIKeyMethodDescriptor           = apiKeyServiceServiceDescriptor.Methods().ByName("GetAPIKey")
+	apiKeyServiceUpdateAPIKeyMethodDescriptor        = apiKeyServiceServiceDescriptor.Methods().ByName("UpdateAPIKey")
+	apiKeyServiceListAPIKeysMethodDescriptor         = apiKeyServiceServiceDescriptor.Methods().ByName("ListAPIKeys")
+	apiKeyServiceDeleteAPIKeyMethodDescriptor        = apiKeyServiceServiceDescriptor.Methods().ByName("DeleteAPIKey")
+	apiKeyServiceExchangeKeyForTokenMethodDescriptor = apiKeyServiceServiceDescriptor.Methods().ByName("ExchangeKeyForToken")
+)
+
 // ApiKeyServiceClient is a client for the apikeys.ApiKeyService service.
 type ApiKeyServiceClient interface {
 	// Creates an API key, pending access token generation from Auth0. The key
@@ -80,32 +91,38 @@ func NewApiKeyServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 		createAPIKey: connect.NewClient[sdp_go.CreateAPIKeyRequest, sdp_go.CreateAPIKeyResponse](
 			httpClient,
 			baseURL+ApiKeyServiceCreateAPIKeyProcedure,
-			opts...,
+			connect.WithSchema(apiKeyServiceCreateAPIKeyMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		getAPIKey: connect.NewClient[sdp_go.GetAPIKeyRequest, sdp_go.GetAPIKeyResponse](
 			httpClient,
 			baseURL+ApiKeyServiceGetAPIKeyProcedure,
-			opts...,
+			connect.WithSchema(apiKeyServiceGetAPIKeyMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		updateAPIKey: connect.NewClient[sdp_go.UpdateAPIKeyRequest, sdp_go.UpdateAPIKeyResponse](
 			httpClient,
 			baseURL+ApiKeyServiceUpdateAPIKeyProcedure,
-			opts...,
+			connect.WithSchema(apiKeyServiceUpdateAPIKeyMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		listAPIKeys: connect.NewClient[sdp_go.ListAPIKeysRequest, sdp_go.ListAPIKeysResponse](
 			httpClient,
 			baseURL+ApiKeyServiceListAPIKeysProcedure,
-			opts...,
+			connect.WithSchema(apiKeyServiceListAPIKeysMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		deleteAPIKey: connect.NewClient[sdp_go.DeleteAPIKeyRequest, sdp_go.DeleteAPIKeyResponse](
 			httpClient,
 			baseURL+ApiKeyServiceDeleteAPIKeyProcedure,
-			opts...,
+			connect.WithSchema(apiKeyServiceDeleteAPIKeyMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		exchangeKeyForToken: connect.NewClient[sdp_go.ExchangeKeyForTokenRequest, sdp_go.ExchangeKeyForTokenResponse](
 			httpClient,
 			baseURL+ApiKeyServiceExchangeKeyForTokenProcedure,
-			opts...,
+			connect.WithSchema(apiKeyServiceExchangeKeyForTokenMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -174,32 +191,38 @@ func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect.HandlerOp
 	apiKeyServiceCreateAPIKeyHandler := connect.NewUnaryHandler(
 		ApiKeyServiceCreateAPIKeyProcedure,
 		svc.CreateAPIKey,
-		opts...,
+		connect.WithSchema(apiKeyServiceCreateAPIKeyMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	apiKeyServiceGetAPIKeyHandler := connect.NewUnaryHandler(
 		ApiKeyServiceGetAPIKeyProcedure,
 		svc.GetAPIKey,
-		opts...,
+		connect.WithSchema(apiKeyServiceGetAPIKeyMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	apiKeyServiceUpdateAPIKeyHandler := connect.NewUnaryHandler(
 		ApiKeyServiceUpdateAPIKeyProcedure,
 		svc.UpdateAPIKey,
-		opts...,
+		connect.WithSchema(apiKeyServiceUpdateAPIKeyMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	apiKeyServiceListAPIKeysHandler := connect.NewUnaryHandler(
 		ApiKeyServiceListAPIKeysProcedure,
 		svc.ListAPIKeys,
-		opts...,
+		connect.WithSchema(apiKeyServiceListAPIKeysMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	apiKeyServiceDeleteAPIKeyHandler := connect.NewUnaryHandler(
 		ApiKeyServiceDeleteAPIKeyProcedure,
 		svc.DeleteAPIKey,
-		opts...,
+		connect.WithSchema(apiKeyServiceDeleteAPIKeyMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	apiKeyServiceExchangeKeyForTokenHandler := connect.NewUnaryHandler(
 		ApiKeyServiceExchangeKeyForTokenProcedure,
 		svc.ExchangeKeyForToken,
-		opts...,
+		connect.WithSchema(apiKeyServiceExchangeKeyForTokenMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/apikeys.ApiKeyService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

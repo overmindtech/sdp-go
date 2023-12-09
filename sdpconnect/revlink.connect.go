@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// RevlinkServiceName is the fully-qualified name of the RevlinkService service.
@@ -39,6 +39,13 @@ const (
 	// RevlinkServiceIngestGatewayResponsesProcedure is the fully-qualified name of the RevlinkService's
 	// IngestGatewayResponses RPC.
 	RevlinkServiceIngestGatewayResponsesProcedure = "/revlink.RevlinkService/IngestGatewayResponses"
+)
+
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	revlinkServiceServiceDescriptor                      = sdp_go.File_revlink_proto.Services().ByName("RevlinkService")
+	revlinkServiceGetReverseLinksMethodDescriptor        = revlinkServiceServiceDescriptor.Methods().ByName("GetReverseLinks")
+	revlinkServiceIngestGatewayResponsesMethodDescriptor = revlinkServiceServiceDescriptor.Methods().ByName("IngestGatewayResponses")
 )
 
 // RevlinkServiceClient is a client for the revlink.RevlinkService service.
@@ -62,12 +69,14 @@ func NewRevlinkServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 		getReverseLinks: connect.NewClient[sdp_go.GetReverseLinksRequest, sdp_go.GetReverseLinksResponse](
 			httpClient,
 			baseURL+RevlinkServiceGetReverseLinksProcedure,
-			opts...,
+			connect.WithSchema(revlinkServiceGetReverseLinksMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		ingestGatewayResponses: connect.NewClient[sdp_go.IngestGatewayResponseRequest, sdp_go.IngestGatewayResponsesResponse](
 			httpClient,
 			baseURL+RevlinkServiceIngestGatewayResponsesProcedure,
-			opts...,
+			connect.WithSchema(revlinkServiceIngestGatewayResponsesMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -105,12 +114,14 @@ func NewRevlinkServiceHandler(svc RevlinkServiceHandler, opts ...connect.Handler
 	revlinkServiceGetReverseLinksHandler := connect.NewUnaryHandler(
 		RevlinkServiceGetReverseLinksProcedure,
 		svc.GetReverseLinks,
-		opts...,
+		connect.WithSchema(revlinkServiceGetReverseLinksMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	revlinkServiceIngestGatewayResponsesHandler := connect.NewClientStreamHandler(
 		RevlinkServiceIngestGatewayResponsesProcedure,
 		svc.IngestGatewayResponses,
-		opts...,
+		connect.WithSchema(revlinkServiceIngestGatewayResponsesMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/revlink.RevlinkService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

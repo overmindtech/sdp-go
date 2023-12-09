@@ -18,7 +18,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_13_0
 
 const (
 	// InviteServiceName is the fully-qualified name of the InviteService service.
@@ -44,6 +44,14 @@ const (
 	InviteServiceRevokeInviteProcedure = "/invites.InviteService/RevokeInvite"
 )
 
+// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
+var (
+	inviteServiceServiceDescriptor            = sdp_go.File_invites_proto.Services().ByName("InviteService")
+	inviteServiceCreateInviteMethodDescriptor = inviteServiceServiceDescriptor.Methods().ByName("CreateInvite")
+	inviteServiceListInvitesMethodDescriptor  = inviteServiceServiceDescriptor.Methods().ByName("ListInvites")
+	inviteServiceRevokeInviteMethodDescriptor = inviteServiceServiceDescriptor.Methods().ByName("RevokeInvite")
+)
+
 // InviteServiceClient is a client for the invites.InviteService service.
 type InviteServiceClient interface {
 	CreateInvite(context.Context, *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error)
@@ -64,17 +72,20 @@ func NewInviteServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 		createInvite: connect.NewClient[sdp_go.CreateInviteRequest, sdp_go.CreateInviteResponse](
 			httpClient,
 			baseURL+InviteServiceCreateInviteProcedure,
-			opts...,
+			connect.WithSchema(inviteServiceCreateInviteMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		listInvites: connect.NewClient[sdp_go.ListInvitesRequest, sdp_go.ListInvitesResponse](
 			httpClient,
 			baseURL+InviteServiceListInvitesProcedure,
-			opts...,
+			connect.WithSchema(inviteServiceListInvitesMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 		revokeInvite: connect.NewClient[sdp_go.RevokeInviteRequest, sdp_go.RevokeInviteResponse](
 			httpClient,
 			baseURL+InviteServiceRevokeInviteProcedure,
-			opts...,
+			connect.WithSchema(inviteServiceRevokeInviteMethodDescriptor),
+			connect.WithClientOptions(opts...),
 		),
 	}
 }
@@ -117,17 +128,20 @@ func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect.HandlerOp
 	inviteServiceCreateInviteHandler := connect.NewUnaryHandler(
 		InviteServiceCreateInviteProcedure,
 		svc.CreateInvite,
-		opts...,
+		connect.WithSchema(inviteServiceCreateInviteMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	inviteServiceListInvitesHandler := connect.NewUnaryHandler(
 		InviteServiceListInvitesProcedure,
 		svc.ListInvites,
-		opts...,
+		connect.WithSchema(inviteServiceListInvitesMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	inviteServiceRevokeInviteHandler := connect.NewUnaryHandler(
 		InviteServiceRevokeInviteProcedure,
 		svc.RevokeInvite,
-		opts...,
+		connect.WithSchema(inviteServiceRevokeInviteMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
 	)
 	return "/invites.InviteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
