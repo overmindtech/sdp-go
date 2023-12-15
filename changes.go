@@ -289,6 +289,7 @@ func (i *Item) ToMap() map[string]any {
 		"attributes":           i.Attributes.AttrStruct.Fields,
 	}
 }
+
 func (id *ItemDiff) ToMap() map[string]any {
 	result := map[string]any{
 		"status": id.Status.String(),
@@ -303,6 +304,18 @@ func (id *ItemDiff) ToMap() map[string]any {
 		result["after"] = id.After.ToMap()
 	}
 	return result
+}
+
+func (id *ItemDiff) GloballyUniqueName() string {
+	if id.Item != nil {
+		return id.Item.GloballyUniqueName()
+	} else if id.Before != nil {
+		return id.Before.GloballyUniqueName()
+	} else if id.After != nil {
+		return id.After.GloballyUniqueName()
+	} else {
+		return "empty item diff"
+	}
 }
 
 func (cp *ChangeProperties) ToMap() map[string]any {
