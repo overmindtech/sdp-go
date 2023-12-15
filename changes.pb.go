@@ -3260,7 +3260,7 @@ type ChangeProperties struct {
 	// Example: susan@contoso.com, jimmy@contoso.com
 	CcEmails string `protobuf:"bytes,6,opt,name=ccEmails,proto3" json:"ccEmails,omitempty"`
 	// UUID of a bookmark for the item queries of the items *directly* affected by
-	// this change. This might be parsed from a terrform plam, added from the API,
+	// this change. This might be parsed from a terraform plam, added from the API,
 	// parsed from a freeform ticket description etc.
 	ChangingItemsBookmarkUUID []byte `protobuf:"bytes,7,opt,name=changingItemsBookmarkUUID,proto3" json:"changingItemsBookmarkUUID,omitempty"`
 	// UUID of a snapshot for the item queries of the items *indirectly* affected
