@@ -1,0 +1,110 @@
+package sdpconnect
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	connect "connectrpc.com/connect"
+	sdp_go "github.com/overmindtech/sdp-go"
+)
+
+type testManagementServiceClient struct {
+	// Error that will be returned
+	Error error
+
+	UnimplementedManagementServiceHandler
+}
+
+func (t testManagementServiceClient) KeepaliveSources(context.Context, *connect.Request[sdp_go.KeepaliveSourcesRequest]) (*connect.Response[sdp_go.KeepaliveSourcesResponse], error) {
+	return &connect.Response[sdp_go.KeepaliveSourcesResponse]{
+		Msg: &sdp_go.KeepaliveSourcesResponse{},
+	}, t.Error
+}
+
+func TestWaitForSources(t *testing.T) {
+	t.Run("without the interceptor", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := context.Background()
+
+		err := WaitForSources(ctx)
+
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	tests := []struct {
+		Name           string
+		WaitForSources bool
+		SourcesError   error
+	}{
+		{
+			Name:           "without calling the wait function",
+			WaitForSources: false,
+			SourcesError:   nil,
+		},
+		{
+			Name:           "with calling the wait function",
+			WaitForSources: true,
+			SourcesError:   nil,
+		},
+		{
+			Name:           "when waking the sources fails but we aren't waiting on it",
+			WaitForSources: false,
+			SourcesError:   errors.New("test error"),
+		},
+		{
+			Name:           "when waking the sources fails but we *are* waiting on it",
+			WaitForSources: true,
+			SourcesError:   errors.New("test error"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			i := NewKeepaliveSourcesInterceptor(testManagementServiceClient{
+				Error: test.SourcesError,
+			})
+
+			called := false
+
+			testFunc := connect.UnaryFunc(func(ctx context.Context, ar connect.AnyRequest) (connect.AnyResponse, error) {
+				var err error
+
+				if test.WaitForSources {
+					err = WaitForSources(ctx)
+				}
+
+				called = true
+				return nil, err
+			})
+
+			ctx := context.Background()
+
+			// Wrap the function
+			testFunc = i.WrapUnary(testFunc)
+
+			// Call the function
+			_, err := testFunc(ctx, nil)
+
+			if test.SourcesError != nil && test.WaitForSources {
+				// If the sources error is not nil and we are waiting for
+				// sources, then we expect to se an error here
+				if err == nil {
+					t.Error("Expected error but got nil")
+				}
+			} else {
+				// Otherwise we shouldn't see an error
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
+			if called != true {
+				t.Error("Wrapped function was not called")
+			}
+		})
+	}
+}
