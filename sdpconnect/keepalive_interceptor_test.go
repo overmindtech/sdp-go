@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	connect "connectrpc.com/connect"
+	"github.com/auth0/go-jwt-middleware/v2/validator"
+	"github.com/overmindtech/sdp-go"
 	sdp_go "github.com/overmindtech/sdp-go"
 )
 
@@ -13,10 +15,15 @@ type testManagementServiceClient struct {
 	// Error that will be returned
 	Error error
 
+	// Counts the number of times it has been called
+	callCount int
+
 	UnimplementedManagementServiceHandler
 }
 
-func (t testManagementServiceClient) KeepaliveSources(context.Context, *connect.Request[sdp_go.KeepaliveSourcesRequest]) (*connect.Response[sdp_go.KeepaliveSourcesResponse], error) {
+func (t *testManagementServiceClient) KeepaliveSources(context.Context, *connect.Request[sdp_go.KeepaliveSourcesRequest]) (*connect.Response[sdp_go.KeepaliveSourcesResponse], error) {
+	t.callCount++
+
 	return &connect.Response[sdp_go.KeepaliveSourcesResponse]{
 		Msg: &sdp_go.KeepaliveSourcesResponse{},
 	}, t.Error
@@ -64,7 +71,7 @@ func TestWaitForSources(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			i := NewKeepaliveSourcesInterceptor(testManagementServiceClient{
+			i := NewKeepaliveSourcesInterceptor(&testManagementServiceClient{
 				Error: test.SourcesError,
 			})
 
@@ -107,4 +114,42 @@ func TestWaitForSources(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("with caching", func(t *testing.T) {
+		ctx := context.Background()
+
+		// Mock the account name
+		ctx = sdp.OverrideAuthContext(ctx, &validator.ValidatedClaims{
+			CustomClaims: &sdp_go.CustomClaims{
+				Scope:       "test",
+				AccountName: "test",
+			},
+		})
+
+		// Create the interceptor
+		client := testManagementServiceClient{}
+		i := NewKeepaliveSourcesInterceptor(&client)
+
+		testFunc := connect.UnaryFunc(func(ctx context.Context, ar connect.AnyRequest) (connect.AnyResponse, error) {
+			_ = WaitForSources(ctx)
+			return nil, nil
+		})
+
+		// Wrap the function
+		testFunc = i.WrapUnary(testFunc)
+
+		// Call wake sources and expect the call count to be 1
+		testFunc(ctx, nil)
+
+		if client.callCount != 1 {
+			t.Errorf("Expected call count to be 1 but got %d", client.callCount)
+		}
+
+		// Call wake sources again and expect the call count to be 1
+		testFunc(ctx, nil)
+
+		if client.callCount != 1 {
+			t.Errorf("Expected call count to be 1 but got %d", client.callCount)
+		}
+	})
 }

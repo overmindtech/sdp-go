@@ -2,6 +2,8 @@ package sdpconnect
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/overmindtech/sdp-go"
@@ -19,6 +21,7 @@ import (
 func NewKeepaliveSourcesInterceptor(managementClient ManagementServiceClient) connect.Interceptor {
 	return &KeepaliveSourcesInterceptor{
 		management: managementClient,
+		lastCalled: make(map[string]time.Time),
 	}
 }
 
@@ -38,6 +41,11 @@ func WaitForSources(ctx context.Context) error {
 }
 
 type KeepaliveSourcesInterceptor struct {
+	// Map of when the sources were last kept alive for each account, and the
+	// time that the call was made
+	lastCalled map[string]time.Time
+	m          sync.RWMutex
+
 	management ManagementServiceClient
 }
 
@@ -47,6 +55,63 @@ type keepaliveSourcesReadyContextKey struct{}
 
 // A func that waits for the sources to be ready
 type waitForSourcesFunc func() error
+
+// Returns whether or not the keepalive should actually be called for this
+// request. This is based on a cache to ensure that we aren't spamming the
+// endpoint when we don't need to
+func (i *KeepaliveSourcesInterceptor) shouldCallKeepalive(ctx context.Context) bool {
+	// Extract the account name from the context
+	claimsInterface := ctx.Value(sdp.CustomClaimsContextKey{})
+	if claimsInterface == nil {
+		return true
+	}
+
+	claims, ok := claimsInterface.(*sdp.CustomClaims)
+
+	if !ok {
+		return true
+	}
+
+	if claims.AccountName == "" {
+		return true
+	}
+
+	i.m.RLock()
+	lastCalled, exists := i.lastCalled[claims.AccountName]
+	i.m.RUnlock()
+
+	if !exists {
+		return true
+	}
+
+	// If the last called time is more then 10 minutes ago, then we should
+	// call the endpoint again
+	return time.Since(lastCalled) > 10*time.Minute
+}
+
+// Update the last called time for the account in the context
+func (i *KeepaliveSourcesInterceptor) updateLastCalled(ctx context.Context) {
+	i.m.Lock()
+	defer i.m.Unlock()
+
+	// Extract the account name from the context
+	claimsInterface := ctx.Value(sdp.CustomClaimsContextKey{})
+	if claimsInterface == nil {
+		return
+	}
+
+	claims, ok := claimsInterface.(*sdp.CustomClaims)
+
+	if !ok {
+		return
+	}
+
+	if claims.AccountName == "" {
+		return
+	}
+
+	i.lastCalled[claims.AccountName] = time.Now()
+}
 
 func (i *KeepaliveSourcesInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return connect.UnaryFunc(func(ctx context.Context, ar connect.AnyRequest) (connect.AnyResponse, error) {
@@ -88,6 +153,11 @@ func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.C
 		return ctx
 	}
 
+	// Check that we haven't already called the endpoint recently
+	if !i.shouldCallKeepalive(ctx) {
+		return ctx
+	}
+
 	// Create a buffered channel so that if the value is never used, the
 	// goroutine that keeps the sources awake can close. This will be
 	// garbage collected when there are no longer any references to it,
@@ -105,6 +175,7 @@ func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.C
 	// request
 	go func() {
 		defer close(sourcesReady)
+		defer i.updateLastCalled(ctx)
 
 		// Make the request to keep the source awake
 		_, err := i.management.KeepaliveSources(ctx, &connect.Request[sdp.KeepaliveSourcesRequest]{
