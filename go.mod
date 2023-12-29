@@ -3,7 +3,7 @@ module github.com/overmindtech/sdp-go
 go 1.21.5
 
 require (
-	connectrpc.com/connect v1.13.0
+	connectrpc.com/connect v1.14.0
 	github.com/auth0/go-jwt-middleware/v2 v2.2.0
 	github.com/getsentry/sentry-go v0.25.0
 	github.com/go-jose/go-jose/v3 v3.0.1
@@ -19,7 +19,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.21.0
 	go.uber.org/goleak v1.3.0
 	golang.org/x/oauth2 v0.15.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.32.0
 	nhooyr.io/websocket v1.8.10
 )
 
