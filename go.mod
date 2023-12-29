@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/nats-io/jwt/v2 v2.5.3
 	github.com/nats-io/nats.go v1.31.0
-	github.com/nats-io/nkeys v0.4.6
+	github.com/nats-io/nkeys v0.4.7
 	github.com/overmindtech/api-client v0.14.0
 	github.com/sirupsen/logrus v1.9.3
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.46.1
