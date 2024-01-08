@@ -128,7 +128,7 @@ func (c *Client) receive(ctx context.Context) {
 
 		err = proto.Unmarshal(b.Bytes(), msg)
 		if err != nil {
-			c.abort(ctx, fmt.Errorf("error unmarshaling message: %w", err))
+			c.abort(ctx, fmt.Errorf("error unmarshalling message: %w", err))
 			return
 		}
 
