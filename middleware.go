@@ -42,6 +42,10 @@ type CurrentSubjectContextKey struct{}
 
 // AuthConfig Configuration for the auth middleware
 type AuthConfig struct {
+	Auth0Domain    string
+	Auth0Audience  string
+	AuthCookieName string // leave this empty to disable cookie auth
+
 	// Bypasses all auth checks, meaning that HasScopes() will always return
 	// true. This should be used in conjunction with the `AccountOverride` field
 	// since there won't be a token to parse the account from
@@ -59,6 +63,17 @@ type AuthConfig struct {
 
 	// Overrides the scope stored in the CustomClaimsContextKey
 	ScopeOverride *string
+}
+
+// NewAuthConfigFromEnv Creates a new AuthConfig from the default Auth0
+// environment variables, namely: AUTH0_DOMAIN, AUTH0_AUDIENCE, and
+// AUTH_COOKIE_NAME
+func NewAuthConfigFromEnv() AuthConfig {
+	return AuthConfig{
+		Auth0Domain:    os.Getenv("AUTH0_DOMAIN"),
+		Auth0Audience:  os.Getenv("AUTH0_AUDIENCE"),
+		AuthCookieName: os.Getenv("AUTH_COOKIE_NAME"),
+	}
 }
 
 // HasScopes compatibility alias for HasAllScopes
@@ -175,7 +190,7 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 			bypassAuthHandler(accountOverride, processOverrides).ServeHTTP(w, r)
 		} else {
 			// Otherwise ensure the token is valid
-			ensureValidTokenHandler(processOverrides).ServeHTTP(w, r)
+			ensureValidTokenHandler(config, processOverrides).ServeHTTP(w, r)
 		}
 	})
 }
@@ -236,15 +251,24 @@ func bypassAuthHandler(accountName string, next http.Handler) http.Handler {
 	})
 }
 
-// ensureValidTokenHandler is a middleware that will check the validity of our JWT.
+// ensureValidTokenHandler is a middleware that will check the validity of our
+// JWT.
 //
-// This requires the following environment variables to be set as per the Auth0
-// standards: AUTH0_DOMAIN, AUTH0_AUDIENCE, AUTH_COOKIE_NAME
+// # This uses the AuthConfig data to configure token validation. If there is no
+// Auth0 values (i.e. Auth0Domain, Auth0Audience and AuthCookieName  are empty
+// strings) then this will use the environment variables: AUTH0_DOMAIN,
+// AUTH0_AUDIENCE, and AUTH_COOKIE_NAME
 //
 // This middleware also extract custom claims form the token and stores them in
 // CustomClaimsContextKey
-func ensureValidTokenHandler(next http.Handler) http.Handler {
-	issuerURL, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/")
+func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler {
+	if config.Auth0Domain == "" && config.Auth0Audience == "" && config.AuthCookieName == "" {
+		config.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
+		config.Auth0Audience = os.Getenv("AUTH0_AUDIENCE")
+		config.AuthCookieName = os.Getenv("AUTH_COOKIE_NAME")
+	}
+
+	issuerURL, err := url.Parse("https://" + config.Auth0Domain + "/")
 	if err != nil {
 		log.Fatalf("Failed to parse the issuer url: %v", err)
 	}
@@ -255,7 +279,7 @@ func ensureValidTokenHandler(next http.Handler) http.Handler {
 		provider.KeyFunc,
 		validator.RS256,
 		issuerURL.String(),
-		[]string{os.Getenv("AUTH0_AUDIENCE")},
+		[]string{config.Auth0Audience},
 		validator.WithCustomClaims(
 			func() validator.CustomClaims {
 				return &CustomClaims{}
@@ -280,8 +304,8 @@ func ensureValidTokenHandler(next http.Handler) http.Handler {
 		jwtmiddleware.AuthHeaderTokenExtractor,
 	}
 
-	if name := os.Getenv("AUTH_COOKIE_NAME"); name != "" {
-		extractors = append(extractors, jwtmiddleware.CookieTokenExtractor(name))
+	if config.AuthCookieName != "" {
+		extractors = append(extractors, jwtmiddleware.CookieTokenExtractor(config.AuthCookieName))
 	}
 
 	tokenExtractor := jwtmiddleware.MultiTokenExtractor(extractors...)

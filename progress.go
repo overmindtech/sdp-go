@@ -284,7 +284,7 @@ func NewQueryProgress(q *Query) *QueryProgress {
 	}
 }
 
-// Start Starts a given request, sending items to the supplied itemChannel. It
+// Start starts a given request, sending items to the supplied itemChannel. It
 // is up to the user to watch for completion. When the request does complete,
 // the NATS subscriptions will automatically drain and the itemChannel will be
 // closed.
