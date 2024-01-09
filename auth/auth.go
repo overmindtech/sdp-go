@@ -83,6 +83,23 @@ type ClientCredentialsConfig struct {
 // admin permissions, if not, the account that is attached to the client via
 // Auth0 metadata will be used
 func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, account string, flowConfig ClientCredentialsConfig) *natsTokenClient {
+	return NewOAuthTokenClientWithContext(context.Background(), oAuthTokenURL, overmindAPIURL, account, flowConfig)
+}
+
+// NewOAuthTokenClientWithContext Generates a token client that authenticates to
+// OAuth using the client credentials flow, then uses that auth to get a NATS
+// token. `clientID` and `clientSecret` are used to authenticate using the
+// client credentials flow with an API at `oAuthTokenURL`. `overmindAPIURL` is
+// the root URL of the NATS token exchange API that will be used e.g.
+// https://api.server.test/v1
+//
+// Tokens will be minted under the specified account as long as the client has
+// admin permissions, if not, the account that is attached to the client via
+// Auth0 metadata will be used
+//
+// The provided context is used for cancellation and to lookup the HTTP client
+// used by oauth2. See the oauth2.HTTPClient variable.
+func NewOAuthTokenClientWithContext(ctx context.Context, oAuthTokenURL string, overmindAPIURL string, account string, flowConfig ClientCredentialsConfig) *natsTokenClient {
 	conf := &clientcredentials.Config{
 		ClientID:     flowConfig.ClientID,
 		ClientSecret: flowConfig.ClientSecret,
@@ -93,9 +110,7 @@ func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, account st
 	}
 
 	// Get an authenticated client that we can then make more HTTP calls with
-	authenticatedClient := conf.Client(context.Background())
-	// inject otelhttp propagation
-	authenticatedClient.Transport = otelhttp.NewTransport(authenticatedClient.Transport)
+	authenticatedClient := conf.Client(ctx)
 
 	// Configure the token exchange client to use the newly authenticated HTTP
 	// client among other things
