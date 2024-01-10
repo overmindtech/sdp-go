@@ -339,14 +339,6 @@ func (r *Query) ParseUuid() uuid.UUID {
 	return reqUUID
 }
 
-func (x *QueryError) GetUUIDParsed() *uuid.UUID {
-	u, err := uuid.FromBytes(x.GetUUID())
-	if err != nil {
-		return nil
-	}
-	return &u
-}
-
 func (x *CancelQuery) GetUUIDParsed() *uuid.UUID {
 	u, err := uuid.FromBytes(x.GetUUID())
 	if err != nil {
