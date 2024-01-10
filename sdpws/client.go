@@ -73,11 +73,24 @@ type Client struct {
 // client, err := sdpws.Dial(ctx, gatewayUrl, NewAuthenticatedClient(ctx, otelhttp.DefaultClient), nil)
 // ```
 func Dial(ctx context.Context, u string, httpClient *http.Client, handler GatewayMessageHandler) (*Client, error) {
+	return dialImpl(ctx, u, httpClient, handler, true)
+}
+
+func DialBatch(ctx context.Context, u string, httpClient *http.Client, handler GatewayMessageHandler) (*Client, error) {
+	return dialImpl(ctx, u, httpClient, handler, false)
+}
+
+func dialImpl(ctx context.Context, u string, httpClient *http.Client, handler GatewayMessageHandler, interactive bool) (*Client, error) {
 	if httpClient == nil {
 		httpClient = otelhttp.DefaultClient
 	}
 	options := &websocket.DialOptions{
 		HTTPClient: httpClient,
+	}
+	if !interactive {
+		options.HTTPHeader = http.Header{
+			"X-overmind-interactive": []string{"false"},
+		}
 	}
 
 	// nolint: bodyclose // nhooyr.io/websocket reads the body internally
