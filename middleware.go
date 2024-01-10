@@ -292,7 +292,7 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 	}
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		log.WithContext(r.Context()).Errorf("Encountered error while validating JWT: %v", err)
+		log.WithContext(r.Context()).WithError(err).Errorf("Encountered error while validating JWT")
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
