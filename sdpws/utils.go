@@ -94,7 +94,7 @@ readLoop:
 				case sdp.QueryStatus_ERRORED:
 					// if we already received items, we can ignore the error
 					if len(items) == 0 && otherErr != nil {
-						err = fmt.Errorf("query errored: %v", otherErr.String())
+						err = fmt.Errorf("query errored: %w", otherErr)
 						// query errors should not abort the connection
 						// c.abort(ctx, err)
 						return nil, err
