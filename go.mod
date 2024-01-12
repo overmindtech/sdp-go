@@ -9,7 +9,7 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/google/uuid v1.5.0
 	github.com/nats-io/jwt/v2 v2.5.3
-	github.com/nats-io/nats.go v1.31.0
+	github.com/nats-io/nats.go v1.32.0
 	github.com/nats-io/nkeys v0.4.7
 	github.com/overmindtech/api-client v0.14.0
 	github.com/sirupsen/logrus v1.9.3
@@ -31,9 +31,9 @@ require (
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	go.opentelemetry.io/otel/metric v1.21.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
