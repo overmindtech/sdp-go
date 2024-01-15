@@ -257,27 +257,28 @@ func (cm *ChangeMetadata) ToMap() map[string]any {
 	}
 
 	return map[string]any{
-		"UUID":                stringFromUuidBytes(cm.UUID),
-		"createdAt":           cm.CreatedAt.AsTime(),
-		"updatedAt":           cm.UpdatedAt.AsTime(),
-		"status":              cm.Status.String(),
-		"creatorName":         cm.CreatorName,
-		"numAffectedApps":     cm.NumAffectedApps,
-		"numAffectedItems":    cm.NumAffectedItems,
-		"numAffectedEdges":    cm.NumAffectedEdges,
-		"numUnchangedItems":   cm.NumUnchangedItems,
-		"numCreatedItems":     cm.NumCreatedItems,
-		"numUpdatedItems":     cm.NumUpdatedItems,
-		"numDeletedItems":     cm.NumDeletedItems,
-		"UnknownHealthChange": cm.UnknownHealthChange,
-		"OkHealthChange":      cm.OkHealthChange,
-		"WarningHealthChange": cm.WarningHealthChange,
-		"ErrorHealthChange":   cm.ErrorHealthChange,
-		"PendingHealthChange": cm.PendingHealthChange,
-		"risks":               risks,
-		"numHighRisk":         cm.NumHighRisk,
-		"numMediumRisk":       cm.NumMediumRisk,
-		"numLowRisk":          cm.NumLowRisk,
+		"UUID":                  stringFromUuidBytes(cm.UUID),
+		"createdAt":             cm.CreatedAt.AsTime(),
+		"updatedAt":             cm.UpdatedAt.AsTime(),
+		"status":                cm.Status.String(),
+		"creatorName":           cm.CreatorName,
+		"numAffectedApps":       cm.NumAffectedApps,
+		"numAffectedItems":      cm.NumAffectedItems,
+		"numAffectedEdges":      cm.NumAffectedEdges,
+		"numUnchangedItems":     cm.NumUnchangedItems,
+		"numCreatedItems":       cm.NumCreatedItems,
+		"numUpdatedItems":       cm.NumUpdatedItems,
+		"numDeletedItems":       cm.NumDeletedItems,
+		"UnknownHealthChange":   cm.UnknownHealthChange,
+		"OkHealthChange":        cm.OkHealthChange,
+		"WarningHealthChange":   cm.WarningHealthChange,
+		"ErrorHealthChange":     cm.ErrorHealthChange,
+		"PendingHealthChange":   cm.PendingHealthChange,
+		"risks":                 risks,
+		"numHighRisk":           cm.NumHighRisk,
+		"numMediumRisk":         cm.NumMediumRisk,
+		"numLowRisk":            cm.NumLowRisk,
+		"riskCalculationStatus": cm.RiskCalculationStatus.ToMap(),
 	}
 }
 
@@ -342,5 +343,16 @@ func (cp *ChangeProperties) ToMap() map[string]any {
 		"plannedChanges":            plannedChanges,
 		"rawPlan":                   cp.RawPlan,
 		"codeChanges":               cp.CodeChanges,
+	}
+}
+
+func (rcs *RiskCalculationStatus) ToMap() map[string]any {
+	if rcs == nil {
+		return map[string]any{}
+	}
+
+	return map[string]any{
+		"status":  rcs.Status.String(),
+		"message": rcs.Message,
 	}
 }
