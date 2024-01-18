@@ -69,11 +69,11 @@ func (i *KeepaliveSourcesInterceptor) shouldCallKeepalive(ctx context.Context) b
 	claims, ok := claimsInterface.(*sdp.CustomClaims)
 
 	if !ok {
-		return true
+		return false
 	}
 
 	if claims.AccountName == "" {
-		return true
+		return false
 	}
 
 	i.m.RLock()
