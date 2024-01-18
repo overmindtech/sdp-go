@@ -9,6 +9,7 @@ import (
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/overmindtech/sdp-go"
 	sdp_go "github.com/overmindtech/sdp-go"
+	"k8s.io/utils/pointer"
 )
 
 type testManagementServiceClient struct {
@@ -88,7 +89,7 @@ func TestWaitForSources(t *testing.T) {
 				return nil, err
 			})
 
-			ctx := context.Background()
+			ctx := sdp.OverrideCustomClaims(context.Background(), nil, pointer.String("test-account"))
 
 			// Wrap the function
 			testFunc = i.WrapUnary(testFunc)
