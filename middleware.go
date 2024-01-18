@@ -246,6 +246,7 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 
 	// Store the new claims in the context
 	ctx = context.WithValue(ctx, CustomClaimsContextKey{}, claims)
+	ctx = context.WithValue(ctx, AccountNameContextKey{}, claims.AccountName)
 
 	return ctx
 }
