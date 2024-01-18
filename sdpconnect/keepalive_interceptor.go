@@ -61,23 +61,14 @@ type waitForSourcesFunc func() error
 // endpoint when we don't need to
 func (i *KeepaliveSourcesInterceptor) shouldCallKeepalive(ctx context.Context) bool {
 	// Extract the account name from the context
-	claimsInterface := ctx.Value(sdp.CustomClaimsContextKey{})
-	if claimsInterface == nil {
-		return true
-	}
 
-	claims, ok := claimsInterface.(*sdp.CustomClaims)
-
-	if !ok {
-		return true
-	}
-
-	if claims.AccountName == "" {
-		return true
+	accountName, ok := ctx.Value(sdp.AccountNameContextKey{}).(string)
+	if !ok || accountName == "" {
+		return false
 	}
 
 	i.m.RLock()
-	lastCalled, exists := i.lastCalled[claims.AccountName]
+	lastCalled, exists := i.lastCalled[accountName]
 	i.m.RUnlock()
 
 	if !exists {
@@ -91,26 +82,16 @@ func (i *KeepaliveSourcesInterceptor) shouldCallKeepalive(ctx context.Context) b
 
 // Update the last called time for the account in the context
 func (i *KeepaliveSourcesInterceptor) updateLastCalled(ctx context.Context) {
+	// Extract the account name from the context
+	accountName, ok := ctx.Value(sdp.AccountNameContextKey{}).(string)
+	if !ok || accountName == "" {
+		return
+	}
+
 	i.m.Lock()
 	defer i.m.Unlock()
 
-	// Extract the account name from the context
-	claimsInterface := ctx.Value(sdp.CustomClaimsContextKey{})
-	if claimsInterface == nil {
-		return
-	}
-
-	claims, ok := claimsInterface.(*sdp.CustomClaims)
-
-	if !ok {
-		return
-	}
-
-	if claims.AccountName == "" {
-		return
-	}
-
-	i.lastCalled[claims.AccountName] = time.Now()
+	i.lastCalled[accountName] = time.Now()
 }
 
 func (i *KeepaliveSourcesInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {

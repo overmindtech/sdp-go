@@ -7,6 +7,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GatewayMessageHandler is an interface that can be implemented to handle
+// messages from the gateway. The individual methods are calles when the sdpws
+// client receives a message from the gateway. Methods are called in the same
+// order as the messages are received from the gateway. The sdpws client
+// guarantees that the methods are called in a single thread, so no locking is
+// needed.
 type GatewayMessageHandler interface {
 	NewItem(context.Context, *sdp.Item)
 	NewEdge(context.Context, *sdp.Edge)
