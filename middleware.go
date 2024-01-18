@@ -90,6 +90,8 @@ func HasAllScopes(ctx context.Context, requiredScopes ...string) bool {
 	)
 
 	if ctx.Value(AuthBypassedContextKey{}) == true {
+		// this is always set when auth is bypassed
+		// set it here again to capture non-standard auth configs
 		span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
 
 		// Bypass all auth
@@ -120,6 +122,8 @@ func HasAnyScopes(ctx context.Context, requiredScopes ...string) bool {
 	)
 
 	if ctx.Value(AuthBypassedContextKey{}) == true {
+		// this is always set when auth is bypassed
+		// set it here again to capture non-standard auth configs
 		span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
 
 		// Bypass all auth
@@ -187,6 +191,12 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 
 		if config.BypassAuth || bypassPath {
 			// If auth is disabled then bypass
+			span := trace.SpanFromContext(r.Context())
+			// this is always set when auth is bypassed
+			span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
+			if bypassPath {
+				span.SetAttributes(attribute.String("ovm.auth.bypassedPath", r.URL.Path))
+			}
 			bypassAuthHandler(accountOverride, processOverrides).ServeHTTP(w, r)
 		} else {
 			// Otherwise ensure the token is valid
