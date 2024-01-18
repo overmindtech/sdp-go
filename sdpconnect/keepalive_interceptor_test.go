@@ -8,8 +8,6 @@ import (
 	connect "connectrpc.com/connect"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/overmindtech/sdp-go"
-	sdp_go "github.com/overmindtech/sdp-go"
-	"k8s.io/utils/pointer"
 )
 
 type testManagementServiceClient struct {
@@ -22,11 +20,11 @@ type testManagementServiceClient struct {
 	UnimplementedManagementServiceHandler
 }
 
-func (t *testManagementServiceClient) KeepaliveSources(context.Context, *connect.Request[sdp_go.KeepaliveSourcesRequest]) (*connect.Response[sdp_go.KeepaliveSourcesResponse], error) {
+func (t *testManagementServiceClient) KeepaliveSources(context.Context, *connect.Request[sdp.KeepaliveSourcesRequest]) (*connect.Response[sdp.KeepaliveSourcesResponse], error) {
 	t.callCount++
 
-	return &connect.Response[sdp_go.KeepaliveSourcesResponse]{
-		Msg: &sdp_go.KeepaliveSourcesResponse{},
+	return &connect.Response[sdp.KeepaliveSourcesResponse]{
+		Msg: &sdp.KeepaliveSourcesResponse{},
 	}, t.Error
 }
 
@@ -89,7 +87,8 @@ func TestWaitForSources(t *testing.T) {
 				return nil, err
 			})
 
-			ctx := sdp.OverrideCustomClaims(context.Background(), nil, pointer.String("test-account"))
+			testString := "test-account"
+			ctx := sdp.OverrideCustomClaims(context.Background(), nil, &testString)
 
 			// Wrap the function
 			testFunc = i.WrapUnary(testFunc)
@@ -121,7 +120,7 @@ func TestWaitForSources(t *testing.T) {
 
 		// Mock the account name
 		ctx = sdp.OverrideAuthContext(ctx, &validator.ValidatedClaims{
-			CustomClaims: &sdp_go.CustomClaims{
+			CustomClaims: &sdp.CustomClaims{
 				Scope:       "test",
 				AccountName: "test",
 			},
