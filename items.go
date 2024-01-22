@@ -265,7 +265,7 @@ func (a *ItemAttributes) Set(name string, value interface{}) error {
 	}
 
 	// Ensure that this interface will be able to be converted to a struct value
-	sanitizedValue := sanitizeInterface(value, false)
+	sanitizedValue := sanitizeInterface(value, false, DefaultTransforms)
 	structValue, err := structpb.NewValue(sanitizedValue)
 
 	if err != nil {
@@ -371,20 +371,47 @@ func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
 	return &u
 }
 
+// Converts to attributes using an additional set of custom transformers. These
+// can be used to change the transform behaviour of known types to do things
+// like redaction of sensitive data or simplification of complex types.
+//
+// For example this could be used to cimpletely remove anything of type `Secret`:
+//
+// ```go
+//
+//	TransformMap{
+//		reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
+//			// Remove it
+//			return nil
+//		},
+//	}
+//
+// ```
+func ToAttributesCustom(m map[string]interface{}, sort bool, customTransforms TransformMap) (*ItemAttributes, error) {
+	// Add the default transforms
+	for k, v := range DefaultTransforms {
+		if _, ok := customTransforms[k]; !ok {
+			customTransforms[k] = v
+		}
+	}
+
+	return toAttributes(m, sort, customTransforms)
+}
+
 // Converts a map[string]interface{} to an ItemAttributes object, sorting all
 // slices alphabetically.This should be used when the item doesn't contain array
 // attributes that are explicitly sorted, especially if these are sometimes
 // returned in a different order
 func ToAttributesSorted(m map[string]interface{}) (*ItemAttributes, error) {
-	return toAttributes(m, true)
+	return toAttributes(m, true, DefaultTransforms)
 }
 
 // ToAttributes Converts a map[string]interface{} to an ItemAttributes object
 func ToAttributes(m map[string]interface{}) (*ItemAttributes, error) {
-	return toAttributes(m, false)
+	return toAttributes(m, false, DefaultTransforms)
 }
 
-func toAttributes(m map[string]interface{}, sort bool) (*ItemAttributes, error) {
+func toAttributes(m map[string]interface{}, sort bool, customTransforms TransformMap) (*ItemAttributes, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -401,7 +428,7 @@ func toAttributes(m map[string]interface{}, sort bool) (*ItemAttributes, error) 
 			continue
 		}
 
-		sanitizedValue := sanitizeInterface(v, sort)
+		sanitizedValue := sanitizeInterface(v, sort, customTransforms)
 		structValue, err := structpb.NewValue(sanitizedValue)
 
 		if err != nil {
@@ -439,6 +466,25 @@ func ToAttributesViaJson(v interface{}) (*ItemAttributes, error) {
 	return ToAttributes(m)
 }
 
+// A function that transforms one data type into another that is compatible with
+// protobuf. This is used to convert things like time.Time into a string
+type TransformFunc func(interface{}) interface{}
+
+// A map of types to transform functions
+type TransformMap map[reflect.Type]TransformFunc
+
+// The default transforms that are used when converting to attributes
+var DefaultTransforms = TransformMap{
+	// Time should be in RFC3339Nano format i.e. 2006-01-02T15:04:05.999999999Z07:00
+	reflect.TypeOf(time.Time{}): func(i interface{}) interface{} {
+		return i.(time.Time).Format(time.RFC3339Nano)
+	},
+	// Duration should be in string format
+	reflect.TypeOf(time.Duration(0)): func(i interface{}) interface{} {
+		return i.(time.Duration).String()
+	},
+}
+
 // sanitizeInterface Ensures that en interface is in a format that can be
 // converted to a protobuf value. The structpb.ToValue() function expects things
 // to be in one of the following formats:
@@ -462,12 +508,17 @@ func ToAttributesViaJson(v interface{}) (*ItemAttributes, error) {
 // function does its best to example the available data type to ensure that as
 // long as the data can in theory be represented by a protobuf struct, the
 // conversion will work.
-func sanitizeInterface(i interface{}, sortArrays bool) interface{} {
+func sanitizeInterface(i interface{}, sortArrays bool, customTransforms TransformMap) interface{} {
 	v := reflect.ValueOf(i)
 	t := v.Type()
 
 	if i == nil {
 		return nil
+	}
+
+	// Use the transform for this specific type if it exists
+	if tFunc, ok := customTransforms[t]; ok {
+		return tFunc(i)
 	}
 
 	switch v.Kind() {
@@ -509,7 +560,7 @@ func sanitizeInterface(i interface{}, sortArrays bool) interface{} {
 		returnSlice = make([]interface{}, v.Len())
 
 		for index := 0; index < v.Len(); index++ {
-			returnSlice[index] = sanitizeInterface(v.Index(index).Interface(), sortArrays)
+			returnSlice[index] = sanitizeInterface(v.Index(index).Interface(), sortArrays, customTransforms)
 		}
 
 		if sortArrays {
@@ -527,58 +578,46 @@ func sanitizeInterface(i interface{}, sortArrays bool) interface{} {
 			stringKey := fmt.Sprint(mapKey.Interface())
 
 			// Convert the value to a compatible interface
-			mapValueInterface := v.MapIndex(mapKey).Interface()
 			zeroValueInterface := reflect.Zero(v.MapIndex(mapKey).Type()).Interface()
+			value := sanitizeInterface(v.MapIndex(mapKey).Interface(), sortArrays, customTransforms)
 
 			// Only use the item if it isn't zero
-			if !reflect.DeepEqual(mapValueInterface, zeroValueInterface) {
-				value := sanitizeInterface(v.MapIndex(mapKey).Interface(), sortArrays)
-
+			if !reflect.DeepEqual(value, zeroValueInterface) {
 				returnMap[stringKey] = value
 			}
 		}
 
 		return returnMap
 	case reflect.Struct:
-		// Special Cases
-		switch x := i.(type) {
-		case time.Time:
-			// If it's a time we just want to print in ISO8601
-			return x.Format(time.RFC3339Nano)
-		case time.Duration:
-			// If it's duration we want to print in a parsable format
-			return x.String()
-		default:
-			// In the case of a struct we basically want to turn it into a
-			// map[string]interface{}
-			var returnMap map[string]interface{}
+		// In the case of a struct we basically want to turn it into a
+		// map[string]interface{}
+		var returnMap map[string]interface{}
 
-			returnMap = make(map[string]interface{})
+		returnMap = make(map[string]interface{})
 
-			// Range over fields
-			n := t.NumField()
-			for i := 0; i < n; i++ {
-				field := t.Field(i)
+		// Range over fields
+		n := t.NumField()
+		for i := 0; i < n; i++ {
+			field := t.Field(i)
 
-				if field.PkgPath != "" {
-					// If this has a PkgPath then it is an un-exported fiend and
-					// should be ignored
-					continue
-				}
-
-				// Get the zero value for this field
-				zeroValue := reflect.Zero(field.Type).Interface()
-				fieldValue := v.Field(i).Interface()
-
-				// Check if the field is it's nil value
-				// Check if there actually was a field with that name
-				if !reflect.DeepEqual(fieldValue, zeroValue) {
-					returnMap[field.Name] = fieldValue
-				}
+			if field.PkgPath != "" {
+				// If this has a PkgPath then it is an un-exported fiend and
+				// should be ignored
+				continue
 			}
 
-			return sanitizeInterface(returnMap, sortArrays)
+			// Get the zero value for this field
+			zeroValue := reflect.Zero(field.Type).Interface()
+			fieldValue := v.Field(i).Interface()
+
+			// Check if the field is it's nil value
+			// Check if there actually was a field with that name
+			if !reflect.DeepEqual(fieldValue, zeroValue) {
+				returnMap[field.Name] = fieldValue
+			}
 		}
+
+		return sanitizeInterface(returnMap, sortArrays, customTransforms)
 	case reflect.Ptr:
 		// Get the zero value for this field
 		zero := reflect.Zero(t)
@@ -588,7 +627,7 @@ func sanitizeInterface(i interface{}, sortArrays bool) interface{} {
 			return nil
 		}
 
-		return sanitizeInterface(v.Elem().Interface(), sortArrays)
+		return sanitizeInterface(v.Elem().Interface(), sortArrays, customTransforms)
 	default:
 		// If we don't recognize the type then we need to see what the
 		// underlying type is and see if we can convert that
