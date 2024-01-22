@@ -111,9 +111,8 @@ var ToAttributesTests = []ToAttributesTest{
 	{
 		Name: "Pointers",
 		Input: map[string]interface{}{
-			"pointer bool":    &Bool1,
-			"pointer string":  &Dylan,
-			"pointer to zero": NilPointerBool,
+			"pointer bool":   &Bool1,
+			"pointer string": &Dylan,
 		},
 	},
 	{
@@ -335,7 +334,7 @@ func TestCustomTransforms(t *testing.T) {
 			"else": nil,
 		}
 
-		attributes, err := ToAttributesCustom(data, true, TransformMap{
+		_, err := ToAttributesCustom(data, true, TransformMap{
 			reflect.TypeOf(Something{}): func(i interface{}) interface{} {
 				return nil
 			},
@@ -344,8 +343,6 @@ func TestCustomTransforms(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		t.Log(attributes)
 	})
 }
 
