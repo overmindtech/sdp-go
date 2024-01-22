@@ -518,7 +518,10 @@ func sanitizeInterface(i interface{}, sortArrays bool, customTransforms Transfor
 
 	// Use the transform for this specific type if it exists
 	if tFunc, ok := customTransforms[t]; ok {
-		return tFunc(i)
+		// Reset the value and type to the transformed value. This means that
+		// even if the function returns something bad, we will then transform it
+		v = reflect.ValueOf(tFunc(i))
+		t = v.Type()
 	}
 
 	switch v.Kind() {

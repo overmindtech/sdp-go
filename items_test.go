@@ -231,45 +231,96 @@ func TestDefaultTransformMap(t *testing.T) {
 }
 
 func TestCustomTransforms(t *testing.T) {
-	type Secret struct {
-		Value string
-	}
+	t.Run("redaction", func(t *testing.T) {
+		type Secret struct {
+			Value string
+		}
 
-	data := map[string]interface{}{
-		"user": map[string]interface{}{
-			"name": "Hunter",
-			"password": Secret{
-				Value: "hunter2",
+		data := map[string]interface{}{
+			"user": map[string]interface{}{
+				"name": "Hunter",
+				"password": Secret{
+					Value: "hunter2",
+				},
 			},
-		},
-	}
+		}
 
-	attributes, err := ToAttributesCustom(data, true, TransformMap{
-		reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
-			// Remove it
-			return nil
-		},
+		attributes, err := ToAttributesCustom(data, true, TransformMap{
+			reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
+				// Remove it
+				return nil
+			},
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		user, err := attributes.Get("user")
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		userMap, ok := user.(map[string]interface{})
+
+		if !ok {
+			t.Fatalf("Expected user to be a map, got %T", user)
+		}
+
+		if _, ok := userMap["password"]; ok {
+			t.Error("Expected password to be removed")
+		}
 	})
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("map response", func(t *testing.T) {
+		type Something struct {
+			Foo string
+			Bar string
+		}
 
-	user, err := attributes.Get("user")
+		data := map[string]interface{}{
+			"something": Something{
+				Foo: "foo",
+				Bar: "bar",
+			},
+		}
 
-	if err != nil {
-		t.Fatal(err)
-	}
+		attributes, err := ToAttributesCustom(data, true, TransformMap{
+			reflect.TypeOf(Something{}): func(i interface{}) interface{} {
+				something := i.(Something)
 
-	userMap, ok := user.(map[string]interface{})
+				return map[string]string{
+					"foo": something.Foo,
+					"bar": something.Bar,
+				}
+			},
+		})
 
-	if !ok {
-		t.Fatalf("Expected user to be a map, got %T", user)
-	}
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if _, ok := userMap["password"]; ok {
-		t.Error("Expected password to be removed")
-	}
+		something, err := attributes.Get("something")
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		somethingMap, ok := something.(map[string]interface{})
+
+		if !ok {
+			t.Fatalf("Expected something to be a map, got %T", something)
+		}
+
+		if somethingMap["foo"] != "foo" {
+			t.Errorf("Expected foo to be foo, got %v", somethingMap["foo"])
+		}
+
+		if somethingMap["bar"] != "bar" {
+			t.Errorf("Expected bar to be bar, got %v", somethingMap["bar"])
+		}
+	})
 }
 
 func TestCopy(t *testing.T) {
