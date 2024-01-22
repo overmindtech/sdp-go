@@ -35,14 +35,6 @@ type CustomStruct struct {
 	Duration time.Duration `json:",omitempty"`
 }
 
-var Struct CustomStruct = CustomStruct{
-	Foo:      "foo",
-	Bar:      "bar",
-	Baz:      "baz",
-	Time:     time.Now(),
-	Duration: (10 * time.Minute),
-}
-
 var ToAttributesTests = []ToAttributesTest{
 	{
 		Name: "Basic strings map",
@@ -127,7 +119,12 @@ var ToAttributesTests = []ToAttributesTest{
 	{
 		Name: "structs",
 		Input: map[string]interface{}{
-			"named struct": Struct,
+			"named struct": CustomStruct{
+				Foo:  "foo",
+				Bar:  "bar",
+				Baz:  "baz",
+				Time: time.Now(),
+			},
 			"anon struct": struct {
 				Yes bool
 			}{
@@ -207,6 +204,71 @@ func TestToAttributes(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestDefaultTransformMap(t *testing.T) {
+	input := map[string]interface{}{
+		// Use a duration
+		"hour": 1 * time.Hour,
+	}
+
+	attributes, err := ToAttributes(input)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hour, err := attributes.Get("hour")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hour != "1h0m0s" {
+		t.Errorf("Expected hour to be 1h0m0s, got %v", hour)
+	}
+}
+
+func TestCustomTransforms(t *testing.T) {
+	type Secret struct {
+		Value string
+	}
+
+	data := map[string]interface{}{
+		"user": map[string]interface{}{
+			"name": "Hunter",
+			"password": Secret{
+				Value: "hunter2",
+			},
+		},
+	}
+
+	attributes, err := ToAttributesCustom(data, true, TransformMap{
+		reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
+			// Remove it
+			return nil
+		},
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := attributes.Get("user")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userMap, ok := user.(map[string]interface{})
+
+	if !ok {
+		t.Fatalf("Expected user to be a map, got %T", user)
+	}
+
+	if _, ok := userMap["password"]; ok {
+		t.Error("Expected password to be removed")
 	}
 }
 
