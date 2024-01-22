@@ -321,6 +321,32 @@ func TestCustomTransforms(t *testing.T) {
 			t.Errorf("Expected bar to be bar, got %v", somethingMap["bar"])
 		}
 	})
+	t.Run("returns nil", func(t *testing.T) {
+		type Something struct {
+			Foo string
+			Bar string
+		}
+
+		data := map[string]interface{}{
+			"something": Something{
+				Foo: "foo",
+				Bar: "bar",
+			},
+			"else": nil,
+		}
+
+		attributes, err := ToAttributesCustom(data, true, TransformMap{
+			reflect.TypeOf(Something{}): func(i interface{}) interface{} {
+				return nil
+			},
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Log(attributes)
+	})
 }
 
 func TestCopy(t *testing.T) {
