@@ -375,7 +375,7 @@ func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
 // can be used to change the transform behaviour of known types to do things
 // like redaction of sensitive data or simplification of complex types.
 //
-// For example this could be used to cimpletely remove anything of type `Secret`:
+// For example this could be used to completely remove anything of type `Secret`:
 //
 // ```go
 //
