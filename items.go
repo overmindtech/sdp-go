@@ -375,7 +375,7 @@ func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
 // can be used to change the transform behaviour of known types to do things
 // like redaction of sensitive data or simplification of complex types.
 //
-// For example this could be used to cimpletely remove anything of type `Secret`:
+// For example this could be used to completely remove anything of type `Secret`:
 //
 // ```go
 //
@@ -429,6 +429,12 @@ func toAttributes(m map[string]interface{}, sort bool, customTransforms Transfor
 		}
 
 		sanitizedValue := sanitizeInterface(v, sort, customTransforms)
+
+		if sanitizedValue == nil {
+			// Don't include nil values
+			continue
+		}
+
 		structValue, err := structpb.NewValue(sanitizedValue)
 
 		if err != nil {
@@ -509,16 +515,25 @@ var DefaultTransforms = TransformMap{
 // long as the data can in theory be represented by a protobuf struct, the
 // conversion will work.
 func sanitizeInterface(i interface{}, sortArrays bool, customTransforms TransformMap) interface{} {
-	v := reflect.ValueOf(i)
-	t := v.Type()
-
 	if i == nil {
 		return nil
 	}
 
+	v := reflect.ValueOf(i)
+	t := v.Type()
+
 	// Use the transform for this specific type if it exists
 	if tFunc, ok := customTransforms[t]; ok {
-		return tFunc(i)
+		// Reset the value and type to the transformed value. This means that
+		// even if the function returns something bad, we will then transform it
+		i = tFunc(i)
+
+		if i == nil {
+			return nil
+		}
+
+		v = reflect.ValueOf(i)
+		t = v.Type()
 	}
 
 	switch v.Kind() {
