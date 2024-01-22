@@ -72,34 +72,14 @@ type ClientCredentialsConfig struct {
 	ClientSecret string
 }
 
-// NewOAuthTokenClient Generates a token client that authenticates to OAuth
-// using the client credentials flow, then uses that auth to get a NATS token.
-// `clientID` and `clientSecret` are used to authenticate using the client
-// credentials flow with an API at `oAuthTokenURL`. `overmindAPIURL` is the root
-// URL of the NATS token exchange API that will be used e.g.
-// https://api.server.test/v1
-//
-// Tokens will be minted under the specified account as long as the client has
-// admin permissions, if not, the account that is attached to the client via
-// Auth0 metadata will be used
-func NewOAuthTokenClient(oAuthTokenURL string, overmindAPIURL string, account string, flowConfig ClientCredentialsConfig) *natsTokenClient {
-	return NewOAuthTokenClientWithContext(context.Background(), oAuthTokenURL, overmindAPIURL, account, flowConfig)
-}
+// TokenSource Returns a token source that can be used to get OAuth tokens.
+// Cache this between invocations to avoid additional charges by Auth0 for M2M
+// tokens.
+func (flowConfig ClientCredentialsConfig) TokenSource(oAuthTokenURL string) oauth2.TokenSource {
+	ctx := context.Background()
+	// inject otel into oauth2
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, otelhttp.DefaultClient)
 
-// NewOAuthTokenClientWithContext Generates a token client that authenticates to
-// OAuth using the client credentials flow, then uses that auth to get a NATS
-// token. `clientID` and `clientSecret` are used to authenticate using the
-// client credentials flow with an API at `oAuthTokenURL`. `overmindAPIURL` is
-// the root URL of the NATS token exchange API that will be used e.g.
-// https://api.server.test/v1
-//
-// Tokens will be minted under the specified account as long as the client has
-// admin permissions, if not, the account that is attached to the client via
-// Auth0 metadata will be used
-//
-// The provided context is used for cancellation and to lookup the HTTP client
-// used by oauth2. See the oauth2.HTTPClient variable.
-func NewOAuthTokenClientWithContext(ctx context.Context, oAuthTokenURL string, overmindAPIURL string, account string, flowConfig ClientCredentialsConfig) *natsTokenClient {
 	conf := &clientcredentials.Config{
 		ClientID:     flowConfig.ClientID,
 		ClientSecret: flowConfig.ClientSecret,
@@ -108,9 +88,39 @@ func NewOAuthTokenClientWithContext(ctx context.Context, oAuthTokenURL string, o
 			"audience": []string{"https://api.overmind.tech"},
 		},
 	}
+	// this will be a `oauth2.ReuseTokenSource`, thus caching the M2M token.
+	// note that this token source is safe for concurrent use and will
+	// automatically refresh the token when it expires. Also note that this
+	// token source will use the passed in http client from otelhttp for all
+	// requests, but will not get the actual caller's context, so spans will not
+	// link up.
+	return conf.TokenSource(ctx)
+}
 
+// NewOAuthTokenClient creates a token client that uses the provided TokenSource
+// to get a NATS token. `overmindAPIURL` is the root URL of the NATS token
+// exchange API that will be used e.g. https://api.server.test/v1
+//
+// Tokens will be minted under the specified account as long as the client has
+// admin permissions, if not, the account that is attached to the client via
+// Auth0 metadata will be used
+func NewOAuthTokenClient(overmindAPIURL string, account string, ts oauth2.TokenSource) *natsTokenClient {
+	return NewOAuthTokenClientWithContext(context.Background(), overmindAPIURL, account, ts)
+}
+
+// NewOAuthTokenClientWithContext creates a token client that uses the provided TokenSource
+// to get a NATS token. `overmindAPIURL` is the root URL of the NATS token
+// exchange API that will be used e.g. https://api.server.test/v1
+//
+// Tokens will be minted under the specified account as long as the client has
+// admin permissions, if not, the account that is attached to the client via
+// Auth0 metadata will be used
+//
+// The provided context is used for cancellation and to lookup the HTTP client
+// used by oauth2. See the oauth2.HTTPClient variable.
+func NewOAuthTokenClientWithContext(ctx context.Context, overmindAPIURL string, account string, ts oauth2.TokenSource) *natsTokenClient {
 	// Get an authenticated client that we can then make more HTTP calls with
-	authenticatedClient := conf.Client(ctx)
+	authenticatedClient := oauth2.NewClient(ctx, ts)
 
 	// Configure the token exchange client to use the newly authenticated HTTP
 	// client among other things
