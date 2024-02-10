@@ -4,9 +4,9 @@ jobs:
   test:
     strategy:
       matrix:
-        # for now only support 1.21 because of loopvar experiment
-        # go-version: [1.21.x, 1.22.x]
-        go-version: [1.21.x]
+        # for now only support 1.22 because of loopvar change
+        # go-version: [1.22.x, 1.23.x]
+        go-version: [1.22.x]
         os:
           - ubuntu-latest
           # - macos-latest
@@ -53,10 +53,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     runs-on: ${{ matrix.os }}
-
-    env:
-      GOEXPERIMENT: loopvar
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
