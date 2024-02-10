@@ -35,7 +35,6 @@
 	},
 	// Set up environment variables in the remote container.
 	"remoteEnv": {
-		"GOEXPERIMENT": "loopvar",
 		"OVERMIND_NTE_ALLPERMS_DOMAIN": "${localEnv:OVERMIND_NTE_ALLPERMS_DOMAIN}",
 		"OVERMIND_NTE_ALLPERMS_CLIENT_ID": "${localEnv:OVERMIND_NTE_ALLPERMS_CLIENT_ID}",
 		"OVERMIND_NTE_ALLPERMS_CLIENT_SECRET": "${localEnv:OVERMIND_NTE_ALLPERMS_CLIENT_SECRET}"
