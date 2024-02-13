@@ -250,35 +250,41 @@ func (r *Risk) ToMap() map[string]any {
 	}
 }
 
-func (cm *ChangeMetadata) ToMap() map[string]any {
-	risks := make([]map[string]any, len(cm.Risks))
-	for i, r := range cm.Risks {
-		risks[i] = r.ToMap()
+func (r *GetChangeRisksResponse) ToMap() map[string]any {
+	rmd := r.GetChangeRiskMetadata()
+	risks := make([]map[string]any, len(rmd.Risks))
+	for i, ri := range rmd.Risks {
+		risks[i] = ri.ToMap()
 	}
 
 	return map[string]any{
-		"UUID":                  stringFromUuidBytes(cm.UUID),
-		"createdAt":             cm.CreatedAt.AsTime(),
-		"updatedAt":             cm.UpdatedAt.AsTime(),
-		"status":                cm.Status.String(),
-		"creatorName":           cm.CreatorName,
-		"numAffectedApps":       cm.NumAffectedApps,
-		"numAffectedItems":      cm.NumAffectedItems,
-		"numAffectedEdges":      cm.NumAffectedEdges,
-		"numUnchangedItems":     cm.NumUnchangedItems,
-		"numCreatedItems":       cm.NumCreatedItems,
-		"numUpdatedItems":       cm.NumUpdatedItems,
-		"numDeletedItems":       cm.NumDeletedItems,
-		"UnknownHealthChange":   cm.UnknownHealthChange,
-		"OkHealthChange":        cm.OkHealthChange,
-		"WarningHealthChange":   cm.WarningHealthChange,
-		"ErrorHealthChange":     cm.ErrorHealthChange,
-		"PendingHealthChange":   cm.PendingHealthChange,
 		"risks":                 risks,
-		"numHighRisk":           cm.NumHighRisk,
-		"numMediumRisk":         cm.NumMediumRisk,
-		"numLowRisk":            cm.NumLowRisk,
-		"riskCalculationStatus": cm.RiskCalculationStatus.ToMap(),
+		"numHighRisk":           rmd.NumHighRisk,
+		"numMediumRisk":         rmd.NumMediumRisk,
+		"numLowRisk":            rmd.NumLowRisk,
+		"riskCalculationStatus": rmd.RiskCalculationStatus.ToMap(),
+	}
+}
+
+func (cm *ChangeMetadata) ToMap() map[string]any {
+	return map[string]any{
+		"UUID":                stringFromUuidBytes(cm.UUID),
+		"createdAt":           cm.CreatedAt.AsTime(),
+		"updatedAt":           cm.UpdatedAt.AsTime(),
+		"status":              cm.Status.String(),
+		"creatorName":         cm.CreatorName,
+		"numAffectedApps":     cm.NumAffectedApps,
+		"numAffectedItems":    cm.NumAffectedItems,
+		"numAffectedEdges":    cm.NumAffectedEdges,
+		"numUnchangedItems":   cm.NumUnchangedItems,
+		"numCreatedItems":     cm.NumCreatedItems,
+		"numUpdatedItems":     cm.NumUpdatedItems,
+		"numDeletedItems":     cm.NumDeletedItems,
+		"UnknownHealthChange": cm.UnknownHealthChange,
+		"OkHealthChange":      cm.OkHealthChange,
+		"WarningHealthChange": cm.WarningHealthChange,
+		"ErrorHealthChange":   cm.ErrorHealthChange,
+		"PendingHealthChange": cm.PendingHealthChange,
 	}
 }
 
@@ -352,7 +358,9 @@ func (rcs *RiskCalculationStatus) ToMap() map[string]any {
 	}
 
 	return map[string]any{
-		"status":  rcs.Status.String(),
-		"message": rcs.Message,
+		"status":      rcs.Status.String(),
+		"message":     rcs.Message,
+		"numSteps":    rcs.NumSteps,
+		"currentStep": rcs.CurrentStep,
 	}
 }
