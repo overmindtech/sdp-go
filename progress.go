@@ -655,7 +655,9 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 
 		// Protect against out-of order responses. Do not mark a responder as
 		// working if it has already finished
-		if responder.lastState == ResponderState_COMPLETE {
+		if responder.lastState == ResponderState_COMPLETE ||
+			responder.lastState == ResponderState_ERROR ||
+			responder.lastState == ResponderState_CANCELLED {
 			return
 		}
 	} else {
