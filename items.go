@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	sdpv2 "github.com/overmindtech/sdp-go/sdp/v2"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -20,10 +21,38 @@ import (
 
 const WILDCARD = "*"
 
+func (h *Health) ToV2() *sdpv2.Health {
+	if h == nil {
+		return nil
+	}
+
+	result := sdpv2.Health_HEALTH_UNSPECIFIED
+	switch *h {
+	case Health_HEALTH_OK:
+		result = sdpv2.Health_HEALTH_OK
+	case Health_HEALTH_WARNING:
+		result = sdpv2.Health_HEALTH_WARNING
+	case Health_HEALTH_ERROR:
+		result = sdpv2.Health_HEALTH_ERROR
+	case Health_HEALTH_PENDING:
+		result = sdpv2.Health_HEALTH_PENDING
+	}
+
+	return &result
+}
+
 // Copy copies all information from one item pointer to another
 func (liq *BlastPropagation) Copy(dest *BlastPropagation) {
 	dest.In = liq.GetIn()
 	dest.Out = liq.GetOut()
+}
+
+// ToV2 returns a SDPv2 blast propagation
+func (r *BlastPropagation) ToV2() *sdpv2.BlastPropagation {
+	return &sdpv2.BlastPropagation{
+		In:  r.In,
+		Out: r.Out,
+	}
 }
 
 // Copy copies all information from one item pointer to another
@@ -153,6 +182,62 @@ func (i *Item) Hash() string {
 	return hashSum(([]byte(fmt.Sprint(i.GloballyUniqueName()))))
 }
 
+// ToV2 converts an item to its v2 equivalents. This includes the item itself
+// and all edges going out from it, as defined in LinkedItems and
+// LinkedItemQueries. Note that this throws away any additional data that might
+// be present, such as SourceQuery and other Metadata or additional information
+// from linked items. Edges get created correctly with direct references or
+// query targets.
+func (i *Item) ToV2() (*sdpv2.Item, []*sdpv2.Edge) {
+	if i == nil {
+		return nil, nil
+	}
+
+	item := &sdpv2.Item{
+		Scope:           i.Scope,
+		Type:            i.Type,
+		UniqueAttribute: i.UniqueAttribute,
+		Attributes:      i.Attributes.AttrStruct,
+		Metadata:        i.Metadata.ToV2(),
+		Health:          i.Health.ToV2(),
+		Tags:            i.Tags,
+	}
+
+	edges := make([]*sdpv2.Edge, 0, len(i.LinkedItems)+len(i.LinkedItemQueries))
+	for _, li := range i.LinkedItems {
+		edge := &sdpv2.Edge{
+			From:             &sdpv2.Edge_FromItemRef{FromItemRef: i.ToReferenceV2()},
+			To:               &sdpv2.Edge_ToItemRef{ToItemRef: li.Item.ToV2()},
+			BlastPropagation: li.BlastPropagation.ToV2(),
+		}
+		edges = append(edges, edge)
+	}
+
+	for _, liq := range i.LinkedItemQueries {
+		// remove the recursion behaviour as edges can only link to a flat set of items (LIST/SEARCH yes, recurse no)
+		toQuery := liq.Query.ToV2()
+		toQuery.RecursionBehaviour = &sdpv2.Query_RecursionBehaviour{}
+
+		edge := &sdpv2.Edge{
+			From:             &sdpv2.Edge_FromItemRef{FromItemRef: i.ToReferenceV2()},
+			To:               &sdpv2.Edge_ToQuery{ToQuery: toQuery},
+			BlastPropagation: liq.BlastPropagation.ToV2(),
+		}
+		edges = append(edges, edge)
+	}
+
+	return item, edges
+}
+
+// Reference returns a SDPv2 reference for the item
+func (i *Item) ToReferenceV2() *sdpv2.Reference {
+	return &sdpv2.Reference{
+		Scope:                i.Scope,
+		Type:                 i.Type,
+		UniqueAttributeValue: i.UniqueAttributeValue(),
+	}
+}
+
 // Hash Returns a 12 character hash for the item. This is likely but not
 // guaranteed to be unique. The hash is calculated using the GloballyUniqueName
 func (r *Reference) Hash() string {
@@ -184,6 +269,15 @@ func (r *Reference) Copy(dest *Reference) {
 	dest.Scope = r.Scope
 }
 
+// ToV2 returns a SDPv2 reference
+func (r *Reference) ToV2() *sdpv2.Reference {
+	return &sdpv2.Reference{
+		Scope:                r.Scope,
+		Type:                 r.Type,
+		UniqueAttributeValue: r.UniqueAttributeValue,
+	}
+}
+
 // Copy copies all information from one Metadata pointer to another
 func (m *Metadata) Copy(dest *Metadata) {
 	if m == nil {
@@ -212,6 +306,18 @@ func (m *Metadata) Copy(dest *Metadata) {
 	dest.SourceDurationPerItem = &durationpb.Duration{
 		Seconds: m.SourceDurationPerItem.GetSeconds(),
 		Nanos:   m.SourceDurationPerItem.GetNanos(),
+	}
+}
+
+func (m *Metadata) ToV2() *sdpv2.Metadata {
+	if m == nil {
+		return nil
+	}
+	return &sdpv2.Metadata{
+		SourceName:      m.SourceName,
+		Timestamp:       m.Timestamp,
+		Hidden:          m.Hidden,
+		SourceQueryUuid: uuid.Must(uuid.FromBytes(m.SourceQuery.GetUUID())).String(),
 	}
 }
 
@@ -337,6 +443,41 @@ func (r *Query) ParseUuid() uuid.UUID {
 		r.UUID = reqUUID[:]
 	}
 	return reqUUID
+}
+
+func (r *Query) ToV2() *sdpv2.Query {
+	return &sdpv2.Query{
+		Uuid:               stringFromUuidBytes(r.UUID),
+		Deadline:           r.Deadline,
+		Method:             r.Method.ToV2(),
+		Scope:              r.Scope,
+		Type:               r.Type,
+		Query:              r.Query,
+		RecursionBehaviour: r.RecursionBehaviour.ToV2(),
+		IgnoreCache:        r.IgnoreCache,
+	}
+}
+
+func (qm QueryMethod) ToV2() sdpv2.QueryMethod {
+	switch qm {
+	case QueryMethod_GET:
+		return sdpv2.QueryMethod_QUERY_METHOD_GET
+	case QueryMethod_LIST:
+		return sdpv2.QueryMethod_QUERY_METHOD_LIST
+	case QueryMethod_SEARCH:
+		return sdpv2.QueryMethod_QUERY_METHOD_SEARCH
+	}
+	return sdpv2.QueryMethod_QUERY_METHOD_UNSPECIFIED
+}
+
+func (qrb *Query_RecursionBehaviour) ToV2() *sdpv2.Query_RecursionBehaviour {
+	if qrb == nil {
+		return nil
+	}
+	return &sdpv2.Query_RecursionBehaviour{
+		LinkDepth:                  qrb.LinkDepth,
+		FollowOnlyBlastPropagation: qrb.FollowOnlyBlastPropagation,
+	}
 }
 
 func (x *CancelQuery) GetUUIDParsed() *uuid.UUID {
