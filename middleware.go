@@ -137,7 +137,7 @@ func HasAnyScopes(ctx context.Context, requiredScopes ...string) bool {
 	}
 
 	span.SetAttributes(
-		attribute.String("ovm.auth.scopes", claims.Scope),
+		attribute.String("ovm.auth.tokenScopes", claims.Scope),
 	)
 
 	for _, scope := range requiredScopes {
