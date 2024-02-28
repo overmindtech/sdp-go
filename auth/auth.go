@@ -108,9 +108,9 @@ func NewOAuthTokenClient(overmindAPIURL string, account string, ts oauth2.TokenS
 	return NewOAuthTokenClientWithContext(context.Background(), overmindAPIURL, account, ts)
 }
 
-// NewOAuthTokenClientWithContext creates a token client that uses the provided TokenSource
-// to get a NATS token. `overmindAPIURL` is the root URL of the NATS token
-// exchange API that will be used e.g. https://api.server.test/v1
+// NewOAuthTokenClientWithContext creates a token client that uses the provided
+// TokenSource to get a NATS token. `overmindAPIURL` is the root URL of the NATS
+// token exchange API that will be used e.g. https://api.server.test/v1
 //
 // Tokens will be minted under the specified account as long as the client has
 // admin permissions, if not, the account that is attached to the client via
@@ -118,6 +118,9 @@ func NewOAuthTokenClient(overmindAPIURL string, account string, ts oauth2.TokenS
 //
 // The provided context is used for cancellation and to lookup the HTTP client
 // used by oauth2. See the oauth2.HTTPClient variable.
+//
+// Provide an account name and an admin token to create a token client for a
+// foreign account.
 func NewOAuthTokenClientWithContext(ctx context.Context, overmindAPIURL string, account string, ts oauth2.TokenSource) *natsTokenClient {
 	// Get an authenticated client that we can then make more HTTP calls with
 	authenticatedClient := oauth2.NewClient(ctx, ts)
