@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	josejwt "github.com/go-jose/go-jose/v3/jwt"
+	jose "github.com/go-jose/go-jose/v4"
+	josejwt "github.com/go-jose/go-jose/v4/jwt"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	overmind "github.com/overmindtech/api-client"
@@ -337,7 +338,7 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 	}
 
 	// Parse the expiry out of the token
-	token, err := josejwt.ParseSigned(res.Msg.AccessToken)
+	token, err := josejwt.ParseSigned(res.Msg.AccessToken, []jose.SignatureAlgorithm{jose.RS256})
 
 	if err != nil {
 		return nil, fmt.Errorf("error parsing JWT: %w", err)
