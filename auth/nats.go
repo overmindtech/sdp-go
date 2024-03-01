@@ -32,7 +32,7 @@ var DisconnectErrHandlerDefault = func(c *nats.Conn, err error) {
 	if err != nil {
 		log.WithError(err).WithFields(fields).Error("NATS disconnected")
 	} else {
-		log.WithFields(fields).Info("NATS disconnected")
+		log.WithFields(fields).Debug("NATS disconnected")
 	}
 }
 var ReconnectHandlerDefault = func(c *nats.Conn) {
@@ -44,7 +44,7 @@ var ReconnectHandlerDefault = func(c *nats.Conn) {
 		fields["url"] = c.ConnectedUrl()
 	}
 
-	log.WithFields(fields).Info("NATS reconnected")
+	log.WithFields(fields).Debug("NATS reconnected")
 }
 var ClosedHandlerDefault = func(c *nats.Conn) {
 	fields := log.Fields{}
@@ -53,7 +53,7 @@ var ClosedHandlerDefault = func(c *nats.Conn) {
 		fields["error"] = c.LastError()
 	}
 
-	log.WithFields(fields).Info("NATS connection closed")
+	log.WithFields(fields).Debug("NATS connection closed")
 }
 var LameDuckModeHandlerDefault = func(c *nats.Conn) {
 	fields := log.Fields{}
@@ -63,7 +63,7 @@ var LameDuckModeHandlerDefault = func(c *nats.Conn) {
 
 	}
 
-	log.WithFields(fields).Info("NATS server has entered lame duck mode")
+	log.WithFields(fields).Debug("NATS server has entered lame duck mode")
 }
 var ErrorHandlerDefault = func(c *nats.Conn, s *nats.Subscription, e error) {
 	fields := log.Fields{
