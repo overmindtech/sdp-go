@@ -22,17 +22,15 @@ func (m MaxRetriesError) Error() string {
 	return "maximum retries reached"
 }
 
-var DisconnectErrHandlerDefault = func(c *nats.Conn, e error) {
-	fields := log.Fields{
-		"error": e,
-	}
+var DisconnectErrHandlerDefault = func(c *nats.Conn, err error) {
+	fields := log.Fields{}
 
 	if c != nil {
 		fields["address"] = c.ConnectedAddr()
 	}
 
-	if e != nil {
-		log.WithFields(fields).Error("NATS disconnected")
+	if err != nil {
+		log.WithError(err).WithFields(fields).Error("NATS disconnected")
 	} else {
 		log.WithFields(fields).Info("NATS disconnected")
 	}
