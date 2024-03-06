@@ -76,7 +76,7 @@ type ClientCredentialsConfig struct {
 // TokenSource Returns a token source that can be used to get OAuth tokens.
 // Cache this between invocations to avoid additional charges by Auth0 for M2M
 // tokens.
-func (flowConfig ClientCredentialsConfig) TokenSource(oAuthTokenURL string) oauth2.TokenSource {
+func (flowConfig ClientCredentialsConfig) TokenSource(oAuthTokenURL, oAuthAudience string) oauth2.TokenSource {
 	ctx := context.Background()
 	// inject otel into oauth2
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, otelhttp.DefaultClient)
@@ -86,7 +86,7 @@ func (flowConfig ClientCredentialsConfig) TokenSource(oAuthTokenURL string) oaut
 		ClientSecret: flowConfig.ClientSecret,
 		TokenURL:     oAuthTokenURL,
 		EndpointParams: url.Values{
-			"audience": []string{"https://api.overmind.tech"},
+			"audience": []string{oAuthAudience},
 		},
 	}
 	// this will be a `oauth2.ReuseTokenSource`, thus caching the M2M token.
