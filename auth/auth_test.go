@@ -97,7 +97,7 @@ func GetTestOAuthTokenClient(t *testing.T) *natsTokenClient {
 	return NewOAuthTokenClient(
 		exchangeURL,
 		"overmind-development",
-		flowConfig.TokenSource(fmt.Sprintf("https://%v/oauth/token", domain)),
+		flowConfig.TokenSource(fmt.Sprintf("https://%v/oauth/token", domain), "https://api.overmind.tech"),
 	)
 }
 
