@@ -35,6 +35,7 @@ jobs:
           API_SERVER_PGPASSWORD: ci
           API_SERVER_PGDBNAME: ci
           ATLAS_DISABLE_SSL: true
+          AUTH0_AUDIENCE: ${{ vars.API_SERVER_AUDIENCE }}
         ports:
           - 8080:8080
         options: >-
