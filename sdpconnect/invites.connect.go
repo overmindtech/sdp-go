@@ -42,6 +42,9 @@ const (
 	// InviteServiceRevokeInviteProcedure is the fully-qualified name of the InviteService's
 	// RevokeInvite RPC.
 	InviteServiceRevokeInviteProcedure = "/invites.InviteService/RevokeInvite"
+	// InviteServiceResendInviteProcedure is the fully-qualified name of the InviteService's
+	// ResendInvite RPC.
+	InviteServiceResendInviteProcedure = "/invites.InviteService/ResendInvite"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -50,6 +53,7 @@ var (
 	inviteServiceCreateInviteMethodDescriptor = inviteServiceServiceDescriptor.Methods().ByName("CreateInvite")
 	inviteServiceListInvitesMethodDescriptor  = inviteServiceServiceDescriptor.Methods().ByName("ListInvites")
 	inviteServiceRevokeInviteMethodDescriptor = inviteServiceServiceDescriptor.Methods().ByName("RevokeInvite")
+	inviteServiceResendInviteMethodDescriptor = inviteServiceServiceDescriptor.Methods().ByName("ResendInvite")
 )
 
 // InviteServiceClient is a client for the invites.InviteService service.
@@ -57,6 +61,7 @@ type InviteServiceClient interface {
 	CreateInvite(context.Context, *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error)
 	ListInvites(context.Context, *connect.Request[sdp_go.ListInvitesRequest]) (*connect.Response[sdp_go.ListInvitesResponse], error)
 	RevokeInvite(context.Context, *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error)
+	ResendInvite(context.Context, *connect.Request[sdp_go.ResendInviteRequest]) (*connect.Response[sdp_go.ResendInviteResponse], error)
 }
 
 // NewInviteServiceClient constructs a client for the invites.InviteService service. By default, it
@@ -87,6 +92,12 @@ func NewInviteServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(inviteServiceRevokeInviteMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		resendInvite: connect.NewClient[sdp_go.ResendInviteRequest, sdp_go.ResendInviteResponse](
+			httpClient,
+			baseURL+InviteServiceResendInviteProcedure,
+			connect.WithSchema(inviteServiceResendInviteMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -95,6 +106,7 @@ type inviteServiceClient struct {
 	createInvite *connect.Client[sdp_go.CreateInviteRequest, sdp_go.CreateInviteResponse]
 	listInvites  *connect.Client[sdp_go.ListInvitesRequest, sdp_go.ListInvitesResponse]
 	revokeInvite *connect.Client[sdp_go.RevokeInviteRequest, sdp_go.RevokeInviteResponse]
+	resendInvite *connect.Client[sdp_go.ResendInviteRequest, sdp_go.ResendInviteResponse]
 }
 
 // CreateInvite calls invites.InviteService.CreateInvite.
@@ -112,11 +124,17 @@ func (c *inviteServiceClient) RevokeInvite(ctx context.Context, req *connect.Req
 	return c.revokeInvite.CallUnary(ctx, req)
 }
 
+// ResendInvite calls invites.InviteService.ResendInvite.
+func (c *inviteServiceClient) ResendInvite(ctx context.Context, req *connect.Request[sdp_go.ResendInviteRequest]) (*connect.Response[sdp_go.ResendInviteResponse], error) {
+	return c.resendInvite.CallUnary(ctx, req)
+}
+
 // InviteServiceHandler is an implementation of the invites.InviteService service.
 type InviteServiceHandler interface {
 	CreateInvite(context.Context, *connect.Request[sdp_go.CreateInviteRequest]) (*connect.Response[sdp_go.CreateInviteResponse], error)
 	ListInvites(context.Context, *connect.Request[sdp_go.ListInvitesRequest]) (*connect.Response[sdp_go.ListInvitesResponse], error)
 	RevokeInvite(context.Context, *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error)
+	ResendInvite(context.Context, *connect.Request[sdp_go.ResendInviteRequest]) (*connect.Response[sdp_go.ResendInviteResponse], error)
 }
 
 // NewInviteServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -143,6 +161,12 @@ func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(inviteServiceRevokeInviteMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	inviteServiceResendInviteHandler := connect.NewUnaryHandler(
+		InviteServiceResendInviteProcedure,
+		svc.ResendInvite,
+		connect.WithSchema(inviteServiceResendInviteMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/invites.InviteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case InviteServiceCreateInviteProcedure:
@@ -151,6 +175,8 @@ func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect.HandlerOp
 			inviteServiceListInvitesHandler.ServeHTTP(w, r)
 		case InviteServiceRevokeInviteProcedure:
 			inviteServiceRevokeInviteHandler.ServeHTTP(w, r)
+		case InviteServiceResendInviteProcedure:
+			inviteServiceResendInviteHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -170,4 +196,8 @@ func (UnimplementedInviteServiceHandler) ListInvites(context.Context, *connect.R
 
 func (UnimplementedInviteServiceHandler) RevokeInvite(context.Context, *connect.Request[sdp_go.RevokeInviteRequest]) (*connect.Response[sdp_go.RevokeInviteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("invites.InviteService.RevokeInvite is not implemented"))
+}
+
+func (UnimplementedInviteServiceHandler) ResendInvite(context.Context, *connect.Request[sdp_go.ResendInviteRequest]) (*connect.Response[sdp_go.ResendInviteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("invites.InviteService.ResendInvite is not implemented"))
 }
