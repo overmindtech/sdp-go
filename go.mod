@@ -9,7 +9,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.0.1
 	github.com/google/uuid v1.6.0
 	github.com/nats-io/jwt/v2 v2.5.5
-	github.com/nats-io/nats.go v1.33.1
+	github.com/nats-io/nats.go v1.34.0
 	github.com/nats-io/nkeys v0.4.7
 	github.com/overmindtech/api-client v0.14.0
 	github.com/sirupsen/logrus v1.9.3
