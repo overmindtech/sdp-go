@@ -366,7 +366,7 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 // get a NATS token.
 //
 // The provided `overmindAPIURL` parameter should be the root URL of the
-// Overmind API, without the /api suffix e.g. https://api.prod.overmind.tech
+// Overmind API, without the /api suffix e.g. https://api.app.overmind.tech
 func NewAPIKeyClient(overmindAPIURL string, apiKey string) (*natsTokenClient, error) {
 	urlParsed, err := url.Parse(overmindAPIURL)
 
