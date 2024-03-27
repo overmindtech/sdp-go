@@ -835,8 +835,8 @@ type SourceMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"` // TOOD: Chnage to ID along with everything else
-	// The name of the nats JWT that has been generated for this source
+	UUID []byte `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"` // TOOD: Change to ID along with everything else
+	// The name of the NATS JWT that has been generated for this source
 	TokenName string `protobuf:"bytes,2,opt,name=TokenName,proto3" json:"TokenName,omitempty"`
 	// When the NATS JWT expires (unix time)
 	TokenExpiry *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=TokenExpiry,proto3" json:"TokenExpiry,omitempty"`
