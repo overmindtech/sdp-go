@@ -256,7 +256,7 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 }
 
 // bypassAuthHandler is a middleware that will bypass authentication
-func bypassAuthHandler(accountName string, next http.Handler) http.Handler {
+func bypassAuthHandler(_ /* accountName */ string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := AddBypassAuthConfig(r.Context())
 
