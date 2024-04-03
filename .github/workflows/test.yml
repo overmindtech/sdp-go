@@ -28,8 +28,8 @@ jobs:
           # creates all service containers on the same network, and with a nice
           # network alias so we can use docker-provided DNS to have them talk to
           # one another
-          API_SERVER_NATS_HOST: nats-auth
-          API_SERVER_NATS_PORT: 4222
+          API_SERVER_NATS_SERVICE_HOST: nats-auth
+          API_SERVER_NATS_SERVICE_PORT: 4222
           API_SERVER_DISABLE_KUBE: true
           API_SERVER_PGHOST: postgres
           API_SERVER_PGUSER: ci
