@@ -209,8 +209,7 @@ func (n *natsTokenClient) generateJWT(ctx context.Context) error {
 		}))
 	}
 	if err != nil {
-		errString := fmt.Sprintf("getting NATS token failed: %v", err.Error())
-		return errors.New(errString)
+		return fmt.Errorf("getting NATS token failed: %w", err)
 	}
 
 	n.jwt = response.Msg.Token
