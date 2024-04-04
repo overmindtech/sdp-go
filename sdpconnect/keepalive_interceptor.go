@@ -155,6 +155,7 @@ func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.C
 	// Make the request in another goroutine so that we don't block the
 	// request
 	go func() {
+		defer sdp.LogRecoverToReturn(ctx, "KeepaliveSourcesInterceptor.wakeSources")
 		defer close(sourcesReady)
 		defer i.updateLastCalled(ctx)
 
