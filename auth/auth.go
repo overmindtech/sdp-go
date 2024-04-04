@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"time"
 
 	"connectrpc.com/connect"
@@ -15,7 +14,6 @@ import (
 	josejwt "github.com/go-jose/go-jose/v4/jwt"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
-	overmind "github.com/overmindtech/api-client"
 	"github.com/overmindtech/sdp-go"
 	"github.com/overmindtech/sdp-go/sdpconnect"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -123,30 +121,19 @@ func NewOAuthTokenClient(overmindAPIURL string, account string, ts oauth2.TokenS
 // Provide an account name and an admin token to create a token client for a
 // foreign account.
 func NewOAuthTokenClientWithContext(ctx context.Context, overmindAPIURL string, account string, ts oauth2.TokenSource) *natsTokenClient {
-	// Get an authenticated client that we can then make more HTTP calls with
 	authenticatedClient := oauth2.NewClient(ctx, ts)
 
-	// Configure the token exchange client to use the newly authenticated HTTP
-	// client among other things
-	tokenExchangeConf := &overmind.Configuration{
-		DefaultHeader: make(map[string]string),
-		UserAgent:     fmt.Sprintf("Overmind/%v (%v/%v)", UserAgentVersion, runtime.GOOS, runtime.GOARCH),
-		Debug:         false,
-		Servers: overmind.ServerConfigurations{
-			{
-				URL:         overmindAPIURL,
-				Description: "Overmind API",
-			},
-		},
-		OperationServers: map[string]overmind.ServerConfigurations{},
-		HTTPClient:       authenticatedClient,
+	// backwards compatibility: remove previously existing "/api" suffix from URL for connect
+	apiUrl, err := url.Parse(overmindAPIURL)
+	if err == nil {
+		apiUrl.Path = ""
+		overmindAPIURL = apiUrl.String()
 	}
-
-	nClient := overmind.NewAPIClient(tokenExchangeConf)
 
 	return &natsTokenClient{
 		Account:     account,
-		OvermindAPI: nClient,
+		adminClient: sdpconnect.NewAdminServiceClient(authenticatedClient, overmindAPIURL),
+		mgmtClient:  sdpconnect.NewManagementServiceClient(authenticatedClient, overmindAPIURL),
 	}
 }
 
@@ -159,8 +146,9 @@ type natsTokenClient struct {
 	// token.
 	Account string
 
-	// An authenticated client for the Overmind API
-	OvermindAPI *overmind.APIClient
+	// authenticated clients for the Overmind API
+	adminClient sdpconnect.AdminServiceClient
+	mgmtClient  sdpconnect.ManagementServiceClient
 
 	jwt  string
 	keys nkeys.KeyPair
@@ -180,7 +168,7 @@ func (n *natsTokenClient) generateKeys() error {
 
 // generateJWT Gets a new JWT from the auth API
 func (n *natsTokenClient) generateJWT(ctx context.Context) error {
-	if n.OvermindAPI == nil {
+	if n.adminClient == nil || n.mgmtClient == nil {
 		return errors.New("no Overmind API client configured")
 	}
 
@@ -193,47 +181,38 @@ func (n *natsTokenClient) generateJWT(ctx context.Context) error {
 		}
 	}
 
-	var err error
-	var pubKey string
-	var hostname string
-	var response *http.Response
-
-	pubKey, err = n.keys.PublicKey()
-
+	pubKey, err := n.keys.PublicKey()
 	if err != nil {
 		return err
 	}
 
-	hostname, err = os.Hostname()
-
+	hostname, err := os.Hostname()
 	if err != nil {
 		return err
+	}
+
+	req := &sdp.CreateTokenRequest{
+		UserPublicNkey: pubKey,
+		UserName:       hostname,
 	}
 
 	// Create the request for a NATS token
+	var response *connect.Response[sdp.CreateTokenResponse]
 	if n.Account == "" {
 		// Use the regular API and let the client authentication determine what our org should be
-		n.jwt, response, err = n.OvermindAPI.CoreApi.CreateToken(ctx).TokenRequestData(overmind.TokenRequestData{
-			UserPubKey: pubKey,
-			UserName:   hostname,
-		}).Execute()
+		response, err = n.mgmtClient.CreateToken(ctx, connect.NewRequest(req))
 	} else {
 		// Explicitly request an org
-		n.jwt, response, err = n.OvermindAPI.AdminApi.AdminCreateToken(ctx, n.Account).TokenRequestData(overmind.TokenRequestData{
-			UserPubKey: pubKey,
-			UserName:   hostname,
-		}).Execute()
+		response, err = n.adminClient.CreateToken(ctx, connect.NewRequest(&sdp.AdminCreateTokenRequest{
+			Account: n.Account,
+			Request: req,
+		}))
 	}
-
 	if err != nil {
-		errString := fmt.Sprintf("getting NATS token failed: %v", err.Error())
-
-		if response != nil && response.Request != nil && response.Request.URL != nil {
-			errString = errString + fmt.Sprintf(". Request URL: %v", response.Request.URL.String())
-		}
-
-		return errors.New(errString)
+		return fmt.Errorf("getting NATS token failed: %w", err)
 	}
+
+	n.jwt = response.Msg.Token
 
 	return nil
 }
@@ -368,12 +347,6 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 // The provided `overmindAPIURL` parameter should be the root URL of the
 // Overmind API, without the /api suffix e.g. https://api.app.overmind.tech
 func NewAPIKeyClient(overmindAPIURL string, apiKey string) (*natsTokenClient, error) {
-	urlParsed, err := url.Parse(overmindAPIURL)
-
-	if err != nil {
-		return nil, fmt.Errorf("error parsing Overmind API URL: %w", err)
-	}
-
 	// Create a token source that exchanges the API key for an OAuth token
 	tokenSource := NewAPIKeyTokenSource(apiKey, overmindAPIURL)
 	transport := oauth2.Transport{
@@ -384,25 +357,8 @@ func NewAPIKeyClient(overmindAPIURL string, apiKey string) (*natsTokenClient, er
 		Transport: otelhttp.NewTransport(&transport),
 	}
 
-	// Set /api path for older APIs
-	urlParsed.Path = "/api"
-
-	// Create a client for the token exchange API
-	tokenExchangeClient := overmind.NewAPIClient(&overmind.Configuration{
-		DefaultHeader: make(map[string]string),
-		UserAgent:     fmt.Sprintf("Overmind/%v (%v/%v)", UserAgentVersion, runtime.GOOS, runtime.GOARCH),
-		Debug:         false,
-		Servers: overmind.ServerConfigurations{
-			{
-				URL:         urlParsed.String(),
-				Description: "Overmind API",
-			},
-		},
-		OperationServers: map[string]overmind.ServerConfigurations{},
-		HTTPClient:       &httpClient,
-	})
-
 	return &natsTokenClient{
-		OvermindAPI: tokenExchangeClient,
+		adminClient: sdpconnect.NewAdminServiceClient(&httpClient, overmindAPIURL),
+		mgmtClient:  sdpconnect.NewManagementServiceClient(&httpClient, overmindAPIURL),
 	}, nil
 }

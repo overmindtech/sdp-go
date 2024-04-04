@@ -11,63 +11,46 @@ jobs:
           - ubuntu-latest
           # - macos-latest
           # - windows-latest
-    services:
-      nats:
-        image: nats
-        ports:
-          - 4222:4222
-      nats-auth:
-        image: ghcr.io/overmindtech/test-populated-nats:main
-        # ports:
-        #   - 4222:4222
-
-      api-server:
-        image: ghcr.io/overmindtech/test-populated-api-server:main
-        env:
-          # This is the URL of the nats-auth container above. Thankfully github
-          # creates all service containers on the same network, and with a nice
-          # network alias so we can use docker-provided DNS to have them talk to
-          # one another
-          API_SERVER_NATS_HOST: nats-auth
-          API_SERVER_NATS_PORT: 4222
-          API_SERVER_DISABLE_KUBE: true
-          API_SERVER_PGHOST: postgres
-          API_SERVER_PGUSER: ci
-          API_SERVER_PGPASSWORD: ci
-          API_SERVER_PGDBNAME: ci
-          API_SERVER_ATLAS_DISABLE_SSL: true
-          AUTH0_AUDIENCE: ${{ vars.API_SERVER_AUDIENCE }}
-        ports:
-          - 8080:8080
-        options: >-
-          --restart always
-
-      postgres:
-        image: postgres:14.6-alpine
-        env:
-          POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     runs-on: ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # also fetch tags and branches for `git describe`
+
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.x
+          go-version: ${{ matrix.go-version }}
           check-latest: true
 
       - name: Get dependencies
         run: |
           go get -v -t -d ./...
 
-      - name: Vet
+      - name: Go Generate
+        run: go generate ./...
+
+      - name: Go vet
         run: go vet ./...
+
+      - name: re-export environment
+        run: |
+          grep -h '^[^#]' .github/env/*.env | sort -u | tee -a "${GITHUB_ENV}"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker Compose Action
+        uses: isbang/compose-action@v1.5.1
+        with:
+          compose-file: ".github/docker-compose-services.yml"
+        env:
+          HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
 
       - name: Test
         run: go test ./... -race -timeout 2m
@@ -76,3 +59,13 @@ jobs:
           OVERMIND_NTE_ALLPERMS_DOMAIN: ${{ secrets.OVERMIND_NTE_ALLPERMS_DOMAIN }}
           OVERMIND_NTE_ALLPERMS_CLIENT_ID: ${{ secrets.OVERMIND_NTE_ALLPERMS_CLIENT_ID }}
           OVERMIND_NTE_ALLPERMS_CLIENT_SECRET: ${{ secrets.OVERMIND_NTE_ALLPERMS_CLIENT_SECRET }}
+
+      - name: Show container logs for debugging
+        if: failure()
+        run: |
+          docker-compose -f .github/docker-compose-services.yml logs
+
+      - name: Show container logs for archival
+        if: ${{ ! failure() }}
+        run: |
+          docker-compose -f .github/docker-compose-services.yml logs

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -63,17 +62,6 @@ type AuthConfig struct {
 
 	// Overrides the scope stored in the CustomClaimsContextKey
 	ScopeOverride *string
-}
-
-// NewAuthConfigFromEnv Creates a new AuthConfig from the default Auth0
-// environment variables, namely: AUTH0_DOMAIN, AUTH0_AUDIENCE, and
-// AUTH_COOKIE_NAME
-func NewAuthConfigFromEnv() AuthConfig {
-	return AuthConfig{
-		Auth0Domain:    os.Getenv("AUTH0_DOMAIN"),
-		Auth0Audience:  os.Getenv("AUTH0_AUDIENCE"),
-		AuthCookieName: os.Getenv("AUTH_COOKIE_NAME"),
-	}
 }
 
 // HasScopes compatibility alias for HasAllScopes
@@ -256,7 +244,7 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 }
 
 // bypassAuthHandler is a middleware that will bypass authentication
-func bypassAuthHandler(accountName string, next http.Handler) http.Handler {
+func bypassAuthHandler(_ /* accountName */ string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := AddBypassAuthConfig(r.Context())
 
@@ -269,18 +257,14 @@ func bypassAuthHandler(accountName string, next http.Handler) http.Handler {
 // ensureValidTokenHandler is a middleware that will check the validity of our
 // JWT.
 //
-// # This uses the AuthConfig data to configure token validation. If there is no
-// Auth0 values (i.e. Auth0Domain, Auth0Audience and AuthCookieName  are empty
-// strings) then this will use the environment variables: AUTH0_DOMAIN,
-// AUTH0_AUDIENCE, and AUTH_COOKIE_NAME
+// This will fail if all of Auth0Domain, Auth0Audience and AuthCookieName are
+// empty.
 //
 // This middleware also extract custom claims form the token and stores them in
 // CustomClaimsContextKey
 func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler {
 	if config.Auth0Domain == "" && config.Auth0Audience == "" && config.AuthCookieName == "" {
-		config.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
-		config.Auth0Audience = os.Getenv("AUTH0_AUDIENCE")
-		config.AuthCookieName = os.Getenv("AUTH_COOKIE_NAME")
+		log.Fatalf("Auth0 configuration is missing")
 	}
 
 	issuerURL, err := url.Parse("https://" + config.Auth0Domain + "/")
