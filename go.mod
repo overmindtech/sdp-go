@@ -19,7 +19,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	golang.org/x/oauth2 v0.19.0
 	google.golang.org/protobuf v1.33.0
-	nhooyr.io/websocket v1.8.10
+	nhooyr.io/websocket v1.8.11
 )
 
 require (
