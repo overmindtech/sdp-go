@@ -3,7 +3,7 @@ module github.com/overmindtech/sdp-go
 go 1.22.2
 
 require (
-	connectrpc.com/connect v1.16.0
+	connectrpc.com/connect v1.16.1
 	github.com/auth0/go-jwt-middleware/v2 v2.2.1
 	github.com/getsentry/sentry-go v0.27.0
 	github.com/go-jose/go-jose/v4 v4.0.1
