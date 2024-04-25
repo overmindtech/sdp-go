@@ -169,32 +169,12 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var bypassPath bool
-		var accountOverride string
-
-		if config.BypassAuthForPaths != nil {
-			bypassPath = config.BypassAuthForPaths.MatchString(r.URL.Path)
-		}
-
-		if config.AccountOverride != nil {
-			accountOverride = *config.AccountOverride
-		}
-
-		if config.BypassAuth || bypassPath {
-			// If auth is disabled then bypass
-			span := trace.SpanFromContext(r.Context())
-			// this is always set when auth is bypassed
-			span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
-			if bypassPath {
-				span.SetAttributes(attribute.String("ovm.auth.bypassedPath", r.URL.Path))
-			}
-			bypassAuthHandler(accountOverride, processOverrides).ServeHTTP(w, r)
-		} else {
-			// Otherwise ensure the token is valid
-			ensureValidTokenHandler(config, processOverrides).ServeHTTP(w, r)
-		}
-	})
+	if config.BypassAuth || config.BypassAuthForPaths != nil {
+		return bypassAuthHandler(config.BypassAuth, config.BypassAuthForPaths, processOverrides)
+	} else {
+		// Otherwise ensure the token is valid
+		return ensureValidTokenHandler(config, processOverrides)
+	}
 }
 
 // AddBypassAuthConfig Adds the requires keys to the context so that
@@ -243,14 +223,44 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 	return ctx
 }
 
-// bypassAuthHandler is a middleware that will bypass authentication
-func bypassAuthHandler(_ /* accountName */ string, next http.Handler) http.Handler {
+// bypassAuthHandler is a middleware that will bypass authentication if alwaysBypass is true
+// or if the request path matches the bypassPaths regex.
+func bypassAuthHandler(alwaysBypass bool, bypassPaths *regexp.Regexp, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := AddBypassAuthConfig(r.Context())
+		var shouldBypass bool
 
-		r = r.Clone(ctx)
+		// If alwaysBypass is true then bypass
+		if alwaysBypass {
+			shouldBypass = true
+		}
 
-		next.ServeHTTP(w, r)
+		// If we aren't bypassing always and we have a regex then check if we
+		// should bypass
+		if !shouldBypass && bypassPaths != nil {
+			shouldBypass = bypassPaths.MatchString(r.URL.Path)
+		}
+
+		if shouldBypass {
+			ctx := r.Context()
+
+			span := trace.SpanFromContext(ctx)
+			// this is always set when auth is bypassed
+			span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
+
+			if bypassPaths != nil {
+				span.SetAttributes(attribute.String("ovm.auth.bypassedPath", r.URL.Path))
+			}
+
+			ctx = AddBypassAuthConfig(ctx)
+
+			r = r.Clone(ctx)
+
+			next.ServeHTTP(w, r)
+		} else {
+			// Do nothing
+			next.ServeHTTP(w, r)
+		}
+
 	})
 }
 

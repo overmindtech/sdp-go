@@ -14,6 +14,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
+// Sends a query on the websocket connection without waiting for responses. Use
+// the `Wait()` method to wait for completion of requests based on their UUID
 func (c *Client) SendQuery(ctx context.Context, q *sdp.Query) error {
 	if c.Closed() {
 		return errors.New("client closed")
@@ -34,6 +36,8 @@ func (c *Client) SendQuery(ctx context.Context, q *sdp.Query) error {
 	return nil
 }
 
+// Run a query and wait for it to complete, returning all of the items that were
+// found.
 func (c *Client) Query(ctx context.Context, q *sdp.Query) ([]*sdp.Item, error) {
 	if c.Closed() {
 		return nil, errors.New("client closed")
@@ -115,6 +119,8 @@ readLoop:
 // TODO: Expand
 // TODO: UndoExpand
 
+// Sends a StoreSnapshot request on the websocket connection without waiting for
+// a response.
 func (c *Client) SendStoreSnapshot(ctx context.Context, s *sdp.StoreSnapshot) error {
 	if c.Closed() {
 		return errors.New("client closed")
@@ -132,6 +138,8 @@ func (c *Client) SendStoreSnapshot(ctx context.Context, s *sdp.StoreSnapshot) er
 	return nil
 }
 
+// Store a snapshot and wait for it to complete, returning the UUID of the
+// snapshot that was created.
 func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (uuid.UUID, error) {
 	if c.Closed() {
 		return uuid.UUID{}, errors.New("client closed")
@@ -176,6 +184,8 @@ func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (u
 
 // TODO: LoadSnapshot
 
+// Sends a StoreBookmark request on the websocket connection without waiting for
+// a response.
 func (c *Client) SendStoreBookmark(ctx context.Context, b *sdp.StoreBookmark) error {
 	if c.Closed() {
 		return errors.New("client closed")
@@ -193,6 +203,8 @@ func (c *Client) SendStoreBookmark(ctx context.Context, b *sdp.StoreBookmark) er
 	return nil
 }
 
+// Store a bookmark and wait for it to complete, returning the UUID of the
+// bookmark that was created.
 func (c *Client) StoreBookmark(ctx context.Context, name, description string, isSystem bool) (uuid.UUID, error) {
 	if c.Closed() {
 		return uuid.UUID{}, errors.New("client closed")
