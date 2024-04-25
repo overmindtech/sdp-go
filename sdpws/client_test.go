@@ -29,7 +29,7 @@ type testServer struct {
 	requestsMu sync.Mutex
 }
 
-func newTestServer(ctx context.Context, t *testing.T) (*testServer, func()) {
+func newTestServer(_ context.Context, t *testing.T) (*testServer, func()) {
 	ts := &testServer{
 		requests: make([]*sdp.GatewayRequest, 0),
 	}
