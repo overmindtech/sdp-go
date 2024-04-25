@@ -169,14 +169,8 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 
-	var accountOverride string
-
-	if config.AccountOverride != nil {
-		accountOverride = *config.AccountOverride
-	}
-
 	if config.BypassAuth || config.BypassAuthForPaths != nil {
-		return bypassAuthHandler(accountOverride, config.BypassAuth, config.BypassAuthForPaths, processOverrides)
+		return bypassAuthHandler(config.BypassAuth, config.BypassAuthForPaths, processOverrides)
 	} else {
 		// Otherwise ensure the token is valid
 		return ensureValidTokenHandler(config, processOverrides)
@@ -231,7 +225,7 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 
 // bypassAuthHandler is a middleware that will bypass authentication if alwaysBypass is true
 // or if the request path matches the bypassPaths regex.
-func bypassAuthHandler(_ /* accountName */ string, alwaysBypass bool, bypassPaths *regexp.Regexp, next http.Handler) http.Handler {
+func bypassAuthHandler(alwaysBypass bool, bypassPaths *regexp.Regexp, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var shouldBypass bool
 
