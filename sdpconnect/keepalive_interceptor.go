@@ -26,7 +26,7 @@ func NewKeepaliveSourcesInterceptor(managementClient ManagementServiceClient) co
 }
 
 // WaitForSources will wait for the sources to be ready after they have been
-// woken up by the `KeepaliveSourcesInterceptor`. If this context was create
+// woken up by the `KeepaliveSourcesInterceptor`. If this context was created
 // without the interceptor, then this function will return immediately. If the
 // waking of the sources returns an error it will be returned via this function
 func WaitForSources(ctx context.Context) error {
