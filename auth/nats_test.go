@@ -196,7 +196,7 @@ func TestNATSConnect(t *testing.T) {
 	t.Run("with a bad URL", func(t *testing.T) {
 		o := NATSOptions{
 			Servers:    []string{"nats://badname.dontresolve.com"},
-			NumRetries: 10,
+			NumRetries: 5,
 			RetryDelay: 100 * time.Millisecond,
 		}
 
@@ -204,11 +204,12 @@ func TestNATSConnect(t *testing.T) {
 
 		_, err := o.Connect()
 
-		// Just sanity check the duration here, it should be less than 1s and it
-		// should be more than... Some larger number of seconds. This is very
-		// much dependant on how long it takes to not resolve the name
-		if time.Since(start) < 1*time.Second {
-			t.Errorf("Reconnecting didn't take long enough, expected >1s got: %v", time.Since(start).String())
+		// Just sanity check the duration here, it should not be less than
+		// NumRetries * RetryDelay and it should be more than... Some larger
+		// number of seconds. This is very much dependant on how long it takes
+		// to not resolve the name
+		if time.Since(start) < 5*100*time.Millisecond {
+			t.Errorf("Reconnecting didn't take long enough, expected >0.5s got: %v", time.Since(start).String())
 		}
 
 		if time.Since(start) > 3*time.Second {
@@ -219,7 +220,7 @@ func TestNATSConnect(t *testing.T) {
 		case MaxRetriesError:
 			// This is good
 		default:
-			t.Errorf("Unknown error type %T", err)
+			t.Errorf("Unknown error type %T: %v", err, err)
 		}
 	})
 
