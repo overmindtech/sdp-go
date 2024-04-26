@@ -214,10 +214,11 @@ func (o NATSOptions) Connect() (sdp.EncodedConnection, error) {
 
 	for triesLeft != 0 {
 		triesLeft--
-		log.WithFields(log.Fields{
+		lf := log.Fields{
 			"servers":   servers,
 			"triesLeft": triesLeft,
-		}).Info("NATS connecting")
+		}
+		log.WithFields(lf).Info("NATS connecting")
 
 		nc, err = nats.Connect(
 			servers,
@@ -225,7 +226,7 @@ func (o NATSOptions) Connect() (sdp.EncodedConnection, error) {
 		)
 
 		if err != nil && triesLeft != 0 {
-			log.WithError(err).WithField("triesLeft", triesLeft).Error("Error connecting to NATS")
+			log.WithError(err).WithFields(lf).Error("Error connecting to NATS")
 			time.Sleep(o.RetryDelay)
 			continue
 		}
