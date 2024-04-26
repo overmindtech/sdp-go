@@ -17,8 +17,8 @@ import (
 )
 
 var tokenExchangeURLs = []string{
-	"http://api-server:8080/api",
-	"http://localhost:8080/api",
+	"http://api-server:8080",
+	"http://localhost:8080",
 }
 
 func TestBasicTokenClient(t *testing.T) {
@@ -157,10 +157,10 @@ func TestNewAPIKeyTokenSource(t *testing.T) {
 }
 
 func GetWorkingTokenExchange() (string, error) {
-	var err error
 	errMap := make(map[string]error)
 
 	for _, url := range tokenExchangeURLs {
+		var err error
 		if err = testURL(url); err == nil {
 			return url, nil
 		}
@@ -173,7 +173,7 @@ func GetWorkingTokenExchange() (string, error) {
 		errString = errString + fmt.Sprintf("  %v: %v\n", url, err.Error())
 	}
 
-	return "", fmt.Errorf("no working token exchanges found:\n%v", err)
+	return "", fmt.Errorf("no working token exchanges found:\n%v", errString)
 }
 
 func testURL(testURL string) error {
