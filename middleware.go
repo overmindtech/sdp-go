@@ -45,6 +45,11 @@ type AuthConfig struct {
 	Auth0Audience  string
 	AuthCookieName string // leave this empty to disable cookie auth
 
+	// Use this to specify the full issuer URL for validating the JWTs. This
+	// should only be used if we aren't using Auth0 as a source for tokens (such
+	// as in testing). Auth0Domain will take precedence if both are set.
+	IssuerURL string
+
 	// Bypasses all auth checks, meaning that HasScopes() will always return
 	// true. This should be used in conjunction with the `AccountOverride` field
 	// since there won't be a token to parse the account from
@@ -169,12 +174,7 @@ func NewAuthMiddleware(config AuthConfig, next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 
-	if config.BypassAuth || config.BypassAuthForPaths != nil {
-		return bypassAuthHandler(config.BypassAuth, config.BypassAuthForPaths, processOverrides)
-	} else {
-		// Otherwise ensure the token is valid
-		return ensureValidTokenHandler(config, processOverrides)
-	}
+	return ensureValidTokenHandler(config, processOverrides)
 }
 
 // AddBypassAuthConfig Adds the requires keys to the context so that
@@ -223,47 +223,6 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 	return ctx
 }
 
-// bypassAuthHandler is a middleware that will bypass authentication if alwaysBypass is true
-// or if the request path matches the bypassPaths regex.
-func bypassAuthHandler(alwaysBypass bool, bypassPaths *regexp.Regexp, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var shouldBypass bool
-
-		// If alwaysBypass is true then bypass
-		if alwaysBypass {
-			shouldBypass = true
-		}
-
-		// If we aren't bypassing always and we have a regex then check if we
-		// should bypass
-		if !shouldBypass && bypassPaths != nil {
-			shouldBypass = bypassPaths.MatchString(r.URL.Path)
-		}
-
-		if shouldBypass {
-			ctx := r.Context()
-
-			span := trace.SpanFromContext(ctx)
-			// this is always set when auth is bypassed
-			span.SetAttributes(attribute.Bool("ovm.auth.bypass", true))
-
-			if bypassPaths != nil {
-				span.SetAttributes(attribute.String("ovm.auth.bypassedPath", r.URL.Path))
-			}
-
-			ctx = AddBypassAuthConfig(ctx)
-
-			r = r.Clone(ctx)
-
-			next.ServeHTTP(w, r)
-		} else {
-			// Do nothing
-			next.ServeHTTP(w, r)
-		}
-
-	})
-}
-
 // ensureValidTokenHandler is a middleware that will check the validity of our
 // JWT.
 //
@@ -277,7 +236,14 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 		log.Fatalf("Auth0 configuration is missing")
 	}
 
-	issuerURL, err := url.Parse("https://" + config.Auth0Domain + "/")
+	var issuerURL *url.URL
+	var err error
+
+	if config.Auth0Domain != "" {
+		issuerURL, err = url.Parse("https://" + config.Auth0Domain + "/")
+	} else {
+		issuerURL, err = url.Parse(config.IssuerURL)
+	}
 	if err != nil {
 		log.Fatalf("Failed to parse the issuer url: %v", err)
 	}
@@ -325,7 +291,7 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 		jwtmiddleware.WithTokenExtractor(tokenExtractor),
 	)
 
-	return middleware.CheckJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	jwtValidationMiddleware := middleware.CheckJWT(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// extract account name and setup otel attributes after the JWT was validated, but before the actual handler runs
 		claims := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
 
@@ -365,6 +331,43 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 
 		next.ServeHTTP(w, r)
 	}))
+
+	// Basically what I need to do here is I need to have a middleware that
+	// checks for bypassing, then passes on to middleware.checkJWT.
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
+
+		var shouldBypass bool
+
+		// If config.BypassAuth is true then bypass
+		if config.BypassAuth {
+			shouldBypass = true
+		}
+
+		// If we aren't bypassing always and we have a regex then check if we
+		// should bypass
+		if !shouldBypass && config.BypassAuthForPaths != nil {
+			shouldBypass = config.BypassAuthForPaths.MatchString(r.URL.Path)
+			if shouldBypass {
+				span.SetAttributes(attribute.String("ovm.auth.bypassedPath", r.URL.Path))
+			}
+		}
+
+		span.SetAttributes(attribute.Bool("ovm.auth.bypass", shouldBypass))
+
+		if shouldBypass {
+			ctx = AddBypassAuthConfig(ctx)
+
+			r = r.Clone(ctx)
+
+			// Call the next handler without adding any JWT validation
+			next.ServeHTTP(w, r)
+		} else {
+			// Otherwise we need to inject the JWT validation middleware
+			jwtValidationMiddleware.ServeHTTP(w, r)
+		}
+	})
 }
 
 // CustomClaims contains custom data we want from the token.
