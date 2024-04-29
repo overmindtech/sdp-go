@@ -157,7 +157,6 @@ func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.C
 	go func() {
 		defer sdp.LogRecoverToReturn(ctx, "KeepaliveSourcesInterceptor.wakeSources")
 		defer close(sourcesReady)
-		defer i.updateLastCalled(ctx)
 
 		// Make the request to keep the source awake
 		_, err := i.management.KeepaliveSources(ctx, &connect.Request[sdp.KeepaliveSourcesRequest]{
@@ -165,6 +164,8 @@ func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.C
 				WaitForHealthy: true,
 			},
 		})
+
+		i.updateLastCalled(ctx)
 
 		// Send the error to the channel
 		sourcesReady <- err

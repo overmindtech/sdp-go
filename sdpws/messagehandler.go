@@ -131,3 +131,37 @@ func (l *NoopGatewayMessageHandler) BookmarkLoadResult(ctx context.Context, resu
 
 func (l *NoopGatewayMessageHandler) QueryStatus(ctx context.Context, status *sdp.QueryStatus) {
 }
+
+var _ GatewayMessageHandler = (*StoreEverythingHandler)(nil)
+
+// A handler that stores all the items and edges it receives
+type StoreEverythingHandler struct {
+	Items []*sdp.Item
+	Edges []*sdp.Edge
+
+	NoopGatewayMessageHandler
+}
+
+func (s *StoreEverythingHandler) NewItem(ctx context.Context, item *sdp.Item) {
+	s.Items = append(s.Items, item)
+}
+
+func (s *StoreEverythingHandler) NewEdge(ctx context.Context, edge *sdp.Edge) {
+	s.Edges = append(s.Edges, edge)
+}
+
+var _ GatewayMessageHandler = (*WaitForAllQueriesHandler)(nil)
+
+// A Handler that waits for all queries to be done then calls a callback
+type WaitForAllQueriesHandler struct {
+	// A callback that will be called when all queries are done
+	DoneCallback func()
+
+	StoreEverythingHandler
+}
+
+func (w *WaitForAllQueriesHandler) Status(ctx context.Context, status *sdp.GatewayRequestStatus) {
+	if status.Done() {
+		w.DoneCallback()
+	}
+}
