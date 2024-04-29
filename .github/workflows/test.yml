@@ -56,7 +56,6 @@ jobs:
         run: go test ./... -race -timeout 2m
         env:
           API_SERVER_AUDIENCE: ${{ vars.API_SERVER_AUDIENCE }}
-          HONEYCOMB_API_KEY: ${{ secrets.HONEYCOMB_API_KEY }}
           OVERMIND_NTE_ALLPERMS_DOMAIN: ${{ secrets.OVERMIND_NTE_ALLPERMS_DOMAIN }}
           OVERMIND_NTE_ALLPERMS_CLIENT_ID: ${{ secrets.OVERMIND_NTE_ALLPERMS_CLIENT_ID }}
           OVERMIND_NTE_ALLPERMS_CLIENT_SECRET: ${{ secrets.OVERMIND_NTE_ALLPERMS_CLIENT_SECRET }}

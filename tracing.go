@@ -2,7 +2,6 @@ package sdp
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
 	"runtime/debug"
 
@@ -17,21 +16,16 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const instrumentationName = "github.com/overmindtech/sdp-go/sdp"
-
-//go:generate sh -c "echo -n $(git describe --tags --long --all) > commit.txt"
-//go:embed commit.txt
-var LibraryVersion string
+const (
+	instrumentationName    = "github.com/overmindtech/sdp-go/sdp"
+	instrumentationVersion = "0.0.1"
+)
 
 var tracer = otel.GetTracerProvider().Tracer(
 	instrumentationName,
-	trace.WithInstrumentationVersion(LibraryVersion),
+	trace.WithInstrumentationVersion(instrumentationVersion),
 	trace.WithSchemaURL(semconv.SchemaURL),
 )
-
-func Tracer() trace.Tracer {
-	return tracer
-}
 
 type CtxMsgHandler func(ctx context.Context, msg *nats.Msg)
 

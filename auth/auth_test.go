@@ -59,7 +59,7 @@ func TestBasicTokenClient(t *testing.T) {
 	}
 }
 
-func GetTestOAuthTokenClient(t *testing.T, ctx context.Context) *natsTokenClient {
+func GetTestOAuthTokenClient(t *testing.T) *natsTokenClient {
 	var domain string
 	var clientID string
 	var clientSecret string
@@ -94,8 +94,7 @@ func GetTestOAuthTokenClient(t *testing.T, ctx context.Context) *natsTokenClient
 		ClientSecret: clientSecret,
 	}
 
-	return NewOAuthTokenClientWithContext(
-		ctx,
+	return NewOAuthTokenClient(
 		exchangeURL,
 		"overmind-development",
 		flowConfig.TokenSource(fmt.Sprintf("https://%v/oauth/token", domain), os.Getenv("API_SERVER_AUDIENCE")),
@@ -103,12 +102,12 @@ func GetTestOAuthTokenClient(t *testing.T, ctx context.Context) *natsTokenClient
 }
 
 func TestOAuthTokenClient(t *testing.T) {
-	ctx, span := tracer.Start(context.Background(), t.Name())
-	defer span.End()
+	c := GetTestOAuthTokenClient(t)
 
-	c := GetTestOAuthTokenClient(t, ctx)
+	var err error
 
-	_, err := c.GetJWT()
+	_, err = c.GetJWT()
+
 	if err != nil {
 		t.Error(err)
 	}
@@ -117,9 +116,11 @@ func TestOAuthTokenClient(t *testing.T) {
 	data := []byte{1, 156, 230, 4, 23, 175, 11}
 
 	_, err = c.Sign(data)
+
 	if err != nil {
 		t.Fatal(err)
 	}
+
 }
 
 type testAPIKeyHandler struct {
