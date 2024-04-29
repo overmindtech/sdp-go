@@ -232,7 +232,7 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 // This middleware also extract custom claims form the token and stores them in
 // CustomClaimsContextKey
 func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler {
-	if config.Auth0Domain == "" && config.Auth0Audience == "" && config.AuthCookieName == "" {
+	if config.Auth0Domain == "" && config.IssuerURL == "" && config.Auth0Audience == "" && config.AuthCookieName == "" {
 		log.Fatalf("Auth0 configuration is missing")
 	}
 
