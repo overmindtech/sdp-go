@@ -193,10 +193,16 @@ func TestToNatsOptions(t *testing.T) {
 }
 
 func TestNATSConnect(t *testing.T) {
+	ctx, span := tracer.Start(context.Background(), t.Name())
+	defer span.End()
+
 	t.Run("with a bad URL", func(t *testing.T) {
+		_, span := tracer.Start(ctx, t.Name())
+		defer span.End()
+
 		o := NATSOptions{
 			Servers:    []string{"nats://badname.dontresolve.com"},
-			NumRetries: 10,
+			NumRetries: 5,
 			RetryDelay: 100 * time.Millisecond,
 		}
 
@@ -204,11 +210,12 @@ func TestNATSConnect(t *testing.T) {
 
 		_, err := o.Connect()
 
-		// Just sanity check the duration here, it should be less than 1s and it
-		// should be more than... Some larger number of seconds. This is very
-		// much dependant on how long it takes to not resolve the name
-		if time.Since(start) < 1*time.Second {
-			t.Errorf("Reconnecting didn't take long enough, expected >1s got: %v", time.Since(start).String())
+		// Just sanity check the duration here, it should not be less than
+		// NumRetries * RetryDelay and it should be more than... Some larger
+		// number of seconds. This is very much dependant on how long it takes
+		// to not resolve the name
+		if time.Since(start) < 5*100*time.Millisecond {
+			t.Errorf("Reconnecting didn't take long enough, expected >0.5s got: %v", time.Since(start).String())
 		}
 
 		if time.Since(start) > 3*time.Second {
@@ -219,15 +226,17 @@ func TestNATSConnect(t *testing.T) {
 		case MaxRetriesError:
 			// This is good
 		default:
-			t.Errorf("Unknown error type %T", err)
+			t.Errorf("Unknown error type %T: %v", err, err)
 		}
 	})
 
 	t.Run("with a bad URL, but a good token", func(t *testing.T) {
-		tk := GetTestOAuthTokenClient(t)
+		ctx, span := tracer.Start(ctx, t.Name())
+		defer span.End()
+
+		tk := GetTestOAuthTokenClient(t, ctx)
 
 		startToken, err := tk.GetJWT()
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -240,12 +249,10 @@ func TestNATSConnect(t *testing.T) {
 		}
 
 		_, err = o.Connect()
-
 		switch err.(type) {
 		case MaxRetriesError:
 			// Make sure we have only got one token, not three
 			currentToken, err := o.TokenClient.GetJWT()
-
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -259,6 +266,9 @@ func TestNATSConnect(t *testing.T) {
 	})
 
 	t.Run("with a good URL", func(t *testing.T) {
+		ctx, span := tracer.Start(ctx, t.Name())
+		defer span.End()
+
 		o := NATSOptions{
 			Servers: []string{
 				"nats://nats:4222",
@@ -269,15 +279,17 @@ func TestNATSConnect(t *testing.T) {
 		}
 
 		conn, err := o.Connect()
-
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ValidateNATSConnection(t, conn)
+		ValidateNATSConnection(t, ctx, conn)
 	})
 
 	t.Run("with a good URL but no retries", func(t *testing.T) {
+		ctx, span := tracer.Start(ctx, t.Name())
+		defer span.End()
+
 		o := NATSOptions{
 			Servers: []string{
 				"nats://nats:4222",
@@ -286,15 +298,17 @@ func TestNATSConnect(t *testing.T) {
 		}
 
 		conn, err := o.Connect()
-
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		ValidateNATSConnection(t, conn)
+		ValidateNATSConnection(t, ctx, conn)
 	})
 
 	t.Run("with a good URL and infinite retries", func(t *testing.T) {
+		ctx, span := tracer.Start(ctx, t.Name())
+		defer span.End()
+
 		o := NATSOptions{
 			Servers: []string{
 				"nats://nats:4222",
@@ -305,34 +319,33 @@ func TestNATSConnect(t *testing.T) {
 		}
 
 		conn, err := o.Connect()
-
 		if err != nil {
 			t.Error(err)
 		}
 
-		ValidateNATSConnection(t, conn)
+		ValidateNATSConnection(t, ctx, conn)
 	})
 }
 
 func TestTokenRefresh(t *testing.T) {
-	tk := GetTestOAuthTokenClient(t)
+	ctx, span := tracer.Start(context.Background(), t.Name())
+	defer span.End()
+
+	tk := GetTestOAuthTokenClient(t, ctx)
 
 	// Get a token
 	token, err := tk.GetJWT()
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Artificially set the expiry and replace the token
 	claims, err := jwt.DecodeUserClaims(token)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	pair, err := nkeys.CreateAccount()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,14 +353,12 @@ func TestTokenRefresh(t *testing.T) {
 	claims.Expires = time.Now().Add(-10 * time.Second).Unix()
 	tk.jwt, err = claims.Encode(pair)
 	expiredToken := tk.jwt
-
 	if err != nil {
 		t.Error(err)
 	}
 
 	// Get the token again
 	newToken, err := tk.GetJWT()
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -357,7 +368,7 @@ func TestTokenRefresh(t *testing.T) {
 	}
 }
 
-func ValidateNATSConnection(t *testing.T, ec sdp.EncodedConnection) {
+func ValidateNATSConnection(t *testing.T, ctx context.Context, ec sdp.EncodedConnection) {
 	t.Helper()
 	done := make(chan struct{})
 
@@ -376,7 +387,7 @@ func ValidateNATSConnection(t *testing.T, ec sdp.EncodedConnection) {
 		t.Error(err)
 	}
 
-	err = ec.Publish(context.Background(), "test", &sdp.QueryResponse{ResponseType: &sdp.QueryResponse_Response{Response: &sdp.Response{
+	err = ec.Publish(ctx, "test", &sdp.QueryResponse{ResponseType: &sdp.QueryResponse_Response{Response: &sdp.Response{
 		Responder: "test",
 		State:     sdp.ResponderState_COMPLETE,
 	}}})

@@ -70,9 +70,10 @@ func TestWaitForSources(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			i := NewKeepaliveSourcesInterceptor(&testManagementServiceClient{
+			client := testManagementServiceClient{
 				Error: test.SourcesError,
-			})
+			}
+			i := NewKeepaliveSourcesInterceptor(&client)
 
 			called := false
 
@@ -98,9 +99,13 @@ func TestWaitForSources(t *testing.T) {
 
 			if test.SourcesError != nil && test.WaitForSources {
 				// If the sources error is not nil and we are waiting for
-				// sources, then we expect to se an error here
+				// sources, then we expect to see an error here
 				if err == nil {
-					t.Error("Expected error but got nil")
+					t.Errorf("Expected error but got nil, despite test.SourcesError=%v", test.SourcesError)
+				}
+
+				if client.callCount != 1 {
+					t.Errorf("Expected call count to be 1 but got %d", client.callCount)
 				}
 			} else {
 				// Otherwise we shouldn't see an error

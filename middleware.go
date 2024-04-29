@@ -201,24 +201,25 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 	i := ctx.Value(CustomClaimsContextKey{})
 
 	var claims *CustomClaims
+	var newClaims CustomClaims
 	var ok bool
 
-	if claims, ok = i.(*CustomClaims); !ok {
-		// Create a new object if required
-		claims = &CustomClaims{}
+	if claims, ok = i.(*CustomClaims); ok {
+		// clone out the values to avoid false sharing
+		newClaims = *claims
 	}
 
 	if scope != nil {
-		claims.Scope = *scope
+		newClaims.Scope = *scope
 	}
 
 	if account != nil {
-		claims.AccountName = *account
+		newClaims.AccountName = *account
 	}
 
 	// Store the new claims in the context
-	ctx = context.WithValue(ctx, CustomClaimsContextKey{}, claims)
-	ctx = context.WithValue(ctx, AccountNameContextKey{}, claims.AccountName)
+	ctx = context.WithValue(ctx, CustomClaimsContextKey{}, &newClaims)
+	ctx = context.WithValue(ctx, AccountNameContextKey{}, newClaims.AccountName)
 
 	return ctx
 }

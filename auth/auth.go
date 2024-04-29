@@ -116,11 +116,15 @@ func NewOAuthTokenClient(overmindAPIURL string, account string, ts oauth2.TokenS
 // Auth0 metadata will be used
 //
 // The provided context is used for cancellation and to lookup the HTTP client
-// used by oauth2. See the oauth2.HTTPClient variable.
+// used by oauth2. See the `oauth2.HTTPClient` variable. If no custom HTTPClient is used, `otelhttp.DefaultClient` is injected instead.
 //
 // Provide an account name and an admin token to create a token client for a
 // foreign account.
 func NewOAuthTokenClientWithContext(ctx context.Context, overmindAPIURL string, account string, ts oauth2.TokenSource) *natsTokenClient {
+	// oauth2 has a custom http client context key to allow overriding its client
+	if ctx.Value(oauth2.HTTPClient) == nil {
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, otelhttp.DefaultClient)
+	}
 	authenticatedClient := oauth2.NewClient(ctx, ts)
 
 	// backwards compatibility: remove previously existing "/api" suffix from URL for connect
