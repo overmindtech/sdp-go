@@ -129,17 +129,19 @@ type AdminServiceClient interface {
 	CreateAccount(context.Context, *connect.Request[sdp_go.CreateAccountRequest]) (*connect.Response[sdp_go.CreateAccountResponse], error)
 	// Get the details of a given account
 	GetAccount(context.Context, *connect.Request[sdp_go.AdminGetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
-	// Deletes an account
+	// Completely deletes an account. This includes all of the data in that
+	// account, bookmarks, changes etc. It also deletes all users from Auth0
+	// that are associated with this account
 	DeleteAccount(context.Context, *connect.Request[sdp_go.AdminDeleteAccountRequest]) (*connect.Response[sdp_go.AdminDeleteAccountResponse], error)
-	// Lists all sources within the closen account
+	// Lists all sources within the chosen account
 	ListSources(context.Context, *connect.Request[sdp_go.AdminListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
-	// Creates a new source within the closen account
+	// Creates a new source within the chosen account
 	CreateSource(context.Context, *connect.Request[sdp_go.AdminCreateSourceRequest]) (*connect.Response[sdp_go.CreateSourceResponse], error)
-	// Get the details of a source within the closen account
+	// Get the details of a source within the chosen account
 	GetSource(context.Context, *connect.Request[sdp_go.AdminGetSourceRequest]) (*connect.Response[sdp_go.GetSourceResponse], error)
-	// Update the details of a source within the closen account
+	// Update the details of a source within the chosen account
 	UpdateSource(context.Context, *connect.Request[sdp_go.AdminUpdateSourceRequest]) (*connect.Response[sdp_go.UpdateSourceResponse], error)
-	// Deletes a source from a closen account
+	// Deletes a source from a chosen account
 	DeleteSource(context.Context, *connect.Request[sdp_go.AdminDeleteSourceRequest]) (*connect.Response[sdp_go.DeleteSourceResponse], error)
 	// Updates sources to keep them running in the background. This can be used
 	// to add explicit action, when the built-in keepalives are not sufficient.
@@ -307,17 +309,19 @@ type AdminServiceHandler interface {
 	CreateAccount(context.Context, *connect.Request[sdp_go.CreateAccountRequest]) (*connect.Response[sdp_go.CreateAccountResponse], error)
 	// Get the details of a given account
 	GetAccount(context.Context, *connect.Request[sdp_go.AdminGetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
-	// Deletes an account
+	// Completely deletes an account. This includes all of the data in that
+	// account, bookmarks, changes etc. It also deletes all users from Auth0
+	// that are associated with this account
 	DeleteAccount(context.Context, *connect.Request[sdp_go.AdminDeleteAccountRequest]) (*connect.Response[sdp_go.AdminDeleteAccountResponse], error)
-	// Lists all sources within the closen account
+	// Lists all sources within the chosen account
 	ListSources(context.Context, *connect.Request[sdp_go.AdminListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
-	// Creates a new source within the closen account
+	// Creates a new source within the chosen account
 	CreateSource(context.Context, *connect.Request[sdp_go.AdminCreateSourceRequest]) (*connect.Response[sdp_go.CreateSourceResponse], error)
-	// Get the details of a source within the closen account
+	// Get the details of a source within the chosen account
 	GetSource(context.Context, *connect.Request[sdp_go.AdminGetSourceRequest]) (*connect.Response[sdp_go.GetSourceResponse], error)
-	// Update the details of a source within the closen account
+	// Update the details of a source within the chosen account
 	UpdateSource(context.Context, *connect.Request[sdp_go.AdminUpdateSourceRequest]) (*connect.Response[sdp_go.UpdateSourceResponse], error)
-	// Deletes a source from a closen account
+	// Deletes a source from a chosen account
 	DeleteSource(context.Context, *connect.Request[sdp_go.AdminDeleteSourceRequest]) (*connect.Response[sdp_go.DeleteSourceResponse], error)
 	// Updates sources to keep them running in the background. This can be used
 	// to add explicit action, when the built-in keepalives are not sufficient.
@@ -481,7 +485,9 @@ func (UnimplementedAdminServiceHandler) CreateToken(context.Context, *connect.Re
 type ManagementServiceClient interface {
 	// Get the details of the account that this user belongs to
 	GetAccount(context.Context, *connect.Request[sdp_go.GetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
-	// Deletes the user's account
+	// Completely deletes the user's account. This includes all of the data in
+	// that account, bookmarks, changes etc. It also deletes the current user,
+	// and all other users in that account from Auth0
 	DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error)
 	// Lists all sources within the user's account
 	ListSources(context.Context, *connect.Request[sdp_go.ListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
@@ -631,7 +637,9 @@ func (c *managementServiceClient) CreateToken(ctx context.Context, req *connect.
 type ManagementServiceHandler interface {
 	// Get the details of the account that this user belongs to
 	GetAccount(context.Context, *connect.Request[sdp_go.GetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
-	// Deletes the user's account
+	// Completely deletes the user's account. This includes all of the data in
+	// that account, bookmarks, changes etc. It also deletes the current user,
+	// and all other users in that account from Auth0
 	DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error)
 	// Lists all sources within the user's account
 	ListSources(context.Context, *connect.Request[sdp_go.ListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
