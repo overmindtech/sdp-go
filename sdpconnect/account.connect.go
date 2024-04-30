@@ -69,6 +69,9 @@ const (
 	// ManagementServiceGetAccountProcedure is the fully-qualified name of the ManagementService's
 	// GetAccount RPC.
 	ManagementServiceGetAccountProcedure = "/account.ManagementService/GetAccount"
+	// ManagementServiceDeleteAccountProcedure is the fully-qualified name of the ManagementService's
+	// DeleteAccount RPC.
+	ManagementServiceDeleteAccountProcedure = "/account.ManagementService/DeleteAccount"
 	// ManagementServiceListSourcesProcedure is the fully-qualified name of the ManagementService's
 	// ListSources RPC.
 	ManagementServiceListSourcesProcedure = "/account.ManagementService/ListSources"
@@ -108,6 +111,7 @@ var (
 	adminServiceCreateTokenMethodDescriptor           = adminServiceServiceDescriptor.Methods().ByName("CreateToken")
 	managementServiceServiceDescriptor                = sdp_go.File_account_proto.Services().ByName("ManagementService")
 	managementServiceGetAccountMethodDescriptor       = managementServiceServiceDescriptor.Methods().ByName("GetAccount")
+	managementServiceDeleteAccountMethodDescriptor    = managementServiceServiceDescriptor.Methods().ByName("DeleteAccount")
 	managementServiceListSourcesMethodDescriptor      = managementServiceServiceDescriptor.Methods().ByName("ListSources")
 	managementServiceCreateSourceMethodDescriptor     = managementServiceServiceDescriptor.Methods().ByName("CreateSource")
 	managementServiceGetSourceMethodDescriptor        = managementServiceServiceDescriptor.Methods().ByName("GetSource")
@@ -126,7 +130,7 @@ type AdminServiceClient interface {
 	// Get the details of a given account
 	GetAccount(context.Context, *connect.Request[sdp_go.AdminGetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
 	// Deletes an account
-	DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error)
+	DeleteAccount(context.Context, *connect.Request[sdp_go.AdminDeleteAccountRequest]) (*connect.Response[sdp_go.AdminDeleteAccountResponse], error)
 	// Lists all sources within the closen account
 	ListSources(context.Context, *connect.Request[sdp_go.AdminListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
 	// Creates a new source within the closen account
@@ -174,7 +178,7 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceGetAccountMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		deleteAccount: connect.NewClient[sdp_go.DeleteAccountRequest, sdp_go.DeleteAccountResponse](
+		deleteAccount: connect.NewClient[sdp_go.AdminDeleteAccountRequest, sdp_go.AdminDeleteAccountResponse](
 			httpClient,
 			baseURL+AdminServiceDeleteAccountProcedure,
 			connect.WithSchema(adminServiceDeleteAccountMethodDescriptor),
@@ -230,7 +234,7 @@ type adminServiceClient struct {
 	listAccounts     *connect.Client[sdp_go.ListAccountsRequest, sdp_go.ListAccountsResponse]
 	createAccount    *connect.Client[sdp_go.CreateAccountRequest, sdp_go.CreateAccountResponse]
 	getAccount       *connect.Client[sdp_go.AdminGetAccountRequest, sdp_go.GetAccountResponse]
-	deleteAccount    *connect.Client[sdp_go.DeleteAccountRequest, sdp_go.DeleteAccountResponse]
+	deleteAccount    *connect.Client[sdp_go.AdminDeleteAccountRequest, sdp_go.AdminDeleteAccountResponse]
 	listSources      *connect.Client[sdp_go.AdminListSourcesRequest, sdp_go.ListSourcesResponse]
 	createSource     *connect.Client[sdp_go.AdminCreateSourceRequest, sdp_go.CreateSourceResponse]
 	getSource        *connect.Client[sdp_go.AdminGetSourceRequest, sdp_go.GetSourceResponse]
@@ -256,7 +260,7 @@ func (c *adminServiceClient) GetAccount(ctx context.Context, req *connect.Reques
 }
 
 // DeleteAccount calls account.AdminService.DeleteAccount.
-func (c *adminServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error) {
+func (c *adminServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[sdp_go.AdminDeleteAccountRequest]) (*connect.Response[sdp_go.AdminDeleteAccountResponse], error) {
 	return c.deleteAccount.CallUnary(ctx, req)
 }
 
@@ -304,7 +308,7 @@ type AdminServiceHandler interface {
 	// Get the details of a given account
 	GetAccount(context.Context, *connect.Request[sdp_go.AdminGetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
 	// Deletes an account
-	DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error)
+	DeleteAccount(context.Context, *connect.Request[sdp_go.AdminDeleteAccountRequest]) (*connect.Response[sdp_go.AdminDeleteAccountResponse], error)
 	// Lists all sources within the closen account
 	ListSources(context.Context, *connect.Request[sdp_go.AdminListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
 	// Creates a new source within the closen account
@@ -441,7 +445,7 @@ func (UnimplementedAdminServiceHandler) GetAccount(context.Context, *connect.Req
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.AdminService.GetAccount is not implemented"))
 }
 
-func (UnimplementedAdminServiceHandler) DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error) {
+func (UnimplementedAdminServiceHandler) DeleteAccount(context.Context, *connect.Request[sdp_go.AdminDeleteAccountRequest]) (*connect.Response[sdp_go.AdminDeleteAccountResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.AdminService.DeleteAccount is not implemented"))
 }
 
@@ -477,6 +481,8 @@ func (UnimplementedAdminServiceHandler) CreateToken(context.Context, *connect.Re
 type ManagementServiceClient interface {
 	// Get the details of the account that this user belongs to
 	GetAccount(context.Context, *connect.Request[sdp_go.GetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
+	// Deletes the user's account
+	DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error)
 	// Lists all sources within the user's account
 	ListSources(context.Context, *connect.Request[sdp_go.ListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
 	// Creates a new source within the user's account
@@ -510,6 +516,12 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			httpClient,
 			baseURL+ManagementServiceGetAccountProcedure,
 			connect.WithSchema(managementServiceGetAccountMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		deleteAccount: connect.NewClient[sdp_go.DeleteAccountRequest, sdp_go.DeleteAccountResponse](
+			httpClient,
+			baseURL+ManagementServiceDeleteAccountProcedure,
+			connect.WithSchema(managementServiceDeleteAccountMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 		listSources: connect.NewClient[sdp_go.ListSourcesRequest, sdp_go.ListSourcesResponse](
@@ -560,6 +572,7 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 // managementServiceClient implements ManagementServiceClient.
 type managementServiceClient struct {
 	getAccount       *connect.Client[sdp_go.GetAccountRequest, sdp_go.GetAccountResponse]
+	deleteAccount    *connect.Client[sdp_go.DeleteAccountRequest, sdp_go.DeleteAccountResponse]
 	listSources      *connect.Client[sdp_go.ListSourcesRequest, sdp_go.ListSourcesResponse]
 	createSource     *connect.Client[sdp_go.CreateSourceRequest, sdp_go.CreateSourceResponse]
 	getSource        *connect.Client[sdp_go.GetSourceRequest, sdp_go.GetSourceResponse]
@@ -572,6 +585,11 @@ type managementServiceClient struct {
 // GetAccount calls account.ManagementService.GetAccount.
 func (c *managementServiceClient) GetAccount(ctx context.Context, req *connect.Request[sdp_go.GetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error) {
 	return c.getAccount.CallUnary(ctx, req)
+}
+
+// DeleteAccount calls account.ManagementService.DeleteAccount.
+func (c *managementServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error) {
+	return c.deleteAccount.CallUnary(ctx, req)
 }
 
 // ListSources calls account.ManagementService.ListSources.
@@ -613,6 +631,8 @@ func (c *managementServiceClient) CreateToken(ctx context.Context, req *connect.
 type ManagementServiceHandler interface {
 	// Get the details of the account that this user belongs to
 	GetAccount(context.Context, *connect.Request[sdp_go.GetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error)
+	// Deletes the user's account
+	DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error)
 	// Lists all sources within the user's account
 	ListSources(context.Context, *connect.Request[sdp_go.ListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error)
 	// Creates a new source within the user's account
@@ -642,6 +662,12 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 		ManagementServiceGetAccountProcedure,
 		svc.GetAccount,
 		connect.WithSchema(managementServiceGetAccountMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	managementServiceDeleteAccountHandler := connect.NewUnaryHandler(
+		ManagementServiceDeleteAccountProcedure,
+		svc.DeleteAccount,
+		connect.WithSchema(managementServiceDeleteAccountMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	managementServiceListSourcesHandler := connect.NewUnaryHandler(
@@ -690,6 +716,8 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 		switch r.URL.Path {
 		case ManagementServiceGetAccountProcedure:
 			managementServiceGetAccountHandler.ServeHTTP(w, r)
+		case ManagementServiceDeleteAccountProcedure:
+			managementServiceDeleteAccountHandler.ServeHTTP(w, r)
 		case ManagementServiceListSourcesProcedure:
 			managementServiceListSourcesHandler.ServeHTTP(w, r)
 		case ManagementServiceCreateSourceProcedure:
@@ -715,6 +743,10 @@ type UnimplementedManagementServiceHandler struct{}
 
 func (UnimplementedManagementServiceHandler) GetAccount(context.Context, *connect.Request[sdp_go.GetAccountRequest]) (*connect.Response[sdp_go.GetAccountResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.GetAccount is not implemented"))
+}
+
+func (UnimplementedManagementServiceHandler) DeleteAccount(context.Context, *connect.Request[sdp_go.DeleteAccountRequest]) (*connect.Response[sdp_go.DeleteAccountResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.DeleteAccount is not implemented"))
 }
 
 func (UnimplementedManagementServiceHandler) ListSources(context.Context, *connect.Request[sdp_go.ListSourcesRequest]) (*connect.Response[sdp_go.ListSourcesResponse], error) {
