@@ -357,10 +357,21 @@ func (rcs *RiskCalculationStatus) ToMap() map[string]any {
 		return map[string]any{}
 	}
 
+	milestones := make([]map[string]any, len(rcs.ProgressMilestones))
+
+	for i, milestone := range rcs.ProgressMilestones {
+		milestones[i] = milestone.ToMap()
+	}
+
 	return map[string]any{
-		"status":      rcs.Status.String(),
-		"message":     rcs.Message,
-		"numSteps":    rcs.NumSteps,
-		"currentStep": rcs.CurrentStep,
+		"status":             rcs.Status.String(),
+		"progressMilestones": milestones,
+	}
+}
+
+func (m *RiskCalculationStatus_ProgressMilestone) ToMap() map[string]any {
+	return map[string]any{
+		"description": m.Description,
+		"status":      m.Status.String(),
 	}
 }
