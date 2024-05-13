@@ -93,6 +93,9 @@ const (
 	// ManagementServiceCreateTokenProcedure is the fully-qualified name of the ManagementService's
 	// CreateToken RPC.
 	ManagementServiceCreateTokenProcedure = "/account.ManagementService/CreateToken"
+	// ManagementServiceRevlinkWarmupProcedure is the fully-qualified name of the ManagementService's
+	// RevlinkWarmup RPC.
+	ManagementServiceRevlinkWarmupProcedure = "/account.ManagementService/RevlinkWarmup"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -119,6 +122,7 @@ var (
 	managementServiceDeleteSourceMethodDescriptor     = managementServiceServiceDescriptor.Methods().ByName("DeleteSource")
 	managementServiceKeepaliveSourcesMethodDescriptor = managementServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
 	managementServiceCreateTokenMethodDescriptor      = managementServiceServiceDescriptor.Methods().ByName("CreateToken")
+	managementServiceRevlinkWarmupMethodDescriptor    = managementServiceServiceDescriptor.Methods().ByName("RevlinkWarmup")
 )
 
 // AdminServiceClient is a client for the account.AdminService service.
@@ -506,6 +510,9 @@ type ManagementServiceClient interface {
 	// control the associated private key also in order to connect to NATS as
 	// the token is not enough on its own
 	CreateToken(context.Context, *connect.Request[sdp_go.CreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error)
+	// Ensure that all reverse links are populated. This does internal debouncing
+	// so the actual logic does only run when required.
+	RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest]) (*connect.ServerStreamForClient[sdp_go.RevlinkWarmupResponse], error)
 }
 
 // NewManagementServiceClient constructs a client for the account.ManagementService service. By
@@ -572,6 +579,12 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(managementServiceCreateTokenMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		revlinkWarmup: connect.NewClient[sdp_go.RevlinkWarmupRequest, sdp_go.RevlinkWarmupResponse](
+			httpClient,
+			baseURL+ManagementServiceRevlinkWarmupProcedure,
+			connect.WithSchema(managementServiceRevlinkWarmupMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -586,6 +599,7 @@ type managementServiceClient struct {
 	deleteSource     *connect.Client[sdp_go.DeleteSourceRequest, sdp_go.DeleteSourceResponse]
 	keepaliveSources *connect.Client[sdp_go.KeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse]
 	createToken      *connect.Client[sdp_go.CreateTokenRequest, sdp_go.CreateTokenResponse]
+	revlinkWarmup    *connect.Client[sdp_go.RevlinkWarmupRequest, sdp_go.RevlinkWarmupResponse]
 }
 
 // GetAccount calls account.ManagementService.GetAccount.
@@ -633,6 +647,11 @@ func (c *managementServiceClient) CreateToken(ctx context.Context, req *connect.
 	return c.createToken.CallUnary(ctx, req)
 }
 
+// RevlinkWarmup calls account.ManagementService.RevlinkWarmup.
+func (c *managementServiceClient) RevlinkWarmup(ctx context.Context, req *connect.Request[sdp_go.RevlinkWarmupRequest]) (*connect.ServerStreamForClient[sdp_go.RevlinkWarmupResponse], error) {
+	return c.revlinkWarmup.CallServerStream(ctx, req)
+}
+
 // ManagementServiceHandler is an implementation of the account.ManagementService service.
 type ManagementServiceHandler interface {
 	// Get the details of the account that this user belongs to
@@ -658,6 +677,9 @@ type ManagementServiceHandler interface {
 	// control the associated private key also in order to connect to NATS as
 	// the token is not enough on its own
 	CreateToken(context.Context, *connect.Request[sdp_go.CreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error)
+	// Ensure that all reverse links are populated. This does internal debouncing
+	// so the actual logic does only run when required.
+	RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest], *connect.ServerStream[sdp_go.RevlinkWarmupResponse]) error
 }
 
 // NewManagementServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -720,6 +742,12 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 		connect.WithSchema(managementServiceCreateTokenMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	managementServiceRevlinkWarmupHandler := connect.NewServerStreamHandler(
+		ManagementServiceRevlinkWarmupProcedure,
+		svc.RevlinkWarmup,
+		connect.WithSchema(managementServiceRevlinkWarmupMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/account.ManagementService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ManagementServiceGetAccountProcedure:
@@ -740,6 +768,8 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 			managementServiceKeepaliveSourcesHandler.ServeHTTP(w, r)
 		case ManagementServiceCreateTokenProcedure:
 			managementServiceCreateTokenHandler.ServeHTTP(w, r)
+		case ManagementServiceRevlinkWarmupProcedure:
+			managementServiceRevlinkWarmupHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -783,4 +813,8 @@ func (UnimplementedManagementServiceHandler) KeepaliveSources(context.Context, *
 
 func (UnimplementedManagementServiceHandler) CreateToken(context.Context, *connect.Request[sdp_go.CreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.CreateToken is not implemented"))
+}
+
+func (UnimplementedManagementServiceHandler) RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest], *connect.ServerStream[sdp_go.RevlinkWarmupResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.RevlinkWarmup is not implemented"))
 }
