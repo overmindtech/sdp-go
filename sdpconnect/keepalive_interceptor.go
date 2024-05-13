@@ -9,6 +9,14 @@ import (
 	"github.com/overmindtech/sdp-go"
 )
 
+// KeepaliveClient is the minimal slice from ManagementServiceClient to be able
+// to run the KeepaliveSourcesInterceptor. This slicing is required to be able
+// to directly reuse the service handler without running into issues where the
+// Handler and Client methods diverge (e.g. when using `stream`)
+type KeepaliveClient interface {
+	KeepaliveSources(context.Context, *connect.Request[sdp.KeepaliveSourcesRequest]) (*connect.Response[sdp.KeepaliveSourcesResponse], error)
+}
+
 // Create a new interceptor that will ensure that sources are alive on all
 // requests. This interceptor will call `KeepaliveSources` on the management
 // service to ensure that the sources are alive. This will be done in a
@@ -18,9 +26,9 @@ import (
 // For services that actually require the sources to be alive, they can use the
 // WaitForSources function to wait for the sources to be ready. This function
 // will block until the sources are ready.
-func NewKeepaliveSourcesInterceptor(managementClient ManagementServiceClient) connect.Interceptor {
+func NewKeepaliveSourcesInterceptor(managementClient KeepaliveClient) connect.Interceptor {
 	return &KeepaliveSourcesInterceptor{
-		management: managementClient,
+		keepalive:  managementClient,
 		lastCalled: make(map[string]time.Time),
 	}
 }
@@ -46,7 +54,7 @@ type KeepaliveSourcesInterceptor struct {
 	lastCalled map[string]time.Time
 	m          sync.RWMutex
 
-	management ManagementServiceClient
+	keepalive KeepaliveClient
 }
 
 // keepaliveSourcesReadyContextKey is the context key used to determine if the
@@ -124,7 +132,7 @@ func (i *KeepaliveSourcesInterceptor) WrapStreamingHandler(next connect.Streamin
 // Actually does the work of waking the sources and attaching the channel to the
 // context. Returns a new context that has the channel attached to it
 func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.Context {
-	if i.management == nil {
+	if i.keepalive == nil {
 		return ctx
 	}
 
@@ -159,7 +167,7 @@ func (i *KeepaliveSourcesInterceptor) wakeSources(ctx context.Context) context.C
 		defer close(sourcesReady)
 
 		// Make the request to keep the source awake
-		_, err := i.management.KeepaliveSources(ctx, &connect.Request[sdp.KeepaliveSourcesRequest]{
+		_, err := i.keepalive.KeepaliveSources(ctx, &connect.Request[sdp.KeepaliveSourcesRequest]{
 			Msg: &sdp.KeepaliveSourcesRequest{
 				WaitForHealthy: true,
 			},
