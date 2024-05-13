@@ -76,6 +76,10 @@ func Dial(ctx context.Context, u string, httpClient *http.Client, handler Gatewa
 	return dialImpl(ctx, u, httpClient, handler, true)
 }
 
+// DialBatch connects to the given URL and returns a new Client. Pass nil as
+// handler if you do not need per-message callbacks. This method is intended for
+// batch processing and sets up opentelemetry propagation. Otherwise this
+// equivalent to `Dial()`
 func DialBatch(ctx context.Context, u string, httpClient *http.Client, handler GatewayMessageHandler) (*Client, error) {
 	return dialImpl(ctx, u, httpClient, handler, false)
 }
