@@ -6,7 +6,7 @@ require (
 	connectrpc.com/connect v1.16.1
 	github.com/auth0/go-jwt-middleware/v2 v2.2.1
 	github.com/getsentry/sentry-go v0.27.0
-	github.com/go-jose/go-jose/v4 v4.0.1
+	github.com/go-jose/go-jose/v4 v4.0.2
 	github.com/google/uuid v1.6.0
 	github.com/nats-io/jwt/v2 v2.5.7
 	github.com/nats-io/nats.go v1.34.1
