@@ -119,6 +119,23 @@ readLoop:
 // TODO: Expand
 // TODO: UndoExpand
 
+func (c *Client) SendLoadSnapshot(ctx context.Context, s *sdp.LoadSnapshot) error {
+	if c.Closed() {
+		return errors.New("client closed")
+	}
+
+	log.WithContext(ctx).WithField("snapshot", s).Trace("loading snapshot via websocket")
+	err := c.send(ctx, &sdp.GatewayRequest{
+		RequestType: &sdp.GatewayRequest_LoadSnapshot{
+			LoadSnapshot: s,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error sending load snapshot: %w", err)
+	}
+	return nil
+}
+
 // Sends a StoreSnapshot request on the websocket connection without waiting for
 // a response.
 func (c *Client) SendStoreSnapshot(ctx context.Context, s *sdp.StoreSnapshot) error {
@@ -182,7 +199,22 @@ func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (u
 	}
 }
 
-// TODO: LoadSnapshot
+func (c *Client) SendLoadBookmark(ctx context.Context, b *sdp.LoadBookmark) error {
+	if c.Closed() {
+		return errors.New("client closed")
+	}
+
+	log.WithContext(ctx).WithField("bookmark", b).Trace("loading bookmark via websocket")
+	err := c.send(ctx, &sdp.GatewayRequest{
+		RequestType: &sdp.GatewayRequest_LoadBookmark{
+			LoadBookmark: b,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error sending load bookmark: %w", err)
+	}
+	return nil
+}
 
 // Sends a StoreBookmark request on the websocket connection without waiting for
 // a response.
