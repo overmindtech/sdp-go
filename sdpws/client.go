@@ -155,7 +155,11 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.NewItem(ctx, item)
 			}
-			c.postRequestChan(uuid.UUID(item.Metadata.SourceQuery.UUID), msg)
+			var u uuid.UUID
+			if len(item.Metadata.SourceQuery.UUID) == 16 {
+				u = uuid.UUID(item.Metadata.SourceQuery.UUID)
+			}
+			c.postRequestChan(u, msg)
 
 		case *sdp.GatewayResponse_NewEdge:
 			edge := msg.GetNewEdge()
@@ -180,7 +184,11 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.QueryError(ctx, qe)
 			}
-			c.postRequestChan(uuid.UUID(qe.UUID), msg)
+			var u uuid.UUID
+			if len(qe.UUID) == 16 {
+				u = uuid.UUID(qe.UUID)
+			}
+			c.postRequestChan(u, msg)
 
 		case *sdp.GatewayResponse_DeleteItem:
 			item := msg.GetDeleteItem()
@@ -205,39 +213,59 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.SnapshotStoreResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			var u uuid.UUID
+			if len(result.MsgID) == 16 {
+				u = uuid.UUID(result.MsgID)
+			}
+			c.postRequestChan(u, msg)
 
 		case *sdp.GatewayResponse_SnapshotLoadResult:
 			result := msg.GetSnapshotLoadResult()
 			if c.handler != nil {
 				c.handler.SnapshotLoadResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			var u uuid.UUID
+			if len(result.MsgID) == 16 {
+				u = uuid.UUID(result.MsgID)
+			}
+			c.postRequestChan(u, msg)
 
 		case *sdp.GatewayResponse_BookmarkStoreResult:
 			result := msg.GetBookmarkStoreResult()
 			if c.handler != nil {
 				c.handler.BookmarkStoreResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			var u uuid.UUID
+			if len(result.MsgID) == 16 {
+				u = uuid.UUID(result.MsgID)
+			}
+			c.postRequestChan(u, msg)
 
 		case *sdp.GatewayResponse_BookmarkLoadResult:
 			result := msg.GetBookmarkLoadResult()
 			if c.handler != nil {
 				c.handler.BookmarkLoadResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			var u uuid.UUID
+			if len(result.MsgID) == 16 {
+				u = uuid.UUID(result.MsgID)
+			}
+			c.postRequestChan(u, msg)
 
 		case *sdp.GatewayResponse_QueryStatus:
 			qs := msg.GetQueryStatus()
 			if c.handler != nil {
 				c.handler.QueryStatus(ctx, qs)
 			}
-			c.postRequestChan(uuid.UUID(qs.UUID), msg)
+			var u uuid.UUID
+			if len(qs.UUID) == 16 {
+				u = uuid.UUID(qs.UUID)
+			}
+			c.postRequestChan(u, msg)
 
 			switch qs.Status {
 			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
-				c.finishRequestChan(uuid.UUID(qs.UUID))
+				c.finishRequestChan(u)
 			}
 
 		default:
