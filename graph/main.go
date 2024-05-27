@@ -289,6 +289,17 @@ func (g *SDPGraph) Node(id int64) graph.Node {
 	return node
 }
 
+// Gets a node from the graph by it's globally unique name
+func (g *SDPGraph) NodeByGloballyUniqueName(globallyUniqueName string) *Node {
+	node, exists := g.nodesByGUN[globallyUniqueName]
+
+	if !exists {
+		return nil
+	}
+
+	return node
+}
+
 // Nodes returns all the nodes in the graph.
 //
 // Nodes must not return nil.
