@@ -155,7 +155,10 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.NewItem(ctx, item)
 			}
-			c.postRequestChan(uuid.UUID(item.Metadata.SourceQuery.UUID), msg)
+			u, err := uuid.FromBytes(item.Metadata.SourceQuery.UUID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 		case *sdp.GatewayResponse_NewEdge:
 			edge := msg.GetNewEdge()
@@ -180,7 +183,10 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.QueryError(ctx, qe)
 			}
-			c.postRequestChan(uuid.UUID(qe.UUID), msg)
+			u, err := uuid.FromBytes(qe.UUID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 		case *sdp.GatewayResponse_DeleteItem:
 			item := msg.GetDeleteItem()
@@ -205,39 +211,54 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.SnapshotStoreResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			u, err := uuid.FromBytes(result.MsgID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 		case *sdp.GatewayResponse_SnapshotLoadResult:
 			result := msg.GetSnapshotLoadResult()
 			if c.handler != nil {
 				c.handler.SnapshotLoadResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			u, err := uuid.FromBytes(result.MsgID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 		case *sdp.GatewayResponse_BookmarkStoreResult:
 			result := msg.GetBookmarkStoreResult()
 			if c.handler != nil {
 				c.handler.BookmarkStoreResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			u, err := uuid.FromBytes(result.MsgID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 		case *sdp.GatewayResponse_BookmarkLoadResult:
 			result := msg.GetBookmarkLoadResult()
 			if c.handler != nil {
 				c.handler.BookmarkLoadResult(ctx, result)
 			}
-			c.postRequestChan(uuid.UUID(result.MsgID), msg)
+			u, err := uuid.FromBytes(result.MsgID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 		case *sdp.GatewayResponse_QueryStatus:
 			qs := msg.GetQueryStatus()
 			if c.handler != nil {
 				c.handler.QueryStatus(ctx, qs)
 			}
-			c.postRequestChan(uuid.UUID(qs.UUID), msg)
+			u, err := uuid.FromBytes(qs.UUID)
+			if err == nil {
+				c.postRequestChan(u, msg)
+			}
 
 			switch qs.Status {
 			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
-				c.finishRequestChan(uuid.UUID(qs.UUID))
+				c.finishRequestChan(u)
 			}
 
 		default:
