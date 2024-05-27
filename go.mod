@@ -18,6 +18,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.27.0
 	go.uber.org/goleak v1.3.0
 	golang.org/x/oauth2 v0.20.0
+	gonum.org/v1/gonum v0.15.0
 	google.golang.org/protobuf v1.34.1
 	nhooyr.io/websocket v1.8.11
 )
@@ -30,6 +31,7 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	go.opentelemetry.io/otel/metric v1.27.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
