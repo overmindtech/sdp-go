@@ -123,11 +123,19 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 // Kill Kills the response sender immediately. This should be used if something
 // has failed and you don't want to send a completed response
+//
+// Deprecated: Use KillWithContext(ctx) instead
 func (rs *ResponseSender) Kill() {
-	rs.killWithResponse(nil)
+	rs.killWithResponse(context.Background(), nil)
 }
 
-func (rs *ResponseSender) killWithResponse(r *Response) {
+// KillWithContext Kills the response sender immediately. This should be used if something
+// has failed and you don't want to send a completed response
+func (rs *ResponseSender) KillWithContext(ctx context.Context) {
+	rs.killWithResponse(ctx, nil)
+}
+
+func (rs *ResponseSender) killWithResponse(ctx context.Context, r *Response) {
 	// close the channel to kill the sender
 	close(rs.monitorKill)
 
@@ -137,7 +145,7 @@ func (rs *ResponseSender) killWithResponse(r *Response) {
 	if rs.connection != nil {
 		if r != nil {
 			// Send the final response
-			rs.connection.Publish(context.Background(), rs.ResponseSubject, &QueryResponse{
+			rs.connection.Publish(ctx, rs.ResponseSubject, &QueryResponse{
 				ResponseType: &QueryResponse_Response{
 					Response: r,
 				},
@@ -147,31 +155,53 @@ func (rs *ResponseSender) killWithResponse(r *Response) {
 }
 
 // Done kills the responder but sends a final completion message
+//
+// Deprecated: Use DoneWithContext(ctx) instead
 func (rs *ResponseSender) Done() {
+	rs.DoneWithContext(context.Background())
+}
+
+// DoneWithContext kills the responder but sends a final completion message
+func (rs *ResponseSender) DoneWithContext(ctx context.Context) {
 	resp := Response{
 		Responder: rs.responderName,
 		State:     ResponderState_COMPLETE,
 	}
-	rs.killWithResponse(&resp)
+	rs.killWithResponse(ctx, &resp)
 }
 
 // Error marks the request and completed with error, and sends the final error
 // response
+//
+// Deprecated: Use ErrorWithContext(ctx) instead
 func (rs *ResponseSender) Error() {
+	rs.ErrorWithContext(context.Background())
+}
+
+// ErrorWithContext marks the request and completed with error, and sends the final error
+// response
+func (rs *ResponseSender) ErrorWithContext(ctx context.Context) {
 	resp := Response{
 		Responder: rs.responderName,
 		State:     ResponderState_ERROR,
 	}
-	rs.killWithResponse(&resp)
+	rs.killWithResponse(ctx, &resp)
 }
 
 // Cancel Marks the request as CANCELLED and sends the final response
+//
+// Deprecated: Use CancelWithContext(ctx) instead
 func (rs *ResponseSender) Cancel() {
+	rs.CancelWithContext(context.Background())
+}
+
+// CancelWithContext Marks the request as CANCELLED and sends the final response
+func (rs *ResponseSender) CancelWithContext(ctx context.Context) {
 	resp := Response{
 		Responder: rs.responderName,
 		State:     ResponderState_CANCELLED,
 	}
-	rs.killWithResponse(&resp)
+	rs.killWithResponse(ctx, &resp)
 }
 
 // Responder represents the status of a responder
