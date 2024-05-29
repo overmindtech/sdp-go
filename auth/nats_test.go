@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
@@ -377,9 +378,11 @@ func ValidateNATSConnection(t *testing.T, ec sdp.EncodedConnection) {
 		t.Error(err)
 	}
 
+	ru := uuid.New()
 	err = ec.Publish(context.Background(), "test", &sdp.QueryResponse{ResponseType: &sdp.QueryResponse_Response{Response: &sdp.Response{
-		Responder: "test",
-		State:     sdp.ResponderState_COMPLETE,
+		Responder:     "test",
+		ResponderUUID: ru[:],
+		State:         sdp.ResponderState_COMPLETE,
 	}}})
 
 	if err != nil {

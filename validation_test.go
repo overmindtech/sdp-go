@@ -422,11 +422,14 @@ func newQueryError() *QueryError {
 func newResponse() *Response {
 	u := uuid.New()
 
+	ru := uuid.New()
+
 	return &Response{
-		Responder:    "foo",
-		State:        ResponderState_WORKING,
-		NextUpdateIn: durationpb.New(time.Second),
-		UUID:         u[:],
+		Responder:     "foo",
+		ResponderUUID: ru[:],
+		State:         ResponderState_WORKING,
+		NextUpdateIn:  durationpb.New(time.Second),
+		UUID:          u[:],
 	}
 }
 

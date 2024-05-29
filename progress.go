@@ -39,6 +39,7 @@ type ResponseSender struct {
 	monitorRunning   sync.WaitGroup
 	monitorKill      chan *Response // Sending to this channel will kill the response sender goroutine and publish the sent message as last msg on the subject
 	responderName    string
+	responderId      uuid.UUID
 	connection       EncodedConnection
 	responseCtx      context.Context
 }
@@ -50,7 +51,7 @@ type ResponseSender struct {
 // The user should make sure to call Done(), Error() or Cancel() once the query
 // has finished to make sure this process stops sending responses. The sender
 // will also be stopped if the context is cancelled
-func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string) {
+func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, responderName string, responderId uuid.UUID) {
 	rs.monitorKill = make(chan *Response, 1)
 	rs.responseCtx = ctx
 
@@ -65,14 +66,16 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	// Set struct values
 	rs.responderName = responderName
+	rs.responderId = responderId
 	rs.connection = ec
 
 	// Create the response before starting the goroutine since it only needs to
 	// be done once
 	resp := Response{
-		Responder:    rs.responderName,
-		State:        ResponderState_WORKING,
-		NextUpdateIn: nextUpdateIn,
+		Responder:     rs.responderName,
+		ResponderUUID: rs.responderId[:],
+		State:         ResponderState_WORKING,
+		NextUpdateIn:  nextUpdateIn,
 	}
 
 	if rs.connection != nil {
@@ -164,8 +167,9 @@ func (rs *ResponseSender) Done() {
 // DoneWithContext kills the responder but sends a final completion message
 func (rs *ResponseSender) DoneWithContext(ctx context.Context) {
 	resp := Response{
-		Responder: rs.responderName,
-		State:     ResponderState_COMPLETE,
+		Responder:     rs.responderName,
+		ResponderUUID: rs.responderId[:],
+		State:         ResponderState_COMPLETE,
 	}
 	rs.killWithResponse(ctx, &resp)
 }
@@ -182,8 +186,9 @@ func (rs *ResponseSender) Error() {
 // response
 func (rs *ResponseSender) ErrorWithContext(ctx context.Context) {
 	resp := Response{
-		Responder: rs.responderName,
-		State:     ResponderState_ERROR,
+		Responder:     rs.responderName,
+		ResponderUUID: rs.responderId[:],
+		State:         ResponderState_ERROR,
 	}
 	rs.killWithResponse(ctx, &resp)
 }
@@ -198,15 +203,17 @@ func (rs *ResponseSender) Cancel() {
 // CancelWithContext Marks the request as CANCELLED and sends the final response
 func (rs *ResponseSender) CancelWithContext(ctx context.Context) {
 	resp := Response{
-		Responder: rs.responderName,
-		State:     ResponderState_CANCELLED,
+		Responder:     rs.responderName,
+		ResponderUUID: rs.responderId[:],
+		State:         ResponderState_CANCELLED,
 	}
 	rs.killWithResponse(ctx, &resp)
 }
 
-// Responder represents the status of a responder
-type Responder struct {
+// responderStatus represents the status of a responder
+type responderStatus struct {
 	Name           string
+	ID             uuid.UUID
 	monitorContext context.Context
 	monitorCancel  context.CancelFunc
 	lastState      ResponderState
@@ -215,7 +222,7 @@ type Responder struct {
 }
 
 // CancelMonitor Cancels the running stall monitor goroutine if there is one
-func (re *Responder) CancelMonitor() {
+func (re *responderStatus) CancelMonitor() {
 	re.mutex.Lock()
 	defer re.mutex.Unlock()
 
@@ -226,7 +233,7 @@ func (re *Responder) CancelMonitor() {
 
 // SetMonitorContext Saves the context details for the monitor goroutine so that
 // it can be cancelled later, freeing up resources
-func (re *Responder) SetMonitorContext(ctx context.Context, cancel context.CancelFunc) {
+func (re *responderStatus) SetMonitorContext(ctx context.Context, cancel context.CancelFunc) {
 	re.mutex.Lock()
 	defer re.mutex.Unlock()
 
@@ -235,7 +242,7 @@ func (re *Responder) SetMonitorContext(ctx context.Context, cancel context.Cance
 }
 
 // SetState updates the state and last state time of the responder
-func (re *Responder) SetState(s ResponderState) {
+func (re *responderStatus) SetState(s ResponderState) {
 	re.mutex.Lock()
 	defer re.mutex.Unlock()
 
@@ -244,7 +251,7 @@ func (re *Responder) SetState(s ResponderState) {
 }
 
 // LastState Returns the last state response for a given responder
-func (re *Responder) LastState() ResponderState {
+func (re *responderStatus) LastState() ResponderState {
 	re.mutex.RLock()
 	defer re.mutex.RUnlock()
 
@@ -252,7 +259,7 @@ func (re *Responder) LastState() ResponderState {
 }
 
 // LastStateTime Returns the last state response for a given responder
-func (re *Responder) LastStateTime() time.Time {
+func (re *responderStatus) LastStateTime() time.Time {
 	re.mutex.RLock()
 	defer re.mutex.RUnlock()
 
@@ -273,7 +280,7 @@ type QueryProgress struct {
 	// completed
 	DrainDelay time.Duration
 
-	responders      map[string]*Responder
+	responders      map[uuid.UUID]*responderStatus
 	respondersMutex sync.RWMutex
 
 	// Channel storage for sending back to the user
@@ -307,7 +314,7 @@ func NewQueryProgress(q *Query) *QueryProgress {
 	return &QueryProgress{
 		Query:           q,
 		DrainDelay:      DefaultDrainDelay,
-		responders:      make(map[string]*Responder),
+		responders:      make(map[uuid.UUID]*responderStatus),
 		doneChan:        make(chan struct{}),
 		itemsProcessed:  new(int64),
 		errorsProcessed: new(int64),
@@ -671,14 +678,21 @@ func (qp *QueryProgress) Execute(ctx context.Context, ec EncodedConnection) ([]*
 // ProcessResponse processes an SDP Response and updates the database
 // accordingly
 func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response) {
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.String("ovm.sdp.response", protojson.Format(response)))
+
+	// do not deal with responses that do not have a responder UUID
+	ru, err := uuid.FromBytes(response.GetResponderUUID())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("response", response).Error("Error parsing responder UUID")
+		return
+	}
+
 	// Update the stored data
 	qp.respondersMutex.Lock()
 	defer qp.respondersMutex.Unlock()
 
-	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.String("ovm.sdp.response", protojson.Format(response)))
-
-	responder, exists := qp.responders[response.Responder]
+	responder, exists := qp.responders[ru]
 
 	if exists {
 		responder.CancelMonitor()
@@ -692,10 +706,11 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 		}
 	} else {
 		// If the responder is new, add it to the list
-		responder = &Responder{
+		responder = &responderStatus{
 			Name: response.GetResponder(),
+			ID:   ru,
 		}
-		qp.responders[response.Responder] = responder
+		qp.responders[ru] = responder
 	}
 
 	responder.SetState(response.State)
@@ -855,12 +870,12 @@ func (qp *QueryProgress) numResponders() int {
 
 // ResponderStates Returns the status details for all responders as a map.
 // Where the key is the name of the responder and the value is its status
-func (qp *QueryProgress) ResponderStates() map[string]ResponderState {
-	statuses := make(map[string]ResponderState)
+func (qp *QueryProgress) ResponderStates() map[uuid.UUID]ResponderState {
+	statuses := make(map[uuid.UUID]ResponderState)
 	qp.respondersMutex.RLock()
 	defer qp.respondersMutex.RUnlock()
 	for _, responder := range qp.responders {
-		statuses[responder.Name] = responder.LastState()
+		statuses[responder.ID] = responder.LastState()
 	}
 
 	return statuses
@@ -897,7 +912,7 @@ func (qp *QueryProgress) allDone() bool {
 // stalled, and a context. The context is used to allow cancellation of the
 // stall monitor from another thread in the case that another message is
 // received.
-func stallMonitor(ctx context.Context, timeout time.Duration, responder *Responder, qp *QueryProgress) {
+func stallMonitor(ctx context.Context, timeout time.Duration, responder *responderStatus, qp *QueryProgress) {
 	defer LogRecoverToReturn(ctx, "stallMonitor")
 	select {
 	case <-ctx.Done():

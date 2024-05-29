@@ -20,9 +20,9 @@ var query = Query{
 	RecursionBehaviour: &Query_RecursionBehaviour{
 		LinkDepth: 10,
 	},
-	Scope:   "test",
-	UUID:    _u[:],
-	Deadline:    timestamppb.New(time.Now().Add(10 * time.Second)),
+	Scope:    "test",
+	UUID:     _u[:],
+	Deadline: timestamppb.New(time.Now().Add(10 * time.Second)),
 }
 
 var itemAttributes = ItemAttributes{
@@ -84,9 +84,12 @@ var queryError = QueryError{
 	Scope:       "test",
 }
 
+var ru = uuid.New()
+
 var response = Response{
-	Responder: "test",
-	State:     ResponderState_WORKING,
+	Responder:     "test",
+	ResponderUUID: ru[:],
+	State:         ResponderState_WORKING,
 	NextUpdateIn: &durationpb.Duration{
 		Seconds: 10,
 		Nanos:   0,
