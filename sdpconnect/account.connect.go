@@ -99,6 +99,9 @@ const (
 	// ManagementServiceRevlinkWarmupProcedure is the fully-qualified name of the ManagementService's
 	// RevlinkWarmup RPC.
 	ManagementServiceRevlinkWarmupProcedure = "/account.ManagementService/RevlinkWarmup"
+	// ManagementServiceGetTrialEndProcedure is the fully-qualified name of the ManagementService's
+	// GetTrialEnd RPC.
+	ManagementServiceGetTrialEndProcedure = "/account.ManagementService/GetTrialEnd"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -127,6 +130,7 @@ var (
 	managementServiceKeepaliveSourcesMethodDescriptor = managementServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
 	managementServiceCreateTokenMethodDescriptor      = managementServiceServiceDescriptor.Methods().ByName("CreateToken")
 	managementServiceRevlinkWarmupMethodDescriptor    = managementServiceServiceDescriptor.Methods().ByName("RevlinkWarmup")
+	managementServiceGetTrialEndMethodDescriptor      = managementServiceServiceDescriptor.Methods().ByName("GetTrialEnd")
 )
 
 // AdminServiceClient is a client for the account.AdminService service.
@@ -545,6 +549,7 @@ type ManagementServiceClient interface {
 	// Ensure that all reverse links are populated. This does internal debouncing
 	// so the actual logic does only run when required.
 	RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest]) (*connect.ServerStreamForClient[sdp_go.RevlinkWarmupResponse], error)
+	GetTrialEnd(context.Context, *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error)
 }
 
 // NewManagementServiceClient constructs a client for the account.ManagementService service. By
@@ -617,6 +622,12 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(managementServiceRevlinkWarmupMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		getTrialEnd: connect.NewClient[sdp_go.GetTrialEndRequest, sdp_go.GetTrialEndResponse](
+			httpClient,
+			baseURL+ManagementServiceGetTrialEndProcedure,
+			connect.WithSchema(managementServiceGetTrialEndMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -632,6 +643,7 @@ type managementServiceClient struct {
 	keepaliveSources *connect.Client[sdp_go.KeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse]
 	createToken      *connect.Client[sdp_go.CreateTokenRequest, sdp_go.CreateTokenResponse]
 	revlinkWarmup    *connect.Client[sdp_go.RevlinkWarmupRequest, sdp_go.RevlinkWarmupResponse]
+	getTrialEnd      *connect.Client[sdp_go.GetTrialEndRequest, sdp_go.GetTrialEndResponse]
 }
 
 // GetAccount calls account.ManagementService.GetAccount.
@@ -684,6 +696,11 @@ func (c *managementServiceClient) RevlinkWarmup(ctx context.Context, req *connec
 	return c.revlinkWarmup.CallServerStream(ctx, req)
 }
 
+// GetTrialEnd calls account.ManagementService.GetTrialEnd.
+func (c *managementServiceClient) GetTrialEnd(ctx context.Context, req *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error) {
+	return c.getTrialEnd.CallUnary(ctx, req)
+}
+
 // ManagementServiceHandler is an implementation of the account.ManagementService service.
 type ManagementServiceHandler interface {
 	// Get the details of the account that this user belongs to
@@ -712,6 +729,7 @@ type ManagementServiceHandler interface {
 	// Ensure that all reverse links are populated. This does internal debouncing
 	// so the actual logic does only run when required.
 	RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest], *connect.ServerStream[sdp_go.RevlinkWarmupResponse]) error
+	GetTrialEnd(context.Context, *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error)
 }
 
 // NewManagementServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -780,6 +798,12 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 		connect.WithSchema(managementServiceRevlinkWarmupMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	managementServiceGetTrialEndHandler := connect.NewUnaryHandler(
+		ManagementServiceGetTrialEndProcedure,
+		svc.GetTrialEnd,
+		connect.WithSchema(managementServiceGetTrialEndMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/account.ManagementService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ManagementServiceGetAccountProcedure:
@@ -802,6 +826,8 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 			managementServiceCreateTokenHandler.ServeHTTP(w, r)
 		case ManagementServiceRevlinkWarmupProcedure:
 			managementServiceRevlinkWarmupHandler.ServeHTTP(w, r)
+		case ManagementServiceGetTrialEndProcedure:
+			managementServiceGetTrialEndHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -849,4 +875,8 @@ func (UnimplementedManagementServiceHandler) CreateToken(context.Context, *conne
 
 func (UnimplementedManagementServiceHandler) RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest], *connect.ServerStream[sdp_go.RevlinkWarmupResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.RevlinkWarmup is not implemented"))
+}
+
+func (UnimplementedManagementServiceHandler) GetTrialEnd(context.Context, *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.GetTrialEnd is not implemented"))
 }
