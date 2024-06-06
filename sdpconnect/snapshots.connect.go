@@ -48,9 +48,6 @@ const (
 	// SnapshotsServiceDeleteSnapshotProcedure is the fully-qualified name of the SnapshotsService's
 	// DeleteSnapshot RPC.
 	SnapshotsServiceDeleteSnapshotProcedure = "/snapshots.SnapshotsService/DeleteSnapshot"
-	// SnapshotsServiceGetInitialDataProcedure is the fully-qualified name of the SnapshotsService's
-	// GetInitialData RPC.
-	SnapshotsServiceGetInitialDataProcedure = "/snapshots.SnapshotsService/GetInitialData"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -61,7 +58,6 @@ var (
 	snapshotsServiceGetSnapshotMethodDescriptor    = snapshotsServiceServiceDescriptor.Methods().ByName("GetSnapshot")
 	snapshotsServiceUpdateSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("UpdateSnapshot")
 	snapshotsServiceDeleteSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("DeleteSnapshot")
-	snapshotsServiceGetInitialDataMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("GetInitialData")
 )
 
 // SnapshotsServiceClient is a client for the snapshots.SnapshotsService service.
@@ -71,8 +67,6 @@ type SnapshotsServiceClient interface {
 	GetSnapshot(context.Context, *connect.Request[sdp_go.GetSnapshotRequest]) (*connect.Response[sdp_go.GetSnapshotResponse], error)
 	UpdateSnapshot(context.Context, *connect.Request[sdp_go.UpdateSnapshotRequest]) (*connect.Response[sdp_go.UpdateSnapshotResponse], error)
 	DeleteSnapshot(context.Context, *connect.Request[sdp_go.DeleteSnapshotRequest]) (*connect.Response[sdp_go.DeleteSnapshotResponse], error)
-	// retrieve the initial data for the example change
-	GetInitialData(context.Context, *connect.Request[sdp_go.GetInitialDataRequest]) (*connect.Response[sdp_go.GetInitialDataResponse], error)
 }
 
 // NewSnapshotsServiceClient constructs a client for the snapshots.SnapshotsService service. By
@@ -115,12 +109,6 @@ func NewSnapshotsServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(snapshotsServiceDeleteSnapshotMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		getInitialData: connect.NewClient[sdp_go.GetInitialDataRequest, sdp_go.GetInitialDataResponse](
-			httpClient,
-			baseURL+SnapshotsServiceGetInitialDataProcedure,
-			connect.WithSchema(snapshotsServiceGetInitialDataMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -131,7 +119,6 @@ type snapshotsServiceClient struct {
 	getSnapshot    *connect.Client[sdp_go.GetSnapshotRequest, sdp_go.GetSnapshotResponse]
 	updateSnapshot *connect.Client[sdp_go.UpdateSnapshotRequest, sdp_go.UpdateSnapshotResponse]
 	deleteSnapshot *connect.Client[sdp_go.DeleteSnapshotRequest, sdp_go.DeleteSnapshotResponse]
-	getInitialData *connect.Client[sdp_go.GetInitialDataRequest, sdp_go.GetInitialDataResponse]
 }
 
 // ListSnapshots calls snapshots.SnapshotsService.ListSnapshots.
@@ -159,11 +146,6 @@ func (c *snapshotsServiceClient) DeleteSnapshot(ctx context.Context, req *connec
 	return c.deleteSnapshot.CallUnary(ctx, req)
 }
 
-// GetInitialData calls snapshots.SnapshotsService.GetInitialData.
-func (c *snapshotsServiceClient) GetInitialData(ctx context.Context, req *connect.Request[sdp_go.GetInitialDataRequest]) (*connect.Response[sdp_go.GetInitialDataResponse], error) {
-	return c.getInitialData.CallUnary(ctx, req)
-}
-
 // SnapshotsServiceHandler is an implementation of the snapshots.SnapshotsService service.
 type SnapshotsServiceHandler interface {
 	ListSnapshots(context.Context, *connect.Request[sdp_go.ListSnapshotsRequest]) (*connect.Response[sdp_go.ListSnapshotResponse], error)
@@ -171,8 +153,6 @@ type SnapshotsServiceHandler interface {
 	GetSnapshot(context.Context, *connect.Request[sdp_go.GetSnapshotRequest]) (*connect.Response[sdp_go.GetSnapshotResponse], error)
 	UpdateSnapshot(context.Context, *connect.Request[sdp_go.UpdateSnapshotRequest]) (*connect.Response[sdp_go.UpdateSnapshotResponse], error)
 	DeleteSnapshot(context.Context, *connect.Request[sdp_go.DeleteSnapshotRequest]) (*connect.Response[sdp_go.DeleteSnapshotResponse], error)
-	// retrieve the initial data for the example change
-	GetInitialData(context.Context, *connect.Request[sdp_go.GetInitialDataRequest]) (*connect.Response[sdp_go.GetInitialDataResponse], error)
 }
 
 // NewSnapshotsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -211,12 +191,6 @@ func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect.Han
 		connect.WithSchema(snapshotsServiceDeleteSnapshotMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	snapshotsServiceGetInitialDataHandler := connect.NewUnaryHandler(
-		SnapshotsServiceGetInitialDataProcedure,
-		svc.GetInitialData,
-		connect.WithSchema(snapshotsServiceGetInitialDataMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/snapshots.SnapshotsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SnapshotsServiceListSnapshotsProcedure:
@@ -229,8 +203,6 @@ func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect.Han
 			snapshotsServiceUpdateSnapshotHandler.ServeHTTP(w, r)
 		case SnapshotsServiceDeleteSnapshotProcedure:
 			snapshotsServiceDeleteSnapshotHandler.ServeHTTP(w, r)
-		case SnapshotsServiceGetInitialDataProcedure:
-			snapshotsServiceGetInitialDataHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -258,8 +230,4 @@ func (UnimplementedSnapshotsServiceHandler) UpdateSnapshot(context.Context, *con
 
 func (UnimplementedSnapshotsServiceHandler) DeleteSnapshot(context.Context, *connect.Request[sdp_go.DeleteSnapshotRequest]) (*connect.Response[sdp_go.DeleteSnapshotResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("snapshots.SnapshotsService.DeleteSnapshot is not implemented"))
-}
-
-func (UnimplementedSnapshotsServiceHandler) GetInitialData(context.Context, *connect.Request[sdp_go.GetInitialDataRequest]) (*connect.Response[sdp_go.GetInitialDataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("snapshots.SnapshotsService.GetInitialData is not implemented"))
 }
