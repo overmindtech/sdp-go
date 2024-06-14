@@ -9,7 +9,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.0.2
 	github.com/google/uuid v1.6.0
 	github.com/nats-io/jwt/v2 v2.5.7
-	github.com/nats-io/nats.go v1.35.0
+	github.com/nats-io/nats.go v1.36.0
 	github.com/nats-io/nkeys v0.4.7
 	github.com/sirupsen/logrus v1.9.3
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0
