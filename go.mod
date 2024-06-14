@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	connectrpc.com/connect v1.16.2
 	github.com/auth0/go-jwt-middleware/v2 v2.2.1
-	github.com/getsentry/sentry-go v0.28.0
+	github.com/getsentry/sentry-go v0.28.1
 	github.com/go-jose/go-jose/v4 v4.0.2
 	github.com/google/uuid v1.6.0
 	github.com/nats-io/jwt/v2 v2.5.7
