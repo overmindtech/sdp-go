@@ -21,8 +21,8 @@ import (
 const _ = connect.IsAtLeastVersion1_13_0
 
 const (
-	// ConfigServiceName is the fully-qualified name of the ConfigService service.
-	ConfigServiceName = "config.ConfigService"
+	// ConfigurationServiceName is the fully-qualified name of the ConfigurationService service.
+	ConfigurationServiceName = "config.ConfigurationService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -33,115 +33,115 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ConfigServiceGetAccountConfigProcedure is the fully-qualified name of the ConfigService's
-	// GetAccountConfig RPC.
-	ConfigServiceGetAccountConfigProcedure = "/config.ConfigService/GetAccountConfig"
-	// ConfigServiceUpdateAccountConfigProcedure is the fully-qualified name of the ConfigService's
-	// UpdateAccountConfig RPC.
-	ConfigServiceUpdateAccountConfigProcedure = "/config.ConfigService/UpdateAccountConfig"
+	// ConfigurationServiceGetAccountConfigProcedure is the fully-qualified name of the
+	// ConfigurationService's GetAccountConfig RPC.
+	ConfigurationServiceGetAccountConfigProcedure = "/config.ConfigurationService/GetAccountConfig"
+	// ConfigurationServiceUpdateAccountConfigProcedure is the fully-qualified name of the
+	// ConfigurationService's UpdateAccountConfig RPC.
+	ConfigurationServiceUpdateAccountConfigProcedure = "/config.ConfigurationService/UpdateAccountConfig"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	configServiceServiceDescriptor                   = sdp_go.File_config_proto.Services().ByName("ConfigService")
-	configServiceGetAccountConfigMethodDescriptor    = configServiceServiceDescriptor.Methods().ByName("GetAccountConfig")
-	configServiceUpdateAccountConfigMethodDescriptor = configServiceServiceDescriptor.Methods().ByName("UpdateAccountConfig")
+	configurationServiceServiceDescriptor                   = sdp_go.File_config_proto.Services().ByName("ConfigurationService")
+	configurationServiceGetAccountConfigMethodDescriptor    = configurationServiceServiceDescriptor.Methods().ByName("GetAccountConfig")
+	configurationServiceUpdateAccountConfigMethodDescriptor = configurationServiceServiceDescriptor.Methods().ByName("UpdateAccountConfig")
 )
 
-// ConfigServiceClient is a client for the config.ConfigService service.
-type ConfigServiceClient interface {
+// ConfigurationServiceClient is a client for the config.ConfigurationService service.
+type ConfigurationServiceClient interface {
 	// Get the account config for the user's account
 	GetAccountConfig(context.Context, *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error)
 	// Update the account config for the user's account
 	UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error)
 }
 
-// NewConfigServiceClient constructs a client for the config.ConfigService service. By default, it
-// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
+// NewConfigurationServiceClient constructs a client for the config.ConfigurationService service. By
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewConfigServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConfigServiceClient {
+func NewConfigurationServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConfigurationServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	return &configServiceClient{
+	return &configurationServiceClient{
 		getAccountConfig: connect.NewClient[sdp_go.GetAccountConfigRequest, sdp_go.GetAccountConfigResponse](
 			httpClient,
-			baseURL+ConfigServiceGetAccountConfigProcedure,
-			connect.WithSchema(configServiceGetAccountConfigMethodDescriptor),
+			baseURL+ConfigurationServiceGetAccountConfigProcedure,
+			connect.WithSchema(configurationServiceGetAccountConfigMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 		updateAccountConfig: connect.NewClient[sdp_go.UpdateAccountConfigRequest, sdp_go.UpdateAccountConfigResponse](
 			httpClient,
-			baseURL+ConfigServiceUpdateAccountConfigProcedure,
-			connect.WithSchema(configServiceUpdateAccountConfigMethodDescriptor),
+			baseURL+ConfigurationServiceUpdateAccountConfigProcedure,
+			connect.WithSchema(configurationServiceUpdateAccountConfigMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
-// configServiceClient implements ConfigServiceClient.
-type configServiceClient struct {
+// configurationServiceClient implements ConfigurationServiceClient.
+type configurationServiceClient struct {
 	getAccountConfig    *connect.Client[sdp_go.GetAccountConfigRequest, sdp_go.GetAccountConfigResponse]
 	updateAccountConfig *connect.Client[sdp_go.UpdateAccountConfigRequest, sdp_go.UpdateAccountConfigResponse]
 }
 
-// GetAccountConfig calls config.ConfigService.GetAccountConfig.
-func (c *configServiceClient) GetAccountConfig(ctx context.Context, req *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error) {
+// GetAccountConfig calls config.ConfigurationService.GetAccountConfig.
+func (c *configurationServiceClient) GetAccountConfig(ctx context.Context, req *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error) {
 	return c.getAccountConfig.CallUnary(ctx, req)
 }
 
-// UpdateAccountConfig calls config.ConfigService.UpdateAccountConfig.
-func (c *configServiceClient) UpdateAccountConfig(ctx context.Context, req *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error) {
+// UpdateAccountConfig calls config.ConfigurationService.UpdateAccountConfig.
+func (c *configurationServiceClient) UpdateAccountConfig(ctx context.Context, req *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error) {
 	return c.updateAccountConfig.CallUnary(ctx, req)
 }
 
-// ConfigServiceHandler is an implementation of the config.ConfigService service.
-type ConfigServiceHandler interface {
+// ConfigurationServiceHandler is an implementation of the config.ConfigurationService service.
+type ConfigurationServiceHandler interface {
 	// Get the account config for the user's account
 	GetAccountConfig(context.Context, *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error)
 	// Update the account config for the user's account
 	UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error)
 }
 
-// NewConfigServiceHandler builds an HTTP handler from the service implementation. It returns the
-// path on which to mount the handler and the handler itself.
+// NewConfigurationServiceHandler builds an HTTP handler from the service implementation. It returns
+// the path on which to mount the handler and the handler itself.
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewConfigServiceHandler(svc ConfigServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	configServiceGetAccountConfigHandler := connect.NewUnaryHandler(
-		ConfigServiceGetAccountConfigProcedure,
+func NewConfigurationServiceHandler(svc ConfigurationServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	configurationServiceGetAccountConfigHandler := connect.NewUnaryHandler(
+		ConfigurationServiceGetAccountConfigProcedure,
 		svc.GetAccountConfig,
-		connect.WithSchema(configServiceGetAccountConfigMethodDescriptor),
+		connect.WithSchema(configurationServiceGetAccountConfigMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	configServiceUpdateAccountConfigHandler := connect.NewUnaryHandler(
-		ConfigServiceUpdateAccountConfigProcedure,
+	configurationServiceUpdateAccountConfigHandler := connect.NewUnaryHandler(
+		ConfigurationServiceUpdateAccountConfigProcedure,
 		svc.UpdateAccountConfig,
-		connect.WithSchema(configServiceUpdateAccountConfigMethodDescriptor),
+		connect.WithSchema(configurationServiceUpdateAccountConfigMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/config.ConfigService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/config.ConfigurationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case ConfigServiceGetAccountConfigProcedure:
-			configServiceGetAccountConfigHandler.ServeHTTP(w, r)
-		case ConfigServiceUpdateAccountConfigProcedure:
-			configServiceUpdateAccountConfigHandler.ServeHTTP(w, r)
+		case ConfigurationServiceGetAccountConfigProcedure:
+			configurationServiceGetAccountConfigHandler.ServeHTTP(w, r)
+		case ConfigurationServiceUpdateAccountConfigProcedure:
+			configurationServiceUpdateAccountConfigHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
 }
 
-// UnimplementedConfigServiceHandler returns CodeUnimplemented from all methods.
-type UnimplementedConfigServiceHandler struct{}
+// UnimplementedConfigurationServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedConfigurationServiceHandler struct{}
 
-func (UnimplementedConfigServiceHandler) GetAccountConfig(context.Context, *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigService.GetAccountConfig is not implemented"))
+func (UnimplementedConfigurationServiceHandler) GetAccountConfig(context.Context, *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigurationService.GetAccountConfig is not implemented"))
 }
 
-func (UnimplementedConfigServiceHandler) UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigService.UpdateAccountConfig is not implemented"))
+func (UnimplementedConfigurationServiceHandler) UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigurationService.UpdateAccountConfig is not implemented"))
 }
