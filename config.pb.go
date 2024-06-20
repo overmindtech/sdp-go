@@ -20,16 +20,24 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GetConfigRequest struct {
+// The config that is used when calculating the blast radius for a change, this
+// does not affect manually requested blast radii vie the "Explore" view or the
+// API
+type BlastRadiusConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// The maximum number of items that can be returned in a single blast radius
+	// request. Once a request has hit this limit, all currently running
+	// requests will be cancelled and the blast radius returned as-is
+	MaxItems int32 `protobuf:"varint,1,opt,name=maxItems,proto3" json:"maxItems,omitempty"`
+	// How deeply to link when calculating the blast radius for a change
+	LinkDepth int32 `protobuf:"varint,2,opt,name=linkDepth,proto3" json:"linkDepth,omitempty"`
 }
 
-func (x *GetConfigRequest) Reset() {
-	*x = GetConfigRequest{}
+func (x *BlastRadiusConfig) Reset() {
+	*x = BlastRadiusConfig{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_config_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +45,13 @@ func (x *GetConfigRequest) Reset() {
 	}
 }
 
-func (x *GetConfigRequest) String() string {
+func (x *BlastRadiusConfig) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetConfigRequest) ProtoMessage() {}
+func (*BlastRadiusConfig) ProtoMessage() {}
 
-func (x *GetConfigRequest) ProtoReflect() protoreflect.Message {
+func (x *BlastRadiusConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_config_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,28 +63,36 @@ func (x *GetConfigRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetConfigRequest.ProtoReflect.Descriptor instead.
-func (*GetConfigRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use BlastRadiusConfig.ProtoReflect.Descriptor instead.
+func (*BlastRadiusConfig) Descriptor() ([]byte, []int) {
 	return file_config_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetConfigRequest) GetKey() string {
+func (x *BlastRadiusConfig) GetMaxItems() int32 {
 	if x != nil {
-		return x.Key
+		return x.MaxItems
 	}
-	return ""
+	return 0
 }
 
-type GetConfigResponse struct {
+func (x *BlastRadiusConfig) GetLinkDepth() int32 {
+	if x != nil {
+		return x.LinkDepth
+	}
+	return 0
+}
+
+type AccountConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Value string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	// The blast radius config for this account
+	BlastRadius *BlastRadiusConfig `protobuf:"bytes,1,opt,name=blastRadius,proto3" json:"blastRadius,omitempty"`
 }
 
-func (x *GetConfigResponse) Reset() {
-	*x = GetConfigResponse{}
+func (x *AccountConfig) Reset() {
+	*x = AccountConfig{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_config_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -84,13 +100,13 @@ func (x *GetConfigResponse) Reset() {
 	}
 }
 
-func (x *GetConfigResponse) String() string {
+func (x *AccountConfig) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetConfigResponse) ProtoMessage() {}
+func (*AccountConfig) ProtoMessage() {}
 
-func (x *GetConfigResponse) ProtoReflect() protoreflect.Message {
+func (x *AccountConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_config_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,29 +118,26 @@ func (x *GetConfigResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetConfigResponse.ProtoReflect.Descriptor instead.
-func (*GetConfigResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AccountConfig.ProtoReflect.Descriptor instead.
+func (*AccountConfig) Descriptor() ([]byte, []int) {
 	return file_config_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetConfigResponse) GetValue() string {
+func (x *AccountConfig) GetBlastRadius() *BlastRadiusConfig {
 	if x != nil {
-		return x.Value
+		return x.BlastRadius
 	}
-	return ""
+	return nil
 }
 
-type SetConfigRequest struct {
+type GetAccountConfigRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
-func (x *SetConfigRequest) Reset() {
-	*x = SetConfigRequest{}
+func (x *GetAccountConfigRequest) Reset() {
+	*x = GetAccountConfigRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_config_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -132,13 +145,13 @@ func (x *SetConfigRequest) Reset() {
 	}
 }
 
-func (x *SetConfigRequest) String() string {
+func (x *GetAccountConfigRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SetConfigRequest) ProtoMessage() {}
+func (*GetAccountConfigRequest) ProtoMessage() {}
 
-func (x *SetConfigRequest) ProtoReflect() protoreflect.Message {
+func (x *GetAccountConfigRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_config_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -150,33 +163,21 @@ func (x *SetConfigRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetConfigRequest.ProtoReflect.Descriptor instead.
-func (*SetConfigRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetAccountConfigRequest.ProtoReflect.Descriptor instead.
+func (*GetAccountConfigRequest) Descriptor() ([]byte, []int) {
 	return file_config_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SetConfigRequest) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-func (x *SetConfigRequest) GetValue() string {
-	if x != nil {
-		return x.Value
-	}
-	return ""
-}
-
-type SetConfigResponse struct {
+type GetAccountConfigResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Config *AccountConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 }
 
-func (x *SetConfigResponse) Reset() {
-	*x = SetConfigResponse{}
+func (x *GetAccountConfigResponse) Reset() {
+	*x = GetAccountConfigResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_config_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,13 +185,13 @@ func (x *SetConfigResponse) Reset() {
 	}
 }
 
-func (x *SetConfigResponse) String() string {
+func (x *GetAccountConfigResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SetConfigResponse) ProtoMessage() {}
+func (*GetAccountConfigResponse) ProtoMessage() {}
 
-func (x *SetConfigResponse) ProtoReflect() protoreflect.Message {
+func (x *GetAccountConfigResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_config_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -202,38 +203,159 @@ func (x *SetConfigResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetConfigResponse.ProtoReflect.Descriptor instead.
-func (*SetConfigResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetAccountConfigResponse.ProtoReflect.Descriptor instead.
+func (*GetAccountConfigResponse) Descriptor() ([]byte, []int) {
 	return file_config_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetAccountConfigResponse) GetConfig() *AccountConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+// Updates the account config for the user's account.
+type UpdateAccountConfigRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Config *AccountConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+}
+
+func (x *UpdateAccountConfigRequest) Reset() {
+	*x = UpdateAccountConfigRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_config_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateAccountConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateAccountConfigRequest) ProtoMessage() {}
+
+func (x *UpdateAccountConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_config_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateAccountConfigRequest.ProtoReflect.Descriptor instead.
+func (*UpdateAccountConfigRequest) Descriptor() ([]byte, []int) {
+	return file_config_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateAccountConfigRequest) GetConfig() *AccountConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+type UpdateAccountConfigResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Config *AccountConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+}
+
+func (x *UpdateAccountConfigResponse) Reset() {
+	*x = UpdateAccountConfigResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_config_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UpdateAccountConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateAccountConfigResponse) ProtoMessage() {}
+
+func (x *UpdateAccountConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_config_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateAccountConfigResponse.ProtoReflect.Descriptor instead.
+func (*UpdateAccountConfigResponse) Descriptor() ([]byte, []int) {
+	return file_config_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpdateAccountConfigResponse) GetConfig() *AccountConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
 }
 
 var File_config_proto protoreflect.FileDescriptor
 
 var file_config_proto_rawDesc = []byte{
-	0x0a, 0x0c, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x03,
-	0x63, 0x6c, 0x69, 0x22, 0x24, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x22, 0x29, 0x0a, 0x11, 0x47, 0x65, 0x74,
-	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14,
-	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76,
-	0x61, 0x6c, 0x75, 0x65, 0x22, 0x3a, 0x0a, 0x10, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
-	0x22, 0x13, 0x0a, 0x11, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x8b, 0x01, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3c, 0x0a, 0x09, 0x47, 0x65, 0x74, 0x43, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x12, 0x15, 0x2e, 0x63, 0x6c, 0x69, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x63, 0x6c,
-	0x69, 0x2e, 0x47, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3c, 0x0a, 0x09, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x12, 0x15, 0x2e, 0x63, 0x6c, 0x69, 0x2e, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66,
-	0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x63, 0x6c, 0x69, 0x2e,
-	0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x42, 0x24, 0x5a, 0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x6f, 0x76, 0x65, 0x72, 0x6d, 0x69, 0x6e, 0x64, 0x74, 0x65, 0x63, 0x68, 0x2f, 0x73,
-	0x64, 0x70, 0x2d, 0x67, 0x6f, 0x3b, 0x73, 0x64, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x0a, 0x0c, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x06,
+	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x4d, 0x0a, 0x11, 0x42, 0x6c, 0x61, 0x73, 0x74, 0x52,
+	0x61, 0x64, 0x69, 0x75, 0x73, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x1a, 0x0a, 0x08, 0x6d,
+	0x61, 0x78, 0x49, 0x74, 0x65, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x6d,
+	0x61, 0x78, 0x49, 0x74, 0x65, 0x6d, 0x73, 0x12, 0x1c, 0x0a, 0x09, 0x6c, 0x69, 0x6e, 0x6b, 0x44,
+	0x65, 0x70, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x09, 0x6c, 0x69, 0x6e, 0x6b,
+	0x44, 0x65, 0x70, 0x74, 0x68, 0x22, 0x4c, 0x0a, 0x0d, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x3b, 0x0a, 0x0b, 0x62, 0x6c, 0x61, 0x73, 0x74, 0x52,
+	0x61, 0x64, 0x69, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x2e, 0x42, 0x6c, 0x61, 0x73, 0x74, 0x52, 0x61, 0x64, 0x69, 0x75, 0x73,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x0b, 0x62, 0x6c, 0x61, 0x73, 0x74, 0x52, 0x61, 0x64,
+	0x69, 0x75, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x49,
+	0x0a, 0x18, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66,
+	0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2d, 0x0a, 0x06, 0x63, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x63, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x52, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x4b, 0x0a, 0x1a, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2d, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x2e, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x06,
+	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x22, 0x4c, 0x0a, 0x1b, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2d, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x41,
+	0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x06, 0x63, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x32, 0xc6, 0x01, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x55, 0x0a, 0x10, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x1f, 0x2e, 0x63, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x63, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5e, 0x0a,
+	0x13, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x12, 0x22, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x24, 0x5a,
+	0x22, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6f, 0x76, 0x65, 0x72,
+	0x6d, 0x69, 0x6e, 0x64, 0x74, 0x65, 0x63, 0x68, 0x2f, 0x73, 0x64, 0x70, 0x2d, 0x67, 0x6f, 0x3b,
+	0x73, 0x64, 0x70, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -248,23 +370,29 @@ func file_config_proto_rawDescGZIP() []byte {
 	return file_config_proto_rawDescData
 }
 
-var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_config_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_config_proto_goTypes = []any{
-	(*GetConfigRequest)(nil),  // 0: cli.GetConfigRequest
-	(*GetConfigResponse)(nil), // 1: cli.GetConfigResponse
-	(*SetConfigRequest)(nil),  // 2: cli.SetConfigRequest
-	(*SetConfigResponse)(nil), // 3: cli.SetConfigResponse
+	(*BlastRadiusConfig)(nil),           // 0: config.BlastRadiusConfig
+	(*AccountConfig)(nil),               // 1: config.AccountConfig
+	(*GetAccountConfigRequest)(nil),     // 2: config.GetAccountConfigRequest
+	(*GetAccountConfigResponse)(nil),    // 3: config.GetAccountConfigResponse
+	(*UpdateAccountConfigRequest)(nil),  // 4: config.UpdateAccountConfigRequest
+	(*UpdateAccountConfigResponse)(nil), // 5: config.UpdateAccountConfigResponse
 }
 var file_config_proto_depIdxs = []int32{
-	0, // 0: cli.ConfigService.GetConfig:input_type -> cli.GetConfigRequest
-	2, // 1: cli.ConfigService.SetConfig:input_type -> cli.SetConfigRequest
-	1, // 2: cli.ConfigService.GetConfig:output_type -> cli.GetConfigResponse
-	3, // 3: cli.ConfigService.SetConfig:output_type -> cli.SetConfigResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: config.AccountConfig.blastRadius:type_name -> config.BlastRadiusConfig
+	1, // 1: config.GetAccountConfigResponse.config:type_name -> config.AccountConfig
+	1, // 2: config.UpdateAccountConfigRequest.config:type_name -> config.AccountConfig
+	1, // 3: config.UpdateAccountConfigResponse.config:type_name -> config.AccountConfig
+	2, // 4: config.ConfigService.GetAccountConfig:input_type -> config.GetAccountConfigRequest
+	4, // 5: config.ConfigService.UpdateAccountConfig:input_type -> config.UpdateAccountConfigRequest
+	3, // 6: config.ConfigService.GetAccountConfig:output_type -> config.GetAccountConfigResponse
+	5, // 7: config.ConfigService.UpdateAccountConfig:output_type -> config.UpdateAccountConfigResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_config_proto_init() }
@@ -274,7 +402,7 @@ func file_config_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_config_proto_msgTypes[0].Exporter = func(v any, i int) any {
-			switch v := v.(*GetConfigRequest); i {
+			switch v := v.(*BlastRadiusConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -286,7 +414,7 @@ func file_config_proto_init() {
 			}
 		}
 		file_config_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*GetConfigResponse); i {
+			switch v := v.(*AccountConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -298,7 +426,7 @@ func file_config_proto_init() {
 			}
 		}
 		file_config_proto_msgTypes[2].Exporter = func(v any, i int) any {
-			switch v := v.(*SetConfigRequest); i {
+			switch v := v.(*GetAccountConfigRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -310,7 +438,31 @@ func file_config_proto_init() {
 			}
 		}
 		file_config_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*SetConfigResponse); i {
+			switch v := v.(*GetAccountConfigResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_config_proto_msgTypes[4].Exporter = func(v any, i int) any {
+			switch v := v.(*UpdateAccountConfigRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_config_proto_msgTypes[5].Exporter = func(v any, i int) any {
+			switch v := v.(*UpdateAccountConfigResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -328,7 +480,7 @@ func file_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_config_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
