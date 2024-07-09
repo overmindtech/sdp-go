@@ -247,7 +247,7 @@ func TestCustomTransforms(t *testing.T) {
 		attributes, err := ToAttributesCustom(data, true, TransformMap{
 			reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
 				// Remove it
-				return nil
+				return "REDACTED"
 			},
 		})
 
@@ -267,8 +267,10 @@ func TestCustomTransforms(t *testing.T) {
 			t.Fatalf("Expected user to be a map, got %T", user)
 		}
 
-		if _, ok := userMap["password"]; ok {
-			t.Error("Expected password to be removed")
+		pass, _ := userMap["password"]
+
+		if pass != "REDACTED" {
+			t.Errorf("Expected password to be REDACTED, got %v", pass)
 		}
 	})
 

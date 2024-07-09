@@ -382,7 +382,7 @@ func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
 //	TransformMap{
 //		reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
 //			// Remove it
-//			return nil
+//			return "REDACTED"
 //		},
 //	}
 //
