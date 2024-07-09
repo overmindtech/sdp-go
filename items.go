@@ -382,7 +382,7 @@ func (x *UndoExpand) GetUUIDParsed() *uuid.UUID {
 //	TransformMap{
 //		reflect.TypeOf(Secret{}): func(i interface{}) interface{} {
 //			// Remove it
-//			return nil
+//			return "REDACTED"
 //		},
 //	}
 //
@@ -423,18 +423,7 @@ func toAttributes(m map[string]interface{}, sort bool, customTransforms Transfor
 
 	// Loop over the map
 	for k, v := range m {
-		if v == nil {
-			// If the value is nil then ignore
-			continue
-		}
-
 		sanitizedValue := sanitizeInterface(v, sort, customTransforms)
-
-		if sanitizedValue == nil {
-			// Don't include nil values
-			continue
-		}
-
 		structValue, err := structpb.NewValue(sanitizedValue)
 
 		if err != nil {
@@ -593,13 +582,8 @@ func sanitizeInterface(i interface{}, sortArrays bool, customTransforms Transfor
 			stringKey := fmt.Sprint(mapKey.Interface())
 
 			// Convert the value to a compatible interface
-			zeroValueInterface := reflect.Zero(v.MapIndex(mapKey).Type()).Interface()
 			value := sanitizeInterface(v.MapIndex(mapKey).Interface(), sortArrays, customTransforms)
-
-			// Only use the item if it isn't zero
-			if !reflect.DeepEqual(value, zeroValueInterface) {
-				returnMap[stringKey] = value
-			}
+			returnMap[stringKey] = value
 		}
 
 		return returnMap
