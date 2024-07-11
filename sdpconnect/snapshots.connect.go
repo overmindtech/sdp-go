@@ -48,16 +48,20 @@ const (
 	// SnapshotsServiceDeleteSnapshotProcedure is the fully-qualified name of the SnapshotsService's
 	// DeleteSnapshot RPC.
 	SnapshotsServiceDeleteSnapshotProcedure = "/snapshots.SnapshotsService/DeleteSnapshot"
+	// SnapshotsServiceListSnapshotByGUNProcedure is the fully-qualified name of the SnapshotsService's
+	// ListSnapshotByGUN RPC.
+	SnapshotsServiceListSnapshotByGUNProcedure = "/snapshots.SnapshotsService/ListSnapshotByGUN"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	snapshotsServiceServiceDescriptor              = sdp_go.File_snapshots_proto.Services().ByName("SnapshotsService")
-	snapshotsServiceListSnapshotsMethodDescriptor  = snapshotsServiceServiceDescriptor.Methods().ByName("ListSnapshots")
-	snapshotsServiceCreateSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("CreateSnapshot")
-	snapshotsServiceGetSnapshotMethodDescriptor    = snapshotsServiceServiceDescriptor.Methods().ByName("GetSnapshot")
-	snapshotsServiceUpdateSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("UpdateSnapshot")
-	snapshotsServiceDeleteSnapshotMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("DeleteSnapshot")
+	snapshotsServiceServiceDescriptor                 = sdp_go.File_snapshots_proto.Services().ByName("SnapshotsService")
+	snapshotsServiceListSnapshotsMethodDescriptor     = snapshotsServiceServiceDescriptor.Methods().ByName("ListSnapshots")
+	snapshotsServiceCreateSnapshotMethodDescriptor    = snapshotsServiceServiceDescriptor.Methods().ByName("CreateSnapshot")
+	snapshotsServiceGetSnapshotMethodDescriptor       = snapshotsServiceServiceDescriptor.Methods().ByName("GetSnapshot")
+	snapshotsServiceUpdateSnapshotMethodDescriptor    = snapshotsServiceServiceDescriptor.Methods().ByName("UpdateSnapshot")
+	snapshotsServiceDeleteSnapshotMethodDescriptor    = snapshotsServiceServiceDescriptor.Methods().ByName("DeleteSnapshot")
+	snapshotsServiceListSnapshotByGUNMethodDescriptor = snapshotsServiceServiceDescriptor.Methods().ByName("ListSnapshotByGUN")
 )
 
 // SnapshotsServiceClient is a client for the snapshots.SnapshotsService service.
@@ -67,6 +71,7 @@ type SnapshotsServiceClient interface {
 	GetSnapshot(context.Context, *connect.Request[sdp_go.GetSnapshotRequest]) (*connect.Response[sdp_go.GetSnapshotResponse], error)
 	UpdateSnapshot(context.Context, *connect.Request[sdp_go.UpdateSnapshotRequest]) (*connect.Response[sdp_go.UpdateSnapshotResponse], error)
 	DeleteSnapshot(context.Context, *connect.Request[sdp_go.DeleteSnapshotRequest]) (*connect.Response[sdp_go.DeleteSnapshotResponse], error)
+	ListSnapshotByGUN(context.Context, *connect.Request[sdp_go.ListSnapshotsByGUNRequest]) (*connect.Response[sdp_go.ListSnapshotsByGUNResponse], error)
 }
 
 // NewSnapshotsServiceClient constructs a client for the snapshots.SnapshotsService service. By
@@ -109,16 +114,23 @@ func NewSnapshotsServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(snapshotsServiceDeleteSnapshotMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		listSnapshotByGUN: connect.NewClient[sdp_go.ListSnapshotsByGUNRequest, sdp_go.ListSnapshotsByGUNResponse](
+			httpClient,
+			baseURL+SnapshotsServiceListSnapshotByGUNProcedure,
+			connect.WithSchema(snapshotsServiceListSnapshotByGUNMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // snapshotsServiceClient implements SnapshotsServiceClient.
 type snapshotsServiceClient struct {
-	listSnapshots  *connect.Client[sdp_go.ListSnapshotsRequest, sdp_go.ListSnapshotResponse]
-	createSnapshot *connect.Client[sdp_go.CreateSnapshotRequest, sdp_go.CreateSnapshotResponse]
-	getSnapshot    *connect.Client[sdp_go.GetSnapshotRequest, sdp_go.GetSnapshotResponse]
-	updateSnapshot *connect.Client[sdp_go.UpdateSnapshotRequest, sdp_go.UpdateSnapshotResponse]
-	deleteSnapshot *connect.Client[sdp_go.DeleteSnapshotRequest, sdp_go.DeleteSnapshotResponse]
+	listSnapshots     *connect.Client[sdp_go.ListSnapshotsRequest, sdp_go.ListSnapshotResponse]
+	createSnapshot    *connect.Client[sdp_go.CreateSnapshotRequest, sdp_go.CreateSnapshotResponse]
+	getSnapshot       *connect.Client[sdp_go.GetSnapshotRequest, sdp_go.GetSnapshotResponse]
+	updateSnapshot    *connect.Client[sdp_go.UpdateSnapshotRequest, sdp_go.UpdateSnapshotResponse]
+	deleteSnapshot    *connect.Client[sdp_go.DeleteSnapshotRequest, sdp_go.DeleteSnapshotResponse]
+	listSnapshotByGUN *connect.Client[sdp_go.ListSnapshotsByGUNRequest, sdp_go.ListSnapshotsByGUNResponse]
 }
 
 // ListSnapshots calls snapshots.SnapshotsService.ListSnapshots.
@@ -146,6 +158,11 @@ func (c *snapshotsServiceClient) DeleteSnapshot(ctx context.Context, req *connec
 	return c.deleteSnapshot.CallUnary(ctx, req)
 }
 
+// ListSnapshotByGUN calls snapshots.SnapshotsService.ListSnapshotByGUN.
+func (c *snapshotsServiceClient) ListSnapshotByGUN(ctx context.Context, req *connect.Request[sdp_go.ListSnapshotsByGUNRequest]) (*connect.Response[sdp_go.ListSnapshotsByGUNResponse], error) {
+	return c.listSnapshotByGUN.CallUnary(ctx, req)
+}
+
 // SnapshotsServiceHandler is an implementation of the snapshots.SnapshotsService service.
 type SnapshotsServiceHandler interface {
 	ListSnapshots(context.Context, *connect.Request[sdp_go.ListSnapshotsRequest]) (*connect.Response[sdp_go.ListSnapshotResponse], error)
@@ -153,6 +170,7 @@ type SnapshotsServiceHandler interface {
 	GetSnapshot(context.Context, *connect.Request[sdp_go.GetSnapshotRequest]) (*connect.Response[sdp_go.GetSnapshotResponse], error)
 	UpdateSnapshot(context.Context, *connect.Request[sdp_go.UpdateSnapshotRequest]) (*connect.Response[sdp_go.UpdateSnapshotResponse], error)
 	DeleteSnapshot(context.Context, *connect.Request[sdp_go.DeleteSnapshotRequest]) (*connect.Response[sdp_go.DeleteSnapshotResponse], error)
+	ListSnapshotByGUN(context.Context, *connect.Request[sdp_go.ListSnapshotsByGUNRequest]) (*connect.Response[sdp_go.ListSnapshotsByGUNResponse], error)
 }
 
 // NewSnapshotsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -191,6 +209,12 @@ func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect.Han
 		connect.WithSchema(snapshotsServiceDeleteSnapshotMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	snapshotsServiceListSnapshotByGUNHandler := connect.NewUnaryHandler(
+		SnapshotsServiceListSnapshotByGUNProcedure,
+		svc.ListSnapshotByGUN,
+		connect.WithSchema(snapshotsServiceListSnapshotByGUNMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/snapshots.SnapshotsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SnapshotsServiceListSnapshotsProcedure:
@@ -203,6 +227,8 @@ func NewSnapshotsServiceHandler(svc SnapshotsServiceHandler, opts ...connect.Han
 			snapshotsServiceUpdateSnapshotHandler.ServeHTTP(w, r)
 		case SnapshotsServiceDeleteSnapshotProcedure:
 			snapshotsServiceDeleteSnapshotHandler.ServeHTTP(w, r)
+		case SnapshotsServiceListSnapshotByGUNProcedure:
+			snapshotsServiceListSnapshotByGUNHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -230,4 +256,8 @@ func (UnimplementedSnapshotsServiceHandler) UpdateSnapshot(context.Context, *con
 
 func (UnimplementedSnapshotsServiceHandler) DeleteSnapshot(context.Context, *connect.Request[sdp_go.DeleteSnapshotRequest]) (*connect.Response[sdp_go.DeleteSnapshotResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("snapshots.SnapshotsService.DeleteSnapshot is not implemented"))
+}
+
+func (UnimplementedSnapshotsServiceHandler) ListSnapshotByGUN(context.Context, *connect.Request[sdp_go.ListSnapshotsByGUNRequest]) (*connect.Response[sdp_go.ListSnapshotsByGUNResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("snapshots.SnapshotsService.ListSnapshotByGUN is not implemented"))
 }
