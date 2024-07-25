@@ -375,3 +375,59 @@ func (m *RiskCalculationStatus_ProgressMilestone) ToMap() map[string]any {
 		"status":      m.Status.String(),
 	}
 }
+
+func (s *CalculateBlastRadiusResponse_State) ToMessage() string {
+	if s == nil {
+		return "unknown"
+	}
+	switch *s {
+	case CalculateBlastRadiusResponse_STATE_UNSPECIFIED:
+		return "unknown"
+	case CalculateBlastRadiusResponse_STATE_DISCOVERING:
+		return "The blast radius is being calculated"
+	case CalculateBlastRadiusResponse_STATE_SAVING:
+		return "The blast radius has been calculated and is being saved"
+	case CalculateBlastRadiusResponse_STATE_FINDING_APPS:
+		return "Determining which apps are within the blast radius"
+	case CalculateBlastRadiusResponse_STATE_DONE:
+		return "The blast radius calculation is complete"
+	default:
+		return "unknown"
+	}
+}
+
+func (s *StartChangeResponse_State) ToMessage() string {
+	if s == nil {
+		return "unknown"
+	}
+	switch *s {
+	case StartChangeResponse_STATE_UNSPECIFIED:
+		return "unknown"
+	case StartChangeResponse_STATE_TAKING_SNAPSHOT:
+		return "Snapshot is being taken"
+	case StartChangeResponse_STATE_SAVING_SNAPSHOT:
+		return "Snapshot is being saved"
+	case StartChangeResponse_STATE_DONE:
+		return "Everything is complete"
+	default:
+		return "unknown"
+	}
+}
+
+func (s *EndChangeResponse_State) ToMessage() string {
+	if s == nil {
+		return "unknown"
+	}
+	switch *s {
+	case EndChangeResponse_STATE_UNSPECIFIED:
+		return "unknown"
+	case EndChangeResponse_STATE_TAKING_SNAPSHOT:
+		return "Snapshot is being taken"
+	case EndChangeResponse_STATE_SAVING_SNAPSHOT:
+		return "Snapshot is being saved"
+	case EndChangeResponse_STATE_DONE:
+		return "Everything is complete"
+	default:
+		return "unknown"
+	}
+}
