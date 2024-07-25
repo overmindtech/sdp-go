@@ -376,11 +376,8 @@ func (m *RiskCalculationStatus_ProgressMilestone) ToMap() map[string]any {
 	}
 }
 
-func (s *CalculateBlastRadiusResponse_State) ToMessage() string {
-	if s == nil {
-		return "unknown"
-	}
-	switch *s {
+func (s CalculateBlastRadiusResponse_State) ToMessage() string {
+	switch s {
 	case CalculateBlastRadiusResponse_STATE_UNSPECIFIED:
 		return "unknown"
 	case CalculateBlastRadiusResponse_STATE_DISCOVERING:
@@ -396,11 +393,8 @@ func (s *CalculateBlastRadiusResponse_State) ToMessage() string {
 	}
 }
 
-func (s *StartChangeResponse_State) ToMessage() string {
-	if s == nil {
-		return "unknown"
-	}
-	switch *s {
+func (s StartChangeResponse_State) ToMessage() string {
+	switch s {
 	case StartChangeResponse_STATE_UNSPECIFIED:
 		return "unknown"
 	case StartChangeResponse_STATE_TAKING_SNAPSHOT:
@@ -414,11 +408,8 @@ func (s *StartChangeResponse_State) ToMessage() string {
 	}
 }
 
-func (s *EndChangeResponse_State) ToMessage() string {
-	if s == nil {
-		return "unknown"
-	}
-	switch *s {
+func (s EndChangeResponse_State) ToMessage() string {
+	switch s {
 	case EndChangeResponse_STATE_UNSPECIFIED:
 		return "unknown"
 	case EndChangeResponse_STATE_TAKING_SNAPSHOT:
