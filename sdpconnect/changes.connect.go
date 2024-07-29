@@ -73,6 +73,9 @@ const (
 	// ChangesServiceDeleteChangeProcedure is the fully-qualified name of the ChangesService's
 	// DeleteChange RPC.
 	ChangesServiceDeleteChangeProcedure = "/changes.ChangesService/DeleteChange"
+	// ChangesServiceListChangesBySnapshotUUIDProcedure is the fully-qualified name of the
+	// ChangesService's ListChangesBySnapshotUUID RPC.
+	ChangesServiceListChangesBySnapshotUUIDProcedure = "/changes.ChangesService/ListChangesBySnapshotUUID"
 	// ChangesServiceGetChangeTimelineProcedure is the fully-qualified name of the ChangesService's
 	// GetChangeTimeline RPC.
 	ChangesServiceGetChangeTimelineProcedure = "/changes.ChangesService/GetChangeTimeline"
@@ -133,40 +136,41 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	changesServiceServiceDescriptor                        = sdp_go.File_changes_proto.Services().ByName("ChangesService")
-	changesServiceListAppsMethodDescriptor                 = changesServiceServiceDescriptor.Methods().ByName("ListApps")
-	changesServiceCreateAppMethodDescriptor                = changesServiceServiceDescriptor.Methods().ByName("CreateApp")
-	changesServiceCreateSimpleAppMethodDescriptor          = changesServiceServiceDescriptor.Methods().ByName("CreateSimpleApp")
-	changesServiceGetAppMethodDescriptor                   = changesServiceServiceDescriptor.Methods().ByName("GetApp")
-	changesServiceUpdateAppMethodDescriptor                = changesServiceServiceDescriptor.Methods().ByName("UpdateApp")
-	changesServiceDeleteAppMethodDescriptor                = changesServiceServiceDescriptor.Methods().ByName("DeleteApp")
-	changesServiceListChangesMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("ListChanges")
-	changesServiceListChangesByStatusMethodDescriptor      = changesServiceServiceDescriptor.Methods().ByName("ListChangesByStatus")
-	changesServiceCreateChangeMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("CreateChange")
-	changesServiceGetChangeMethodDescriptor                = changesServiceServiceDescriptor.Methods().ByName("GetChange")
-	changesServiceGetChangeRisksMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("GetChangeRisks")
-	changesServiceGetChangeArchiveMethodDescriptor         = changesServiceServiceDescriptor.Methods().ByName("GetChangeArchive")
-	changesServiceUpdateChangeMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("UpdateChange")
-	changesServiceDeleteChangeMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("DeleteChange")
-	changesServiceGetChangeTimelineMethodDescriptor        = changesServiceServiceDescriptor.Methods().ByName("GetChangeTimeline")
-	changesServiceRefreshStateMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("RefreshState")
-	changesServiceCalculateBlastRadiusMethodDescriptor     = changesServiceServiceDescriptor.Methods().ByName("CalculateBlastRadius")
-	changesServiceStartChangeMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("StartChange")
-	changesServiceEndChangeMethodDescriptor                = changesServiceServiceDescriptor.Methods().ByName("EndChange")
-	changesServiceSimulateChangeMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("SimulateChange")
-	changesServiceGetOnboardingMethodDescriptor            = changesServiceServiceDescriptor.Methods().ByName("GetOnboarding")
-	changesServiceUpdateOnboardingMethodDescriptor         = changesServiceServiceDescriptor.Methods().ByName("UpdateOnboarding")
-	changesServiceListHomeAppsMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("ListHomeApps")
-	changesServiceListHomeChangesMethodDescriptor          = changesServiceServiceDescriptor.Methods().ByName("ListHomeChanges")
-	changesServiceGetAppSummaryMethodDescriptor            = changesServiceServiceDescriptor.Methods().ByName("GetAppSummary")
-	changesServiceGetAppSummariesMethodDescriptor          = changesServiceServiceDescriptor.Methods().ByName("GetAppSummaries")
-	changesServiceListAppChangesMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("ListAppChanges")
-	changesServiceListAppChangesSummaryMethodDescriptor    = changesServiceServiceDescriptor.Methods().ByName("ListAppChangesSummary")
-	changesServiceUpdateChangingItemsMethodDescriptor      = changesServiceServiceDescriptor.Methods().ByName("UpdateChangingItems")
-	changesServiceUpdatePlannedChangesMethodDescriptor     = changesServiceServiceDescriptor.Methods().ByName("UpdatePlannedChanges")
-	changesServiceGetAffectedAppsMethodDescriptor          = changesServiceServiceDescriptor.Methods().ByName("GetAffectedApps")
-	changesServiceListChangingItemsSummaryMethodDescriptor = changesServiceServiceDescriptor.Methods().ByName("ListChangingItemsSummary")
-	changesServiceGetDiffMethodDescriptor                  = changesServiceServiceDescriptor.Methods().ByName("GetDiff")
+	changesServiceServiceDescriptor                         = sdp_go.File_changes_proto.Services().ByName("ChangesService")
+	changesServiceListAppsMethodDescriptor                  = changesServiceServiceDescriptor.Methods().ByName("ListApps")
+	changesServiceCreateAppMethodDescriptor                 = changesServiceServiceDescriptor.Methods().ByName("CreateApp")
+	changesServiceCreateSimpleAppMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("CreateSimpleApp")
+	changesServiceGetAppMethodDescriptor                    = changesServiceServiceDescriptor.Methods().ByName("GetApp")
+	changesServiceUpdateAppMethodDescriptor                 = changesServiceServiceDescriptor.Methods().ByName("UpdateApp")
+	changesServiceDeleteAppMethodDescriptor                 = changesServiceServiceDescriptor.Methods().ByName("DeleteApp")
+	changesServiceListChangesMethodDescriptor               = changesServiceServiceDescriptor.Methods().ByName("ListChanges")
+	changesServiceListChangesByStatusMethodDescriptor       = changesServiceServiceDescriptor.Methods().ByName("ListChangesByStatus")
+	changesServiceCreateChangeMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("CreateChange")
+	changesServiceGetChangeMethodDescriptor                 = changesServiceServiceDescriptor.Methods().ByName("GetChange")
+	changesServiceGetChangeRisksMethodDescriptor            = changesServiceServiceDescriptor.Methods().ByName("GetChangeRisks")
+	changesServiceGetChangeArchiveMethodDescriptor          = changesServiceServiceDescriptor.Methods().ByName("GetChangeArchive")
+	changesServiceUpdateChangeMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("UpdateChange")
+	changesServiceDeleteChangeMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("DeleteChange")
+	changesServiceListChangesBySnapshotUUIDMethodDescriptor = changesServiceServiceDescriptor.Methods().ByName("ListChangesBySnapshotUUID")
+	changesServiceGetChangeTimelineMethodDescriptor         = changesServiceServiceDescriptor.Methods().ByName("GetChangeTimeline")
+	changesServiceRefreshStateMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("RefreshState")
+	changesServiceCalculateBlastRadiusMethodDescriptor      = changesServiceServiceDescriptor.Methods().ByName("CalculateBlastRadius")
+	changesServiceStartChangeMethodDescriptor               = changesServiceServiceDescriptor.Methods().ByName("StartChange")
+	changesServiceEndChangeMethodDescriptor                 = changesServiceServiceDescriptor.Methods().ByName("EndChange")
+	changesServiceSimulateChangeMethodDescriptor            = changesServiceServiceDescriptor.Methods().ByName("SimulateChange")
+	changesServiceGetOnboardingMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("GetOnboarding")
+	changesServiceUpdateOnboardingMethodDescriptor          = changesServiceServiceDescriptor.Methods().ByName("UpdateOnboarding")
+	changesServiceListHomeAppsMethodDescriptor              = changesServiceServiceDescriptor.Methods().ByName("ListHomeApps")
+	changesServiceListHomeChangesMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("ListHomeChanges")
+	changesServiceGetAppSummaryMethodDescriptor             = changesServiceServiceDescriptor.Methods().ByName("GetAppSummary")
+	changesServiceGetAppSummariesMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("GetAppSummaries")
+	changesServiceListAppChangesMethodDescriptor            = changesServiceServiceDescriptor.Methods().ByName("ListAppChanges")
+	changesServiceListAppChangesSummaryMethodDescriptor     = changesServiceServiceDescriptor.Methods().ByName("ListAppChangesSummary")
+	changesServiceUpdateChangingItemsMethodDescriptor       = changesServiceServiceDescriptor.Methods().ByName("UpdateChangingItems")
+	changesServiceUpdatePlannedChangesMethodDescriptor      = changesServiceServiceDescriptor.Methods().ByName("UpdatePlannedChanges")
+	changesServiceGetAffectedAppsMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("GetAffectedApps")
+	changesServiceListChangingItemsSummaryMethodDescriptor  = changesServiceServiceDescriptor.Methods().ByName("ListChangingItemsSummary")
+	changesServiceGetDiffMethodDescriptor                   = changesServiceServiceDescriptor.Methods().ByName("GetDiff")
 )
 
 // ChangesServiceClient is a client for the changes.ChangesService service.
@@ -200,6 +204,8 @@ type ChangesServiceClient interface {
 	UpdateChange(context.Context, *connect.Request[sdp_go.UpdateChangeRequest]) (*connect.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
 	DeleteChange(context.Context, *connect.Request[sdp_go.DeleteChangeRequest]) (*connect.Response[sdp_go.DeleteChangeResponse], error)
+	// Lists all changes for a snapshot UUID
+	ListChangesBySnapshotUUID(context.Context, *connect.Request[sdp_go.ListChangesBySnapshotUUIDRequest]) (*connect.Response[sdp_go.ListChangesBySnapshotUUIDResponse], error)
 	// Get the timeline of changes for a given change
 	GetChangeTimeline(context.Context, *connect.Request[sdp_go.GetChangeTimelineRequest]) (*connect.Response[sdp_go.GetChangeTimelineResponse], error)
 	// Ask the gateway to refresh all internal caches and status slots
@@ -359,6 +365,12 @@ func NewChangesServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(changesServiceDeleteChangeMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		listChangesBySnapshotUUID: connect.NewClient[sdp_go.ListChangesBySnapshotUUIDRequest, sdp_go.ListChangesBySnapshotUUIDResponse](
+			httpClient,
+			baseURL+ChangesServiceListChangesBySnapshotUUIDProcedure,
+			connect.WithSchema(changesServiceListChangesBySnapshotUUIDMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		getChangeTimeline: connect.NewClient[sdp_go.GetChangeTimelineRequest, sdp_go.GetChangeTimelineResponse](
 			httpClient,
 			baseURL+ChangesServiceGetChangeTimelineProcedure,
@@ -478,39 +490,40 @@ func NewChangesServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // changesServiceClient implements ChangesServiceClient.
 type changesServiceClient struct {
-	listApps                 *connect.Client[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse]
-	createApp                *connect.Client[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse]
-	createSimpleApp          *connect.Client[sdp_go.CreateSimpleAppRequest, sdp_go.CreateSimpleAppResponse]
-	getApp                   *connect.Client[sdp_go.GetAppRequest, sdp_go.GetAppResponse]
-	updateApp                *connect.Client[sdp_go.UpdateAppRequest, sdp_go.UpdateAppResponse]
-	deleteApp                *connect.Client[sdp_go.DeleteAppRequest, sdp_go.DeleteAppResponse]
-	listChanges              *connect.Client[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse]
-	listChangesByStatus      *connect.Client[sdp_go.ListChangesByStatusRequest, sdp_go.ListChangesByStatusResponse]
-	createChange             *connect.Client[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse]
-	getChange                *connect.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
-	getChangeRisks           *connect.Client[sdp_go.GetChangeRisksRequest, sdp_go.GetChangeRisksResponse]
-	getChangeArchive         *connect.Client[sdp_go.GetChangeArchiveRequest, sdp_go.GetChangeArchiveResponse]
-	updateChange             *connect.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
-	deleteChange             *connect.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
-	getChangeTimeline        *connect.Client[sdp_go.GetChangeTimelineRequest, sdp_go.GetChangeTimelineResponse]
-	refreshState             *connect.Client[sdp_go.RefreshStateRequest, sdp_go.RefreshStateResponse]
-	calculateBlastRadius     *connect.Client[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse]
-	startChange              *connect.Client[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse]
-	endChange                *connect.Client[sdp_go.EndChangeRequest, sdp_go.EndChangeResponse]
-	simulateChange           *connect.Client[sdp_go.SimulateChangeRequest, sdp_go.SimulateChangeResponse]
-	getOnboarding            *connect.Client[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse]
-	updateOnboarding         *connect.Client[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse]
-	listHomeApps             *connect.Client[sdp_go.ListHomeAppsRequest, sdp_go.ListHomeAppsResponse]
-	listHomeChanges          *connect.Client[sdp_go.ListHomeChangesRequest, sdp_go.ListHomeChangesResponse]
-	getAppSummary            *connect.Client[sdp_go.GetAppSummaryRequest, sdp_go.GetAppSummaryResponse]
-	getAppSummaries          *connect.Client[sdp_go.GetAppSummariesRequest, sdp_go.GetAppSummariesResponse]
-	listAppChanges           *connect.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
-	listAppChangesSummary    *connect.Client[sdp_go.ListAppChangesSummaryRequest, sdp_go.ListAppChangesSummaryResponse]
-	updateChangingItems      *connect.Client[sdp_go.UpdateChangingItemsRequest, sdp_go.CalculateBlastRadiusResponse]
-	updatePlannedChanges     *connect.Client[sdp_go.UpdatePlannedChangesRequest, sdp_go.CalculateBlastRadiusResponse]
-	getAffectedApps          *connect.Client[sdp_go.GetAffectedAppsRequest, sdp_go.GetAffectedAppsResponse]
-	listChangingItemsSummary *connect.Client[sdp_go.ListChangingItemsSummaryRequest, sdp_go.ListChangingItemsSummaryResponse]
-	getDiff                  *connect.Client[sdp_go.GetDiffRequest, sdp_go.GetDiffResponse]
+	listApps                  *connect.Client[sdp_go.ListAppsRequest, sdp_go.ListAppsResponse]
+	createApp                 *connect.Client[sdp_go.CreateAppRequest, sdp_go.CreateAppResponse]
+	createSimpleApp           *connect.Client[sdp_go.CreateSimpleAppRequest, sdp_go.CreateSimpleAppResponse]
+	getApp                    *connect.Client[sdp_go.GetAppRequest, sdp_go.GetAppResponse]
+	updateApp                 *connect.Client[sdp_go.UpdateAppRequest, sdp_go.UpdateAppResponse]
+	deleteApp                 *connect.Client[sdp_go.DeleteAppRequest, sdp_go.DeleteAppResponse]
+	listChanges               *connect.Client[sdp_go.ListChangesRequest, sdp_go.ListChangesResponse]
+	listChangesByStatus       *connect.Client[sdp_go.ListChangesByStatusRequest, sdp_go.ListChangesByStatusResponse]
+	createChange              *connect.Client[sdp_go.CreateChangeRequest, sdp_go.CreateChangeResponse]
+	getChange                 *connect.Client[sdp_go.GetChangeRequest, sdp_go.GetChangeResponse]
+	getChangeRisks            *connect.Client[sdp_go.GetChangeRisksRequest, sdp_go.GetChangeRisksResponse]
+	getChangeArchive          *connect.Client[sdp_go.GetChangeArchiveRequest, sdp_go.GetChangeArchiveResponse]
+	updateChange              *connect.Client[sdp_go.UpdateChangeRequest, sdp_go.UpdateChangeResponse]
+	deleteChange              *connect.Client[sdp_go.DeleteChangeRequest, sdp_go.DeleteChangeResponse]
+	listChangesBySnapshotUUID *connect.Client[sdp_go.ListChangesBySnapshotUUIDRequest, sdp_go.ListChangesBySnapshotUUIDResponse]
+	getChangeTimeline         *connect.Client[sdp_go.GetChangeTimelineRequest, sdp_go.GetChangeTimelineResponse]
+	refreshState              *connect.Client[sdp_go.RefreshStateRequest, sdp_go.RefreshStateResponse]
+	calculateBlastRadius      *connect.Client[sdp_go.CalculateBlastRadiusRequest, sdp_go.CalculateBlastRadiusResponse]
+	startChange               *connect.Client[sdp_go.StartChangeRequest, sdp_go.StartChangeResponse]
+	endChange                 *connect.Client[sdp_go.EndChangeRequest, sdp_go.EndChangeResponse]
+	simulateChange            *connect.Client[sdp_go.SimulateChangeRequest, sdp_go.SimulateChangeResponse]
+	getOnboarding             *connect.Client[sdp_go.GetOnboardingRequest, sdp_go.GetOnboardingResponse]
+	updateOnboarding          *connect.Client[sdp_go.UpdateOnboardingRequest, sdp_go.UpdateOnboardingResponse]
+	listHomeApps              *connect.Client[sdp_go.ListHomeAppsRequest, sdp_go.ListHomeAppsResponse]
+	listHomeChanges           *connect.Client[sdp_go.ListHomeChangesRequest, sdp_go.ListHomeChangesResponse]
+	getAppSummary             *connect.Client[sdp_go.GetAppSummaryRequest, sdp_go.GetAppSummaryResponse]
+	getAppSummaries           *connect.Client[sdp_go.GetAppSummariesRequest, sdp_go.GetAppSummariesResponse]
+	listAppChanges            *connect.Client[sdp_go.ListAppChangesRequest, sdp_go.ListAppChangesResponse]
+	listAppChangesSummary     *connect.Client[sdp_go.ListAppChangesSummaryRequest, sdp_go.ListAppChangesSummaryResponse]
+	updateChangingItems       *connect.Client[sdp_go.UpdateChangingItemsRequest, sdp_go.CalculateBlastRadiusResponse]
+	updatePlannedChanges      *connect.Client[sdp_go.UpdatePlannedChangesRequest, sdp_go.CalculateBlastRadiusResponse]
+	getAffectedApps           *connect.Client[sdp_go.GetAffectedAppsRequest, sdp_go.GetAffectedAppsResponse]
+	listChangingItemsSummary  *connect.Client[sdp_go.ListChangingItemsSummaryRequest, sdp_go.ListChangingItemsSummaryResponse]
+	getDiff                   *connect.Client[sdp_go.GetDiffRequest, sdp_go.GetDiffResponse]
 }
 
 // ListApps calls changes.ChangesService.ListApps.
@@ -581,6 +594,11 @@ func (c *changesServiceClient) UpdateChange(ctx context.Context, req *connect.Re
 // DeleteChange calls changes.ChangesService.DeleteChange.
 func (c *changesServiceClient) DeleteChange(ctx context.Context, req *connect.Request[sdp_go.DeleteChangeRequest]) (*connect.Response[sdp_go.DeleteChangeResponse], error) {
 	return c.deleteChange.CallUnary(ctx, req)
+}
+
+// ListChangesBySnapshotUUID calls changes.ChangesService.ListChangesBySnapshotUUID.
+func (c *changesServiceClient) ListChangesBySnapshotUUID(ctx context.Context, req *connect.Request[sdp_go.ListChangesBySnapshotUUIDRequest]) (*connect.Response[sdp_go.ListChangesBySnapshotUUIDResponse], error) {
+	return c.listChangesBySnapshotUUID.CallUnary(ctx, req)
 }
 
 // GetChangeTimeline calls changes.ChangesService.GetChangeTimeline.
@@ -709,6 +727,8 @@ type ChangesServiceHandler interface {
 	UpdateChange(context.Context, *connect.Request[sdp_go.UpdateChangeRequest]) (*connect.Response[sdp_go.UpdateChangeResponse], error)
 	// Deletes a change
 	DeleteChange(context.Context, *connect.Request[sdp_go.DeleteChangeRequest]) (*connect.Response[sdp_go.DeleteChangeResponse], error)
+	// Lists all changes for a snapshot UUID
+	ListChangesBySnapshotUUID(context.Context, *connect.Request[sdp_go.ListChangesBySnapshotUUIDRequest]) (*connect.Response[sdp_go.ListChangesBySnapshotUUIDResponse], error)
 	// Get the timeline of changes for a given change
 	GetChangeTimeline(context.Context, *connect.Request[sdp_go.GetChangeTimelineRequest]) (*connect.Response[sdp_go.GetChangeTimelineResponse], error)
 	// Ask the gateway to refresh all internal caches and status slots
@@ -864,6 +884,12 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 		connect.WithSchema(changesServiceDeleteChangeMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	changesServiceListChangesBySnapshotUUIDHandler := connect.NewUnaryHandler(
+		ChangesServiceListChangesBySnapshotUUIDProcedure,
+		svc.ListChangesBySnapshotUUID,
+		connect.WithSchema(changesServiceListChangesBySnapshotUUIDMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	changesServiceGetChangeTimelineHandler := connect.NewUnaryHandler(
 		ChangesServiceGetChangeTimelineProcedure,
 		svc.GetChangeTimeline,
@@ -1008,6 +1034,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 			changesServiceUpdateChangeHandler.ServeHTTP(w, r)
 		case ChangesServiceDeleteChangeProcedure:
 			changesServiceDeleteChangeHandler.ServeHTTP(w, r)
+		case ChangesServiceListChangesBySnapshotUUIDProcedure:
+			changesServiceListChangesBySnapshotUUIDHandler.ServeHTTP(w, r)
 		case ChangesServiceGetChangeTimelineProcedure:
 			changesServiceGetChangeTimelineHandler.ServeHTTP(w, r)
 		case ChangesServiceRefreshStateProcedure:
@@ -1109,6 +1137,10 @@ func (UnimplementedChangesServiceHandler) UpdateChange(context.Context, *connect
 
 func (UnimplementedChangesServiceHandler) DeleteChange(context.Context, *connect.Request[sdp_go.DeleteChangeRequest]) (*connect.Response[sdp_go.DeleteChangeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.DeleteChange is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) ListChangesBySnapshotUUID(context.Context, *connect.Request[sdp_go.ListChangesBySnapshotUUIDRequest]) (*connect.Response[sdp_go.ListChangesBySnapshotUUIDResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.ListChangesBySnapshotUUID is not implemented"))
 }
 
 func (UnimplementedChangesServiceHandler) GetChangeTimeline(context.Context, *connect.Request[sdp_go.GetChangeTimelineRequest]) (*connect.Response[sdp_go.GetChangeTimelineResponse], error) {
