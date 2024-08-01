@@ -39,6 +39,15 @@ const (
 	// ConfigurationServiceUpdateAccountConfigProcedure is the fully-qualified name of the
 	// ConfigurationService's UpdateAccountConfig RPC.
 	ConfigurationServiceUpdateAccountConfigProcedure = "/config.ConfigurationService/UpdateAccountConfig"
+	// ConfigurationServiceCreateHcpConfigProcedure is the fully-qualified name of the
+	// ConfigurationService's CreateHcpConfig RPC.
+	ConfigurationServiceCreateHcpConfigProcedure = "/config.ConfigurationService/CreateHcpConfig"
+	// ConfigurationServiceGetHcpConfigProcedure is the fully-qualified name of the
+	// ConfigurationService's GetHcpConfig RPC.
+	ConfigurationServiceGetHcpConfigProcedure = "/config.ConfigurationService/GetHcpConfig"
+	// ConfigurationServiceDeleteHcpConfigProcedure is the fully-qualified name of the
+	// ConfigurationService's DeleteHcpConfig RPC.
+	ConfigurationServiceDeleteHcpConfigProcedure = "/config.ConfigurationService/DeleteHcpConfig"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -46,6 +55,9 @@ var (
 	configurationServiceServiceDescriptor                   = sdp_go.File_config_proto.Services().ByName("ConfigurationService")
 	configurationServiceGetAccountConfigMethodDescriptor    = configurationServiceServiceDescriptor.Methods().ByName("GetAccountConfig")
 	configurationServiceUpdateAccountConfigMethodDescriptor = configurationServiceServiceDescriptor.Methods().ByName("UpdateAccountConfig")
+	configurationServiceCreateHcpConfigMethodDescriptor     = configurationServiceServiceDescriptor.Methods().ByName("CreateHcpConfig")
+	configurationServiceGetHcpConfigMethodDescriptor        = configurationServiceServiceDescriptor.Methods().ByName("GetHcpConfig")
+	configurationServiceDeleteHcpConfigMethodDescriptor     = configurationServiceServiceDescriptor.Methods().ByName("DeleteHcpConfig")
 )
 
 // ConfigurationServiceClient is a client for the config.ConfigurationService service.
@@ -54,6 +66,14 @@ type ConfigurationServiceClient interface {
 	GetAccountConfig(context.Context, *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error)
 	// Update the account config for the user's account
 	UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error)
+	// Create a new HCP Terraform config for the user's account. This follows
+	// the same flow as CreateAPIKey, to create a new API key that is then used
+	// for the HCP Terraform endpoint URL.
+	CreateHcpConfig(context.Context, *connect.Request[sdp_go.CreateHcpConfigRequest]) (*connect.Response[sdp_go.CreateHcpConfigResponse], error)
+	// Get the existing HCP Terraform config for the user's account.
+	GetHcpConfig(context.Context, *connect.Request[sdp_go.GetHcpConfigRequest]) (*connect.Response[sdp_go.GetHcpConfigResponse], error)
+	// Remove the existing HCP Terraform config from the user's account.
+	DeleteHcpConfig(context.Context, *connect.Request[sdp_go.DeleteHcpConfigRequest]) (*connect.Response[sdp_go.DeleteHcpConfigResponse], error)
 }
 
 // NewConfigurationServiceClient constructs a client for the config.ConfigurationService service. By
@@ -78,6 +98,24 @@ func NewConfigurationServiceClient(httpClient connect.HTTPClient, baseURL string
 			connect.WithSchema(configurationServiceUpdateAccountConfigMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		createHcpConfig: connect.NewClient[sdp_go.CreateHcpConfigRequest, sdp_go.CreateHcpConfigResponse](
+			httpClient,
+			baseURL+ConfigurationServiceCreateHcpConfigProcedure,
+			connect.WithSchema(configurationServiceCreateHcpConfigMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		getHcpConfig: connect.NewClient[sdp_go.GetHcpConfigRequest, sdp_go.GetHcpConfigResponse](
+			httpClient,
+			baseURL+ConfigurationServiceGetHcpConfigProcedure,
+			connect.WithSchema(configurationServiceGetHcpConfigMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		deleteHcpConfig: connect.NewClient[sdp_go.DeleteHcpConfigRequest, sdp_go.DeleteHcpConfigResponse](
+			httpClient,
+			baseURL+ConfigurationServiceDeleteHcpConfigProcedure,
+			connect.WithSchema(configurationServiceDeleteHcpConfigMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -85,6 +123,9 @@ func NewConfigurationServiceClient(httpClient connect.HTTPClient, baseURL string
 type configurationServiceClient struct {
 	getAccountConfig    *connect.Client[sdp_go.GetAccountConfigRequest, sdp_go.GetAccountConfigResponse]
 	updateAccountConfig *connect.Client[sdp_go.UpdateAccountConfigRequest, sdp_go.UpdateAccountConfigResponse]
+	createHcpConfig     *connect.Client[sdp_go.CreateHcpConfigRequest, sdp_go.CreateHcpConfigResponse]
+	getHcpConfig        *connect.Client[sdp_go.GetHcpConfigRequest, sdp_go.GetHcpConfigResponse]
+	deleteHcpConfig     *connect.Client[sdp_go.DeleteHcpConfigRequest, sdp_go.DeleteHcpConfigResponse]
 }
 
 // GetAccountConfig calls config.ConfigurationService.GetAccountConfig.
@@ -97,12 +138,35 @@ func (c *configurationServiceClient) UpdateAccountConfig(ctx context.Context, re
 	return c.updateAccountConfig.CallUnary(ctx, req)
 }
 
+// CreateHcpConfig calls config.ConfigurationService.CreateHcpConfig.
+func (c *configurationServiceClient) CreateHcpConfig(ctx context.Context, req *connect.Request[sdp_go.CreateHcpConfigRequest]) (*connect.Response[sdp_go.CreateHcpConfigResponse], error) {
+	return c.createHcpConfig.CallUnary(ctx, req)
+}
+
+// GetHcpConfig calls config.ConfigurationService.GetHcpConfig.
+func (c *configurationServiceClient) GetHcpConfig(ctx context.Context, req *connect.Request[sdp_go.GetHcpConfigRequest]) (*connect.Response[sdp_go.GetHcpConfigResponse], error) {
+	return c.getHcpConfig.CallUnary(ctx, req)
+}
+
+// DeleteHcpConfig calls config.ConfigurationService.DeleteHcpConfig.
+func (c *configurationServiceClient) DeleteHcpConfig(ctx context.Context, req *connect.Request[sdp_go.DeleteHcpConfigRequest]) (*connect.Response[sdp_go.DeleteHcpConfigResponse], error) {
+	return c.deleteHcpConfig.CallUnary(ctx, req)
+}
+
 // ConfigurationServiceHandler is an implementation of the config.ConfigurationService service.
 type ConfigurationServiceHandler interface {
 	// Get the account config for the user's account
 	GetAccountConfig(context.Context, *connect.Request[sdp_go.GetAccountConfigRequest]) (*connect.Response[sdp_go.GetAccountConfigResponse], error)
 	// Update the account config for the user's account
 	UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error)
+	// Create a new HCP Terraform config for the user's account. This follows
+	// the same flow as CreateAPIKey, to create a new API key that is then used
+	// for the HCP Terraform endpoint URL.
+	CreateHcpConfig(context.Context, *connect.Request[sdp_go.CreateHcpConfigRequest]) (*connect.Response[sdp_go.CreateHcpConfigResponse], error)
+	// Get the existing HCP Terraform config for the user's account.
+	GetHcpConfig(context.Context, *connect.Request[sdp_go.GetHcpConfigRequest]) (*connect.Response[sdp_go.GetHcpConfigResponse], error)
+	// Remove the existing HCP Terraform config from the user's account.
+	DeleteHcpConfig(context.Context, *connect.Request[sdp_go.DeleteHcpConfigRequest]) (*connect.Response[sdp_go.DeleteHcpConfigResponse], error)
 }
 
 // NewConfigurationServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -123,12 +187,36 @@ func NewConfigurationServiceHandler(svc ConfigurationServiceHandler, opts ...con
 		connect.WithSchema(configurationServiceUpdateAccountConfigMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	configurationServiceCreateHcpConfigHandler := connect.NewUnaryHandler(
+		ConfigurationServiceCreateHcpConfigProcedure,
+		svc.CreateHcpConfig,
+		connect.WithSchema(configurationServiceCreateHcpConfigMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	configurationServiceGetHcpConfigHandler := connect.NewUnaryHandler(
+		ConfigurationServiceGetHcpConfigProcedure,
+		svc.GetHcpConfig,
+		connect.WithSchema(configurationServiceGetHcpConfigMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	configurationServiceDeleteHcpConfigHandler := connect.NewUnaryHandler(
+		ConfigurationServiceDeleteHcpConfigProcedure,
+		svc.DeleteHcpConfig,
+		connect.WithSchema(configurationServiceDeleteHcpConfigMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/config.ConfigurationService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ConfigurationServiceGetAccountConfigProcedure:
 			configurationServiceGetAccountConfigHandler.ServeHTTP(w, r)
 		case ConfigurationServiceUpdateAccountConfigProcedure:
 			configurationServiceUpdateAccountConfigHandler.ServeHTTP(w, r)
+		case ConfigurationServiceCreateHcpConfigProcedure:
+			configurationServiceCreateHcpConfigHandler.ServeHTTP(w, r)
+		case ConfigurationServiceGetHcpConfigProcedure:
+			configurationServiceGetHcpConfigHandler.ServeHTTP(w, r)
+		case ConfigurationServiceDeleteHcpConfigProcedure:
+			configurationServiceDeleteHcpConfigHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -144,4 +232,16 @@ func (UnimplementedConfigurationServiceHandler) GetAccountConfig(context.Context
 
 func (UnimplementedConfigurationServiceHandler) UpdateAccountConfig(context.Context, *connect.Request[sdp_go.UpdateAccountConfigRequest]) (*connect.Response[sdp_go.UpdateAccountConfigResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigurationService.UpdateAccountConfig is not implemented"))
+}
+
+func (UnimplementedConfigurationServiceHandler) CreateHcpConfig(context.Context, *connect.Request[sdp_go.CreateHcpConfigRequest]) (*connect.Response[sdp_go.CreateHcpConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigurationService.CreateHcpConfig is not implemented"))
+}
+
+func (UnimplementedConfigurationServiceHandler) GetHcpConfig(context.Context, *connect.Request[sdp_go.GetHcpConfigRequest]) (*connect.Response[sdp_go.GetHcpConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigurationService.GetHcpConfig is not implemented"))
+}
+
+func (UnimplementedConfigurationServiceHandler) DeleteHcpConfig(context.Context, *connect.Request[sdp_go.DeleteHcpConfigRequest]) (*connect.Response[sdp_go.DeleteHcpConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("config.ConfigurationService.DeleteHcpConfig is not implemented"))
 }
