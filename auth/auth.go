@@ -16,6 +16,7 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/overmindtech/sdp-go"
 	"github.com/overmindtech/sdp-go/sdpconnect"
+	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/oauth2"
@@ -200,8 +201,18 @@ func (n *natsTokenClient) generateJWT(ctx context.Context) error {
 	var response *connect.Response[sdp.CreateTokenResponse]
 	if n.Account == "" {
 		// Use the regular API and let the client authentication determine what our org should be
+		log.WithFields(log.Fields{
+			"account":    n.Account,
+			"publicNKey": req.UserPublicNkey,
+			"UserName":   req.UserName,
+		}).Trace("Using regular API to get NATS token")
 		response, err = n.mgmtClient.CreateToken(ctx, connect.NewRequest(req))
 	} else {
+		log.WithFields(log.Fields{
+			"account":    n.Account,
+			"publicNKey": req.UserPublicNkey,
+			"UserName":   req.UserName,
+		}).Trace("Using admin API to get NATS token")
 		// Explicitly request an org
 		response, err = n.adminClient.CreateToken(ctx, connect.NewRequest(&sdp.AdminCreateTokenRequest{
 			Account: n.Account,
