@@ -281,3 +281,21 @@ func (c *Client) StoreBookmark(ctx context.Context, name, description string, is
 }
 
 // TODO: LoadBookmark
+
+// send chatMessage to the assistant
+func (c *Client) SendChatMessage(ctx context.Context, m *sdp.ChatMessage) error {
+	if c.Closed() {
+		return errors.New("client closed")
+	}
+
+	log.WithContext(ctx).WithField("message", m).Trace("sending chat message via websocket")
+	err := c.send(ctx, &sdp.GatewayRequest{
+		RequestType: &sdp.GatewayRequest_ChatMessage{
+			ChatMessage: m,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error sending chat message: %w", err)
+	}
+	return nil
+}

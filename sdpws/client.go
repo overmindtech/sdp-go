@@ -261,6 +261,13 @@ func (c *Client) receive(ctx context.Context) {
 				c.finishRequestChan(u)
 			}
 
+		case *sdp.GatewayResponse_ChatMessageResult:
+			chatMessageResult := msg.GetChatMessageResult()
+			if c.handler != nil {
+				c.handler.ChatMessageResult(ctx, chatMessageResult)
+			}
+			c.postRequestChan(uuid.Nil, msg)
+
 		default:
 			log.WithContext(ctx).WithField("response", msg).WithField("responseType", fmt.Sprintf("%T", msg.ResponseType)).Warn("unexpected response")
 		}

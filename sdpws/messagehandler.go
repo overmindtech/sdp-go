@@ -8,7 +8,7 @@ import (
 )
 
 // GatewayMessageHandler is an interface that can be implemented to handle
-// messages from the gateway. The individual methods are calles when the sdpws
+// messages from the gateway. The individual methods are called when the sdpws
 // client receives a message from the gateway. Methods are called in the same
 // order as the messages are received from the gateway. The sdpws client
 // guarantees that the methods are called in a single thread, so no locking is
@@ -27,6 +27,7 @@ type GatewayMessageHandler interface {
 	BookmarkStoreResult(context.Context, *sdp.BookmarkStoreResult)
 	BookmarkLoadResult(context.Context, *sdp.BookmarkLoadResult)
 	QueryStatus(context.Context, *sdp.QueryStatus)
+	ChatMessageResult(context.Context, *sdp.ChatMessageResult)
 }
 
 type LoggingGatewayMessageHandler struct {
@@ -88,6 +89,10 @@ func (l *LoggingGatewayMessageHandler) QueryStatus(ctx context.Context, status *
 	log.WithContext(ctx).WithField("status", status).Log(l.Level, "received query status")
 }
 
+func (l *LoggingGatewayMessageHandler) ChatMessageResult(ctx context.Context, chatMessageResult *sdp.ChatMessageResult) {
+	log.WithContext(ctx).WithField("chatMessage", chatMessageResult).Log(l.Level, "received chat message result")
+}
+
 type NoopGatewayMessageHandler struct{}
 
 // assert that NoopGatewayMessageHandler implements GatewayMessageHandler
@@ -130,6 +135,9 @@ func (l *NoopGatewayMessageHandler) BookmarkLoadResult(ctx context.Context, resu
 }
 
 func (l *NoopGatewayMessageHandler) QueryStatus(ctx context.Context, status *sdp.QueryStatus) {
+}
+
+func (l *NoopGatewayMessageHandler) ChatMessageResult(ctx context.Context, chatMessageResult *sdp.ChatMessageResult) {
 }
 
 var _ GatewayMessageHandler = (*StoreEverythingHandler)(nil)

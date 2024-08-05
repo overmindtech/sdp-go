@@ -63,9 +63,9 @@ jobs:
       - name: Show container logs for debugging
         if: failure()
         run: |
-          docker-compose -f .github/docker-compose-services.yml logs
+          docker compose -f .github/docker-compose-services.yml logs
 
       - name: Show container logs for archival
         if: ${{ ! failure() }}
         run: |
-          docker-compose -f .github/docker-compose-services.yml logs
+          docker compose -f .github/docker-compose-services.yml logs
