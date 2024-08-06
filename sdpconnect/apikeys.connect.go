@@ -36,6 +36,9 @@ const (
 	// ApiKeyServiceCreateAPIKeyProcedure is the fully-qualified name of the ApiKeyService's
 	// CreateAPIKey RPC.
 	ApiKeyServiceCreateAPIKeyProcedure = "/apikeys.ApiKeyService/CreateAPIKey"
+	// ApiKeyServiceRefreshAPIKeyProcedure is the fully-qualified name of the ApiKeyService's
+	// RefreshAPIKey RPC.
+	ApiKeyServiceRefreshAPIKeyProcedure = "/apikeys.ApiKeyService/RefreshAPIKey"
 	// ApiKeyServiceGetAPIKeyProcedure is the fully-qualified name of the ApiKeyService's GetAPIKey RPC.
 	ApiKeyServiceGetAPIKeyProcedure = "/apikeys.ApiKeyService/GetAPIKey"
 	// ApiKeyServiceUpdateAPIKeyProcedure is the fully-qualified name of the ApiKeyService's
@@ -56,6 +59,7 @@ const (
 var (
 	apiKeyServiceServiceDescriptor                   = sdp_go.File_apikeys_proto.Services().ByName("ApiKeyService")
 	apiKeyServiceCreateAPIKeyMethodDescriptor        = apiKeyServiceServiceDescriptor.Methods().ByName("CreateAPIKey")
+	apiKeyServiceRefreshAPIKeyMethodDescriptor       = apiKeyServiceServiceDescriptor.Methods().ByName("RefreshAPIKey")
 	apiKeyServiceGetAPIKeyMethodDescriptor           = apiKeyServiceServiceDescriptor.Methods().ByName("GetAPIKey")
 	apiKeyServiceUpdateAPIKeyMethodDescriptor        = apiKeyServiceServiceDescriptor.Methods().ByName("UpdateAPIKey")
 	apiKeyServiceListAPIKeysMethodDescriptor         = apiKeyServiceServiceDescriptor.Methods().ByName("ListAPIKeys")
@@ -69,6 +73,10 @@ type ApiKeyServiceClient interface {
 	// cannot be used until the user has been redirected to the given URL which
 	// allows Auth0 to actually generate an access token
 	CreateAPIKey(context.Context, *connect.Request[sdp_go.CreateAPIKeyRequest]) (*connect.Response[sdp_go.CreateAPIKeyResponse], error)
+	// Refreshes an API key, returning a new one with the same metadata and
+	// properties. The response will be the same as CreateAPIKey, and requires
+	// the same redirect handling to authenticate the new key.
+	RefreshAPIKey(context.Context, *connect.Request[sdp_go.RefreshAPIKeyRequest]) (*connect.Response[sdp_go.RefreshAPIKeyResponse], error)
 	GetAPIKey(context.Context, *connect.Request[sdp_go.GetAPIKeyRequest]) (*connect.Response[sdp_go.GetAPIKeyResponse], error)
 	UpdateAPIKey(context.Context, *connect.Request[sdp_go.UpdateAPIKeyRequest]) (*connect.Response[sdp_go.UpdateAPIKeyResponse], error)
 	ListAPIKeys(context.Context, *connect.Request[sdp_go.ListAPIKeysRequest]) (*connect.Response[sdp_go.ListAPIKeysResponse], error)
@@ -92,6 +100,12 @@ func NewApiKeyServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			httpClient,
 			baseURL+ApiKeyServiceCreateAPIKeyProcedure,
 			connect.WithSchema(apiKeyServiceCreateAPIKeyMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		refreshAPIKey: connect.NewClient[sdp_go.RefreshAPIKeyRequest, sdp_go.RefreshAPIKeyResponse](
+			httpClient,
+			baseURL+ApiKeyServiceRefreshAPIKeyProcedure,
+			connect.WithSchema(apiKeyServiceRefreshAPIKeyMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 		getAPIKey: connect.NewClient[sdp_go.GetAPIKeyRequest, sdp_go.GetAPIKeyResponse](
@@ -130,6 +144,7 @@ func NewApiKeyServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 // apiKeyServiceClient implements ApiKeyServiceClient.
 type apiKeyServiceClient struct {
 	createAPIKey        *connect.Client[sdp_go.CreateAPIKeyRequest, sdp_go.CreateAPIKeyResponse]
+	refreshAPIKey       *connect.Client[sdp_go.RefreshAPIKeyRequest, sdp_go.RefreshAPIKeyResponse]
 	getAPIKey           *connect.Client[sdp_go.GetAPIKeyRequest, sdp_go.GetAPIKeyResponse]
 	updateAPIKey        *connect.Client[sdp_go.UpdateAPIKeyRequest, sdp_go.UpdateAPIKeyResponse]
 	listAPIKeys         *connect.Client[sdp_go.ListAPIKeysRequest, sdp_go.ListAPIKeysResponse]
@@ -140,6 +155,11 @@ type apiKeyServiceClient struct {
 // CreateAPIKey calls apikeys.ApiKeyService.CreateAPIKey.
 func (c *apiKeyServiceClient) CreateAPIKey(ctx context.Context, req *connect.Request[sdp_go.CreateAPIKeyRequest]) (*connect.Response[sdp_go.CreateAPIKeyResponse], error) {
 	return c.createAPIKey.CallUnary(ctx, req)
+}
+
+// RefreshAPIKey calls apikeys.ApiKeyService.RefreshAPIKey.
+func (c *apiKeyServiceClient) RefreshAPIKey(ctx context.Context, req *connect.Request[sdp_go.RefreshAPIKeyRequest]) (*connect.Response[sdp_go.RefreshAPIKeyResponse], error) {
+	return c.refreshAPIKey.CallUnary(ctx, req)
 }
 
 // GetAPIKey calls apikeys.ApiKeyService.GetAPIKey.
@@ -173,6 +193,10 @@ type ApiKeyServiceHandler interface {
 	// cannot be used until the user has been redirected to the given URL which
 	// allows Auth0 to actually generate an access token
 	CreateAPIKey(context.Context, *connect.Request[sdp_go.CreateAPIKeyRequest]) (*connect.Response[sdp_go.CreateAPIKeyResponse], error)
+	// Refreshes an API key, returning a new one with the same metadata and
+	// properties. The response will be the same as CreateAPIKey, and requires
+	// the same redirect handling to authenticate the new key.
+	RefreshAPIKey(context.Context, *connect.Request[sdp_go.RefreshAPIKeyRequest]) (*connect.Response[sdp_go.RefreshAPIKeyResponse], error)
 	GetAPIKey(context.Context, *connect.Request[sdp_go.GetAPIKeyRequest]) (*connect.Response[sdp_go.GetAPIKeyResponse], error)
 	UpdateAPIKey(context.Context, *connect.Request[sdp_go.UpdateAPIKeyRequest]) (*connect.Response[sdp_go.UpdateAPIKeyResponse], error)
 	ListAPIKeys(context.Context, *connect.Request[sdp_go.ListAPIKeysRequest]) (*connect.Response[sdp_go.ListAPIKeysResponse], error)
@@ -192,6 +216,12 @@ func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect.HandlerOp
 		ApiKeyServiceCreateAPIKeyProcedure,
 		svc.CreateAPIKey,
 		connect.WithSchema(apiKeyServiceCreateAPIKeyMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	apiKeyServiceRefreshAPIKeyHandler := connect.NewUnaryHandler(
+		ApiKeyServiceRefreshAPIKeyProcedure,
+		svc.RefreshAPIKey,
+		connect.WithSchema(apiKeyServiceRefreshAPIKeyMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
 	apiKeyServiceGetAPIKeyHandler := connect.NewUnaryHandler(
@@ -228,6 +258,8 @@ func NewApiKeyServiceHandler(svc ApiKeyServiceHandler, opts ...connect.HandlerOp
 		switch r.URL.Path {
 		case ApiKeyServiceCreateAPIKeyProcedure:
 			apiKeyServiceCreateAPIKeyHandler.ServeHTTP(w, r)
+		case ApiKeyServiceRefreshAPIKeyProcedure:
+			apiKeyServiceRefreshAPIKeyHandler.ServeHTTP(w, r)
 		case ApiKeyServiceGetAPIKeyProcedure:
 			apiKeyServiceGetAPIKeyHandler.ServeHTTP(w, r)
 		case ApiKeyServiceUpdateAPIKeyProcedure:
@@ -249,6 +281,10 @@ type UnimplementedApiKeyServiceHandler struct{}
 
 func (UnimplementedApiKeyServiceHandler) CreateAPIKey(context.Context, *connect.Request[sdp_go.CreateAPIKeyRequest]) (*connect.Response[sdp_go.CreateAPIKeyResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("apikeys.ApiKeyService.CreateAPIKey is not implemented"))
+}
+
+func (UnimplementedApiKeyServiceHandler) RefreshAPIKey(context.Context, *connect.Request[sdp_go.RefreshAPIKeyRequest]) (*connect.Response[sdp_go.RefreshAPIKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("apikeys.ApiKeyService.RefreshAPIKey is not implemented"))
 }
 
 func (UnimplementedApiKeyServiceHandler) GetAPIKey(context.Context, *connect.Request[sdp_go.GetAPIKeyRequest]) (*connect.Response[sdp_go.GetAPIKeyResponse], error) {
