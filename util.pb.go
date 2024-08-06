@@ -27,9 +27,9 @@ type PaginationRequest struct {
 
 	// The number of items to return in a single page. The minimum is 10 and the maximum is 100.
 	PageSize int32 `protobuf:"varint,1,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
-	// The page number to return. the first page is 0.
+	// The page number to return. the first page is 1.
 	// if the page number is larger than the total number of pages, the last page is returned.
-	// if the page number is negative, the first page 0 is returned.
+	// if the page number is negative, the first page 1 is returned.
 	Page int32 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
 }
 
@@ -89,7 +89,7 @@ type PaginationResponse struct {
 	// The total number of items available. Expensive to calculate https://www.cybertec-postgresql.com/en/pagination-problem-total-result-count/
 	// this is done as a separate query
 	TotalItems int32 `protobuf:"varint,2,opt,name=totalItems,proto3" json:"totalItems,omitempty"`
-	// The current page number
+	// The current page number, NB if the user provided a negative page number, this will be 1, if the user provided a page number larger than the total number of pages, this will be the last page.
 	Page int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	// The total number of pages available. based on the totalItems and pageSize.
 	TotalPages int32 `protobuf:"varint,4,opt,name=totalPages,proto3" json:"totalPages,omitempty"`
