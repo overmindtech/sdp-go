@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/coder/websocket"
 	"github.com/google/uuid"
 	"github.com/overmindtech/sdp-go"
 	log "github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"google.golang.org/protobuf/proto"
-	"nhooyr.io/websocket"
 )
 
 // Client is the main driver for all interactions with a SDP/Gateway websocket.
@@ -97,7 +97,7 @@ func dialImpl(ctx context.Context, u string, httpClient *http.Client, handler Ga
 		}
 	}
 
-	// nolint: bodyclose // nhooyr.io/websocket reads the body internally
+	// nolint: bodyclose // github.com/coder/websocket reads the body internally
 	conn, _, err := websocket.Dial(ctx, u, options)
 	if err != nil {
 		return nil, err
