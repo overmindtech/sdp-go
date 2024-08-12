@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/google/uuid"
 	"github.com/overmindtech/sdp-go"
 	"go.uber.org/goleak"
 	"google.golang.org/protobuf/proto"
-	"nhooyr.io/websocket"
 )
 
 // TestServer is a test server for the websocket client. Note that this can only

@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	connectrpc.com/connect v1.16.2
 	github.com/auth0/go-jwt-middleware/v2 v2.2.1
+	github.com/coder/websocket v1.8.12
 	github.com/getsentry/sentry-go v0.28.1
 	github.com/go-jose/go-jose/v4 v4.0.4
 	github.com/google/uuid v1.6.0
@@ -20,7 +21,6 @@ require (
 	golang.org/x/oauth2 v0.22.0
 	gonum.org/v1/gonum v0.15.0
 	google.golang.org/protobuf v1.34.2
-	nhooyr.io/websocket v1.8.11
 )
 
 require (
