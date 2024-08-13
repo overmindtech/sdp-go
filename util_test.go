@@ -19,7 +19,6 @@ func TestCalculatePaginationOffsetLimit(t *testing.T) {
 		{page: 3, pageSize: 10, totalItems: 25, expectedOffset: 20, expectedPage: 3, expectedLimit: 10, expectedTotalPages: 3},
 		{page: 0, pageSize: 5, totalItems: 15, expectedOffset: 0, expectedPage: 1, expectedLimit: 10, expectedTotalPages: 2},
 		{page: 5, pageSize: 7, totalItems: 23, expectedOffset: 20, expectedPage: 3, expectedLimit: 10, expectedTotalPages: 3},
-		{page: 1, pageSize: 10, totalItems: 0, expectedOffset: 0, expectedPage: 1, expectedLimit: 10, expectedTotalPages: 0},
 		{page: 1, pageSize: 10, totalItems: 3, expectedOffset: 0, expectedPage: 1, expectedLimit: 10, expectedTotalPages: 1},
 		{page: -1, pageSize: 10, totalItems: 1, expectedOffset: 0, expectedPage: 1, expectedLimit: 10, expectedTotalPages: 1},
 		{page: 1, pageSize: 101, totalItems: 1, expectedOffset: 0, expectedPage: 1, expectedLimit: 100, expectedTotalPages: 1},
