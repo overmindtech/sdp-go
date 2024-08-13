@@ -275,7 +275,7 @@ func TestItemDiffToYAMLDiff(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !strings.Contains(diff, "-    ami-id: ami-12345678") {
+		if !strings.Contains(diff, "-  ami-id: ami-12345678") {
 			t.Errorf("diff does not contain expected value")
 		}
 	})
