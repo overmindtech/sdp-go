@@ -45,4 +45,20 @@ func TestCalculatePaginationOffsetLimit(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Default values", func(t *testing.T) {
+		offset, limit, correctedPage, pages := CalculatePaginationOffsetLimit(nil, 0)
+		if offset != 0 {
+			t.Errorf("Expected offset 0, but got %d", offset)
+		}
+		if correctedPage != 1 {
+			t.Errorf("Expected correctedPage 1, but got %d", correctedPage)
+		}
+		if limit != 10 {
+			t.Errorf("Expected limit 10, but got %d", limit)
+		}
+		if pages != 0 {
+			t.Errorf("Expected pages 0, but got %d", pages)
+		}
+	})
 }
