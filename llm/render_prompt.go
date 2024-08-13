@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"math"
 	"text/template"
+	"time"
 
 	"github.com/akedrou/textdiff"
 	"github.com/akedrou/textdiff/myers"
 	"github.com/overmindtech/sdp-go"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,16 +32,19 @@ import (
 // prettyStatus: Returns a human-readable status for an sdp.ItemDiffStatus
 //
 // prettySeverity: Returns a human-readable severity for an sdp.Risk_Severity
+//
+// prettyTime: Formats a time.Time or *timestamppb.Timestamp as a human-readable
+// string
 func RenderPrompt(tpl string, args any) (string, error) {
 	parsed, err := template.New("tpl").Funcs(
 		template.FuncMap{
-			// TODO: Audit these and make sure they are used
 			"trim":               trim,
 			"itemToYAML":         itemToYAML,
 			"itemDiffToYAMLDiff": itemDiffToYAMLDiff,
 			"globallyUniqueName": globallyUniqueName,
 			"prettyStatus":       prettyStatus,
 			"prettySeverity":     prettySeverity,
+			"prettyTime":         prettyTime,
 		},
 	).Parse(tpl)
 	if err != nil {
@@ -51,6 +56,18 @@ func RenderPrompt(tpl string, args any) (string, error) {
 		return "", fmt.Errorf("could not execute template: %w", err)
 	}
 	return buf.String(), nil
+}
+
+// Formats a time.Time or *timestamppb.Timestamp as a human-readable string
+func prettyTime(input any) string {
+	switch val := input.(type) {
+	case time.Time:
+		return val.Format(time.RFC3339)
+	case *timestamppb.Timestamp:
+		return val.AsTime().Format(time.RFC3339)
+	default:
+		return fmt.Sprint(input)
+	}
 }
 
 // prettySeverity returns a human-readable string for the given severity
