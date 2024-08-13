@@ -23,6 +23,7 @@ func TestCalculatePaginationOffsetLimit(t *testing.T) {
 		{page: 1, pageSize: 10, totalItems: 3, expectedOffset: 0, expectedPage: 1, expectedLimit: 10, expectedTotalPages: 1},
 		{page: -1, pageSize: 10, totalItems: 1, expectedOffset: 0, expectedPage: 1, expectedLimit: 10, expectedTotalPages: 1},
 		{page: 1, pageSize: 101, totalItems: 1, expectedOffset: 0, expectedPage: 1, expectedLimit: 100, expectedTotalPages: 1},
+		{page: 1, pageSize: 10, totalItems: 0, expectedOffset: 0, expectedPage: 0, expectedLimit: 0, expectedTotalPages: 0},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("page%d pagesize%d totalItems%d", tc.page, tc.pageSize, tc.totalItems), func(t *testing.T) {
@@ -47,7 +48,7 @@ func TestCalculatePaginationOffsetLimit(t *testing.T) {
 	}
 
 	t.Run("Default values", func(t *testing.T) {
-		offset, limit, correctedPage, pages := CalculatePaginationOffsetLimit(nil, 0)
+		offset, limit, correctedPage, pages := CalculatePaginationOffsetLimit(nil, 100)
 		if offset != 0 {
 			t.Errorf("Expected offset 0, but got %d", offset)
 		}
@@ -57,8 +58,8 @@ func TestCalculatePaginationOffsetLimit(t *testing.T) {
 		if limit != 10 {
 			t.Errorf("Expected limit 10, but got %d", limit)
 		}
-		if pages != 0 {
-			t.Errorf("Expected pages 0, but got %d", pages)
+		if pages != 10 {
+			t.Errorf("Expected pages 10, but got %d", pages)
 		}
 	})
 }
