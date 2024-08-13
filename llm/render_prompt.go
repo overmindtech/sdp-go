@@ -38,7 +38,6 @@ import (
 func RenderPrompt(tpl string, args any) (string, error) {
 	parsed, err := template.New("tpl").Funcs(
 		template.FuncMap{
-			// TODO: Audit these and make sure they are used
 			"trim":               trim,
 			"itemToYAML":         itemToYAML,
 			"itemDiffToYAMLDiff": itemDiffToYAMLDiff,
