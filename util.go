@@ -8,6 +8,8 @@ import "math"
 //
 // This also sets sane defaults for the page size if pagination is not provided.
 // These defaults are page 1 with a page size of 10
+//
+// NOTE: If there are no items, then this will return 0 for all values
 func CalculatePaginationOffsetLimit(pagination *PaginationRequest, totalItems int32) (offset, limit, page, totalPages int32) {
 	if totalItems == 0 {
 		// If there are no items, there are no pages
