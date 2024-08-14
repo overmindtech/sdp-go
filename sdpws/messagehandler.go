@@ -27,7 +27,9 @@ type GatewayMessageHandler interface {
 	BookmarkStoreResult(context.Context, *sdp.BookmarkStoreResult)
 	BookmarkLoadResult(context.Context, *sdp.BookmarkLoadResult)
 	QueryStatus(context.Context, *sdp.QueryStatus)
-	ChatMessageResult(context.Context, *sdp.ChatMessageResult)
+	ChatResponse(context.Context, *sdp.ChatResponse)
+	ToolStart(context.Context, *sdp.ToolStart)
+	ToolFinish(context.Context, *sdp.ToolFinish)
 }
 
 type LoggingGatewayMessageHandler struct {
@@ -89,8 +91,16 @@ func (l *LoggingGatewayMessageHandler) QueryStatus(ctx context.Context, status *
 	log.WithContext(ctx).WithField("status", status).Log(l.Level, "received query status")
 }
 
-func (l *LoggingGatewayMessageHandler) ChatMessageResult(ctx context.Context, chatMessageResult *sdp.ChatMessageResult) {
-	log.WithContext(ctx).WithField("chatMessage", chatMessageResult).Log(l.Level, "received chat message result")
+func (l *LoggingGatewayMessageHandler) ChatResponse(ctx context.Context, chatResponse *sdp.ChatResponse) {
+	log.WithContext(ctx).WithField("chatResponse", chatResponse).Log(l.Level, "received chat response")
+}
+
+func (l *LoggingGatewayMessageHandler) ToolStart(ctx context.Context, toolStart *sdp.ToolStart) {
+	log.WithContext(ctx).WithField("toolStart", toolStart).Log(l.Level, "received tool start")
+}
+
+func (l *LoggingGatewayMessageHandler) ToolFinish(ctx context.Context, toolFinish *sdp.ToolFinish) {
+	log.WithContext(ctx).WithField("toolFinish", toolFinish).Log(l.Level, "received tool finish")
 }
 
 type NoopGatewayMessageHandler struct{}
@@ -137,7 +147,13 @@ func (l *NoopGatewayMessageHandler) BookmarkLoadResult(ctx context.Context, resu
 func (l *NoopGatewayMessageHandler) QueryStatus(ctx context.Context, status *sdp.QueryStatus) {
 }
 
-func (l *NoopGatewayMessageHandler) ChatMessageResult(ctx context.Context, chatMessageResult *sdp.ChatMessageResult) {
+func (l *NoopGatewayMessageHandler) ChatResponse(ctx context.Context, chatMessageResult *sdp.ChatResponse) {
+}
+
+func (l *NoopGatewayMessageHandler) ToolStart(ctx context.Context, toolStart *sdp.ToolStart) {
+}
+
+func (l *NoopGatewayMessageHandler) ToolFinish(ctx context.Context, toolFinish *sdp.ToolFinish) {
 }
 
 var _ GatewayMessageHandler = (*StoreEverythingHandler)(nil)

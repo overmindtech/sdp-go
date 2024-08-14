@@ -261,10 +261,24 @@ func (c *Client) receive(ctx context.Context) {
 				c.finishRequestChan(u)
 			}
 
-		case *sdp.GatewayResponse_ChatMessageResult:
-			chatMessageResult := msg.GetChatMessageResult()
+		case *sdp.GatewayResponse_ChatResponse:
+			chatResponse := msg.GetChatResponse()
 			if c.handler != nil {
-				c.handler.ChatMessageResult(ctx, chatMessageResult)
+				c.handler.ChatResponse(ctx, chatResponse)
+			}
+			c.postRequestChan(uuid.Nil, msg)
+
+		case *sdp.GatewayResponse_ToolStart:
+			toolStart := msg.GetToolStart()
+			if c.handler != nil {
+				c.handler.ToolStart(ctx, toolStart)
+			}
+			c.postRequestChan(uuid.Nil, msg)
+
+		case *sdp.GatewayResponse_ToolFinish:
+			toolFinish := msg.GetToolFinish()
+			if c.handler != nil {
+				c.handler.ToolFinish(ctx, toolFinish)
 			}
 			c.postRequestChan(uuid.Nil, msg)
 
