@@ -67,12 +67,12 @@ func TestResponseSenderDone(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if queryResponse, ok := finalMessage.V.(*QueryResponse); ok {
-		if finalResponse, ok := queryResponse.ResponseType.(*QueryResponse_Response); ok {
-			if finalResponse.Response.State != ResponderState_COMPLETE {
-				t.Errorf("Expected final message state to be COMPLETE (1), found: %v", finalResponse.Response.State)
+		if finalResponse, ok := queryResponse.GetResponseType().(*QueryResponse_Response); ok {
+			if finalResponse.Response.GetState() != ResponderState_COMPLETE {
+				t.Errorf("Expected final message state to be COMPLETE (1), found: %v", finalResponse.Response.GetState())
 			}
 		} else {
-			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.ResponseType)
+			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.GetResponseType())
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -114,12 +114,12 @@ func TestResponseSenderError(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if queryResponse, ok := finalMessage.V.(*QueryResponse); ok {
-		if finalResponse, ok := queryResponse.ResponseType.(*QueryResponse_Response); ok {
-			if finalResponse.Response.State != ResponderState_ERROR {
-				t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.Response.State)
+		if finalResponse, ok := queryResponse.GetResponseType().(*QueryResponse_Response); ok {
+			if finalResponse.Response.GetState() != ResponderState_ERROR {
+				t.Errorf("Expected final message state to be ERROR, found: %v", finalResponse.Response.GetState())
 			}
 		} else {
-			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.ResponseType)
+			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.GetResponseType())
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -161,12 +161,12 @@ func TestResponseSenderCancel(t *testing.T) {
 	tp.messagesMutex.Unlock()
 
 	if queryResponse, ok := finalMessage.V.(*QueryResponse); ok {
-		if finalResponse, ok := queryResponse.ResponseType.(*QueryResponse_Response); ok {
-			if finalResponse.Response.State != ResponderState_CANCELLED {
-				t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.Response.State)
+		if finalResponse, ok := queryResponse.GetResponseType().(*QueryResponse_Response); ok {
+			if finalResponse.Response.GetState() != ResponderState_CANCELLED {
+				t.Errorf("Expected final message state to be CANCELLED, found: %v", finalResponse.Response.GetState())
 			}
 		} else {
-			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.ResponseType)
+			t.Errorf("Final QueryResponse did not contain a valid Response object. Message content type %T", queryResponse.GetResponseType())
 		}
 	} else {
 		t.Errorf("Final message did not contain a valid response object. Message content type %T", finalMessage.V)
@@ -804,7 +804,7 @@ func TestExecute(t *testing.T) {
 						Responder:     "test",
 						ResponderUUID: ru1[:],
 						State:         ResponderState_WORKING,
-						UUID:          q.UUID,
+						UUID:          q.GetUUID(),
 						NextUpdateIn: &durationpb.Duration{
 							Seconds: 10,
 							Nanos:   0,
@@ -837,7 +837,7 @@ func TestExecute(t *testing.T) {
 						Responder:     "test",
 						ResponderUUID: ru1[:],
 						State:         ResponderState_COMPLETE,
-						UUID:          q.UUID,
+						UUID:          q.GetUUID(),
 					},
 				},
 			})
@@ -897,7 +897,7 @@ func TestRealNats(t *testing.T) {
 				Responder:     "test",
 				ResponderUUID: ru1[:],
 				State:         ResponderState_WORKING,
-				UUID:          q.UUID,
+				UUID:          q.GetUUID(),
 				NextUpdateIn: &durationpb.Duration{
 					Seconds: 10,
 					Nanos:   0,
@@ -914,7 +914,7 @@ func TestRealNats(t *testing.T) {
 				Responder:     "test",
 				ResponderUUID: ru1[:],
 				State:         ResponderState_COMPLETE,
-				UUID:          q.UUID,
+				UUID:          q.GetUUID(),
 			}}})
 		}))
 		ready <- true
@@ -966,7 +966,7 @@ func TestFastFinisher(t *testing.T) {
 			Responder:     "test",
 			ResponderUUID: fast[:],
 			State:         ResponderState_WORKING,
-			UUID:          q.UUID,
+			UUID:          q.GetUUID(),
 			NextUpdateIn: &durationpb.Duration{
 				Seconds: 1,
 				Nanos:   0,
@@ -989,7 +989,7 @@ func TestFastFinisher(t *testing.T) {
 			Responder:     "test",
 			ResponderUUID: fast[:],
 			State:         ResponderState_COMPLETE,
-			UUID:          q.UUID,
+			UUID:          q.GetUUID(),
 		}}})
 		if err != nil {
 			t.Fatal(err)
@@ -1014,7 +1014,7 @@ func TestFastFinisher(t *testing.T) {
 			Responder:     "test",
 			ResponderUUID: slow[:],
 			State:         ResponderState_WORKING,
-			UUID:          q.UUID,
+			UUID:          q.GetUUID(),
 			NextUpdateIn: &durationpb.Duration{
 				Seconds: 1,
 				Nanos:   0,
@@ -1026,7 +1026,7 @@ func TestFastFinisher(t *testing.T) {
 
 		// Send an item
 		item := newItem()
-		item.Attributes.Set("name", "baz")
+		item.GetAttributes().Set("name", "baz")
 		err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: item}})
 		if err != nil {
 			t.Fatal(err)
@@ -1037,7 +1037,7 @@ func TestFastFinisher(t *testing.T) {
 			Responder:     "test",
 			ResponderUUID: slow[:],
 			State:         ResponderState_COMPLETE,
-			UUID:          q.UUID,
+			UUID:          q.GetUUID(),
 		}}})
 		if err != nil {
 			t.Fatal(err)

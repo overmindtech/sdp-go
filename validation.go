@@ -11,19 +11,19 @@ func (i *Item) Validate() error {
 		return errors.New("Item is nil")
 	}
 
-	if i.Type == "" {
+	if i.GetType() == "" {
 		return fmt.Errorf("item has empty Type: %v", i.GloballyUniqueName())
 	}
 
-	if i.UniqueAttribute == "" {
+	if i.GetUniqueAttribute() == "" {
 		return fmt.Errorf("item has empty UniqueAttribute: %v", i.GloballyUniqueName())
 	}
 
-	if i.Attributes == nil {
+	if i.GetAttributes() == nil {
 		return fmt.Errorf("item has nil Attributes: %v", i.GloballyUniqueName())
 	}
 
-	if i.Scope == "" {
+	if i.GetScope() == "" {
 		return fmt.Errorf("item has empty Scope: %v", i.GloballyUniqueName())
 	}
 
@@ -39,14 +39,13 @@ func (r *Reference) Validate() error {
 	if r == nil {
 		return errors.New("reference is nil")
 	}
-
-	if r.Type == "" {
+	if r.GetType() == "" {
 		return fmt.Errorf("reference has empty Type: %v", r)
 	}
-	if r.UniqueAttributeValue == "" {
+	if r.GetUniqueAttributeValue() == "" {
 		return fmt.Errorf("reference has empty UniqueAttributeValue: %v", r)
 	}
-	if r.Scope == "" {
+	if r.GetScope() == "" {
 		return fmt.Errorf("reference has empty Scope: %v", r)
 	}
 
@@ -61,13 +60,12 @@ func (e *Edge) Validate() error {
 
 	var err error
 
-	err = e.From.Validate()
-
+	err = e.GetFrom().Validate()
 	if err != nil {
 		return err
 	}
 
-	err = e.To.Validate()
+	err = e.GetTo().Validate()
 
 	return err
 }
@@ -78,11 +76,11 @@ func (r *Response) Validate() error {
 		return errors.New("response is nil")
 	}
 
-	if r.Responder == "" {
+	if r.GetResponder() == "" {
 		return fmt.Errorf("response has empty Responder: %v", r)
 	}
 
-	if len(r.UUID) == 0 {
+	if len(r.GetUUID()) == 0 {
 		return fmt.Errorf("response has empty UUID: %v", r)
 	}
 
@@ -95,28 +93,28 @@ func (e *QueryError) Validate() error {
 		return errors.New("queryError is nil")
 	}
 
-	if len(e.UUID) == 0 {
-		return fmt.Errorf("queryError has empty UUID: %v", e)
+	if len(e.GetUUID()) == 0 {
+		return fmt.Errorf("queryError has empty UUID: %w", e)
 	}
 
-	if e.ErrorString == "" {
-		return fmt.Errorf("queryError has empty ErrorString: %v", e)
+	if e.GetErrorString() == "" {
+		return fmt.Errorf("queryError has empty ErrorString: %w", e)
 	}
 
-	if e.Scope == "" {
-		return fmt.Errorf("queryError has empty Scope: %v", e)
+	if e.GetScope() == "" {
+		return fmt.Errorf("queryError has empty Scope: %w", e)
 	}
 
-	if e.SourceName == "" {
-		return fmt.Errorf("queryError has empty SourceName: %v", e)
+	if e.GetSourceName() == "" {
+		return fmt.Errorf("queryError has empty SourceName: %w", e)
 	}
 
-	if e.ItemType == "" {
-		return fmt.Errorf("queryError has empty ItemType: %v", e)
+	if e.GetItemType() == "" {
+		return fmt.Errorf("queryError has empty ItemType: %w", e)
 	}
 
-	if e.ResponderName == "" {
-		return fmt.Errorf("queryError has empty ResponderName: %v", e)
+	if e.GetResponderName() == "" {
+		return fmt.Errorf("queryError has empty ResponderName: %w", e)
 	}
 
 	return nil
@@ -128,20 +126,20 @@ func (q *Query) Validate() error {
 		return errors.New("query is nil")
 	}
 
-	if q.Type == "" {
+	if q.GetType() == "" {
 		return fmt.Errorf("query has empty Type: %v", q)
 	}
 
-	if q.Scope == "" {
+	if q.GetScope() == "" {
 		return fmt.Errorf("query has empty Scope: %v", q)
 	}
 
-	if len(q.UUID) != 16 {
+	if len(q.GetUUID()) != 16 {
 		return fmt.Errorf("query has invalid UUID: %v", q)
 	}
 
-	if q.Method == QueryMethod_GET {
-		if q.Query == "" {
+	if q.GetMethod() == QueryMethod_GET {
+		if q.GetQuery() == "" {
 			return fmt.Errorf("query cannot have empty Query when method is Get: %v", q)
 		}
 	}

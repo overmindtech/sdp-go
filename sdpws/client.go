@@ -150,13 +150,13 @@ func (c *Client) receive(ctx context.Context) {
 			return
 		}
 
-		switch msg.ResponseType.(type) {
+		switch msg.GetResponseType().(type) {
 		case *sdp.GatewayResponse_NewItem:
 			item := msg.GetNewItem()
 			if c.handler != nil {
 				c.handler.NewItem(ctx, item)
 			}
-			u, err := uuid.FromBytes(item.Metadata.SourceQuery.UUID)
+			u, err := uuid.FromBytes(item.GetMetadata().GetSourceQuery().GetUUID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
@@ -184,7 +184,7 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.QueryError(ctx, qe)
 			}
-			u, err := uuid.FromBytes(qe.UUID)
+			u, err := uuid.FromBytes(qe.GetUUID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
@@ -212,7 +212,7 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.SnapshotStoreResult(ctx, result)
 			}
-			u, err := uuid.FromBytes(result.MsgID)
+			u, err := uuid.FromBytes(result.GetMsgID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
@@ -222,7 +222,7 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.SnapshotLoadResult(ctx, result)
 			}
-			u, err := uuid.FromBytes(result.MsgID)
+			u, err := uuid.FromBytes(result.GetMsgID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
@@ -232,7 +232,7 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.BookmarkStoreResult(ctx, result)
 			}
-			u, err := uuid.FromBytes(result.MsgID)
+			u, err := uuid.FromBytes(result.GetMsgID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
@@ -242,7 +242,7 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.BookmarkLoadResult(ctx, result)
 			}
-			u, err := uuid.FromBytes(result.MsgID)
+			u, err := uuid.FromBytes(result.GetMsgID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
@@ -252,12 +252,12 @@ func (c *Client) receive(ctx context.Context) {
 			if c.handler != nil {
 				c.handler.QueryStatus(ctx, qs)
 			}
-			u, err := uuid.FromBytes(qs.UUID)
+			u, err := uuid.FromBytes(qs.GetUUID())
 			if err == nil {
 				c.postRequestChan(u, msg)
 			}
 
-			switch qs.Status {
+			switch qs.GetStatus() {
 			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
 				c.finishRequestChan(u)
 			}
@@ -284,7 +284,7 @@ func (c *Client) receive(ctx context.Context) {
 			c.postRequestChan(uuid.Nil, msg)
 
 		default:
-			log.WithContext(ctx).WithField("response", msg).WithField("responseType", fmt.Sprintf("%T", msg.ResponseType)).Warn("unexpected response")
+			log.WithContext(ctx).WithField("response", msg).WithField("responseType", fmt.Sprintf("%T", msg.GetResponseType())).Warn("unexpected response")
 		}
 	}
 }

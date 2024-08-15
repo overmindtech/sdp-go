@@ -2,24 +2,24 @@ package sdp
 
 func (s *Snapshot) ToMap() map[string]any {
 	return map[string]any{
-		"metadata":   s.Metadata.ToMap(),
-		"properties": s.Properties.ToMap(),
+		"metadata":   s.GetMetadata().ToMap(),
+		"properties": s.GetProperties().ToMap(),
 	}
 }
 
 func (sm *SnapshotMetadata) ToMap() map[string]any {
 	return map[string]any{
-		"UUID":    stringFromUuidBytes(sm.UUID),
-		"created": sm.Created.AsTime(),
+		"UUID":    stringFromUuidBytes(sm.GetUUID()),
+		"created": sm.GetCreated().AsTime(),
 	}
 }
 
 func (sp *SnapshotProperties) ToMap() map[string]any {
 	return map[string]any{
-		"name":          sp.Name,
-		"description":   sp.Description,
-		"queries":       sp.Queries,
-		"excludedItems": sp.ExcludedItems,
-		"Items":         sp.Items,
+		"name":          sp.GetName(),
+		"description":   sp.GetDescription(),
+		"queries":       sp.GetQueries(),
+		"excludedItems": sp.GetExcludedItems(),
+		"Items":         sp.GetItems(),
 	}
 }

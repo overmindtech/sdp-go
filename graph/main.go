@@ -183,9 +183,9 @@ func (g *SDPGraph) AddItem(item *sdp.Item, weight float64) int64 {
 	g.nodesByGUN[item.GloballyUniqueName()] = &node
 
 	// Find all edges and add them
-	for _, linkedItem := range item.LinkedItems {
+	for _, linkedItem := range item.GetLinkedItems() {
 		// Check if the linked item node exists
-		linkedItemNode, exists := g.nodesByGUN[linkedItem.Item.GloballyUniqueName()]
+		linkedItemNode, exists := g.nodesByGUN[linkedItem.GetItem().GloballyUniqueName()]
 
 		if exists {
 			// Add the edge
@@ -198,10 +198,10 @@ func (g *SDPGraph) AddItem(item *sdp.Item, weight float64) int64 {
 		} else {
 			// If the target for the edge doesn't exist, add this to the list to
 			// be created later
-			if _, exists := g.unseenEdges[linkedItem.Item.GloballyUniqueName()]; !exists {
-				g.unseenEdges[linkedItem.Item.GloballyUniqueName()] = []*Node{&node}
+			if _, exists := g.unseenEdges[linkedItem.GetItem().GloballyUniqueName()]; !exists {
+				g.unseenEdges[linkedItem.GetItem().GloballyUniqueName()] = []*Node{&node}
 			} else {
-				g.unseenEdges[linkedItem.Item.GloballyUniqueName()] = append(g.unseenEdges[linkedItem.Item.GloballyUniqueName()], &node)
+				g.unseenEdges[linkedItem.GetItem().GloballyUniqueName()] = append(g.unseenEdges[linkedItem.GetItem().GloballyUniqueName()], &node)
 			}
 		}
 	}

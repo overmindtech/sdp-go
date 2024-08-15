@@ -43,7 +43,7 @@ func (c *Client) Query(ctx context.Context, q *sdp.Query) ([]*sdp.Item, error) {
 		return nil, errors.New("client closed")
 	}
 
-	u := uuid.UUID(q.UUID)
+	u := uuid.UUID(q.GetUUID())
 
 	r := c.createRequestChan(u)
 	defer c.finishRequestChan(u)
@@ -67,7 +67,7 @@ readLoop:
 			if !more {
 				break readLoop
 			}
-			switch resp.ResponseType.(type) {
+			switch resp.GetResponseType().(type) {
 			case *sdp.GatewayResponse_NewItem:
 				item := resp.GetNewItem()
 				log.WithContext(ctx).WithField("query", q).WithField("item", item).Trace("received item")
@@ -75,7 +75,7 @@ readLoop:
 			case *sdp.GatewayResponse_QueryError:
 				qe := resp.GetQueryError()
 				log.WithContext(ctx).WithField("query", q).WithField("queryError", qe).Trace("received query error")
-				switch qe.ErrorType {
+				switch qe.GetErrorType() {
 				case sdp.QueryError_OTHER, sdp.QueryError_TIMEOUT, sdp.QueryError_NOSCOPE:
 					// record that we received an error, but continue reading
 					// if we receive any item, mapping was still successful
@@ -90,7 +90,7 @@ readLoop:
 				span := trace.SpanFromContext(ctx)
 				span.SetAttributes(attribute.String("ovm.sdp.lastQueryStatus", qs.String()))
 				log.WithContext(ctx).WithField("query", q).WithField("queryStatus", qs).Trace("received query status")
-				switch qs.Status {
+				switch qs.GetStatus() {
 				case sdp.QueryStatus_FINISHED:
 					break readLoop
 				case sdp.QueryStatus_CANCELLED:
@@ -106,7 +106,7 @@ readLoop:
 					break readLoop
 				}
 			default:
-				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.ResponseType)).Warn("unexpected response")
+				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.GetResponseType())).Warn("unexpected response")
 			}
 		}
 	}
@@ -183,16 +183,16 @@ func (c *Client) StoreSnapshot(ctx context.Context, name, description string) (u
 			if !more {
 				return uuid.UUID{}, errors.New("request channel closed")
 			}
-			switch resp.ResponseType.(type) {
+			switch resp.GetResponseType().(type) {
 			case *sdp.GatewayResponse_SnapshotStoreResult:
 				ssr := resp.GetSnapshotStoreResult()
 				log.WithContext(ctx).WithField("Snapshot", s).WithField("snapshotStoreResult", ssr).Trace("received snapshot store result")
-				if ssr.Success {
-					return uuid.UUID(ssr.SnapshotID), nil
+				if ssr.GetSuccess() {
+					return uuid.UUID(ssr.GetSnapshotID()), nil
 				}
-				return uuid.UUID{}, fmt.Errorf("snapshot store failed: %v", ssr.ErrorMessage)
+				return uuid.UUID{}, fmt.Errorf("snapshot store failed: %v", ssr.GetErrorMessage())
 			default:
-				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.ResponseType)).Warn("unexpected response")
+				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.GetResponseType())).Warn("unexpected response")
 				return uuid.UUID{}, errors.New("unexpected response")
 			}
 		}
@@ -264,16 +264,16 @@ func (c *Client) StoreBookmark(ctx context.Context, name, description string, is
 			if !more {
 				return uuid.UUID{}, errors.New("request channel closed")
 			}
-			switch resp.ResponseType.(type) {
+			switch resp.GetResponseType().(type) {
 			case *sdp.GatewayResponse_BookmarkStoreResult:
 				bsr := resp.GetBookmarkStoreResult()
 				log.WithContext(ctx).WithField("bookmark", b).WithField("bookmarkStoreResult", bsr).Trace("received bookmark store result")
-				if bsr.Success {
-					return uuid.UUID(bsr.BookmarkID), nil
+				if bsr.GetSuccess() {
+					return uuid.UUID(bsr.GetBookmarkID()), nil
 				}
-				return uuid.UUID{}, fmt.Errorf("bookmark store failed: %v", bsr.ErrorMessage)
+				return uuid.UUID{}, fmt.Errorf("bookmark store failed: %v", bsr.GetErrorMessage())
 			default:
-				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.ResponseType)).Warn("unexpected response")
+				log.WithContext(ctx).WithField("response", resp).WithField("responseType", fmt.Sprintf("%T", resp.GetResponseType())).Warn("unexpected response")
 				return uuid.UUID{}, errors.New("unexpected response")
 			}
 		}

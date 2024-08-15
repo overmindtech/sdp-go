@@ -13,13 +13,19 @@ func TestRequest(t *testing.T) {
 
 	t.Run("with a regular subject", func(t *testing.T) {
 		// Create the responder
-		tc.Subscribe("test", func(msg *nats.Msg) {
-			tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
+		_, err := tc.Subscribe("test", func(msg *nats.Msg) {
+			err2 := tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
 				ResponseType: &GatewayResponse_Error{
 					Error: "testing",
 				},
 			})
+			if err2 != nil {
+				t.Error(err2)
+			}
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := &GatewayRequest{}
 
@@ -43,20 +49,26 @@ func TestRequest(t *testing.T) {
 			t.Error(err)
 		}
 
-		if response.ResponseType.(*GatewayResponse_Error).Error != "testing" {
+		if response.GetResponseType().(*GatewayResponse_Error).Error != "testing" {
 			t.Errorf("expected error to be 'testing', got '%v'", response)
 		}
 	})
 
 	t.Run("with a > wildcard subject", func(t *testing.T) {
 		// Create the responder
-		tc.Subscribe("test.>", func(msg *nats.Msg) {
-			tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
+		_, err := tc.Subscribe("test.>", func(msg *nats.Msg) {
+			err2 := tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
 				ResponseType: &GatewayResponse_Error{
 					Error: "testing",
 				},
 			})
+			if err2 != nil {
+				t.Error(err2)
+			}
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := &GatewayRequest{}
 
@@ -80,20 +92,26 @@ func TestRequest(t *testing.T) {
 			t.Error(err)
 		}
 
-		if response.ResponseType.(*GatewayResponse_Error).Error != "testing" {
+		if response.GetResponseType().(*GatewayResponse_Error).Error != "testing" {
 			t.Errorf("expected error to be 'testing', got '%v'", response)
 		}
 	})
 
 	t.Run("with a * wildcard subject", func(t *testing.T) {
 		// Create the responder
-		tc.Subscribe("test.*.bar", func(msg *nats.Msg) {
-			tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
+		_, err := tc.Subscribe("test.*.bar", func(msg *nats.Msg) {
+			err2 := tc.Publish(context.Background(), msg.Reply, &GatewayResponse{
 				ResponseType: &GatewayResponse_Error{
 					Error: "testing",
 				},
 			})
+			if err2 != nil {
+				t.Error(err2)
+			}
 		})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		request := &GatewayRequest{}
 
@@ -117,7 +135,7 @@ func TestRequest(t *testing.T) {
 			t.Error(err)
 		}
 
-		if response.ResponseType.(*GatewayResponse_Error).Error != "testing" {
+		if response.GetResponseType().(*GatewayResponse_Error).Error != "testing" {
 			t.Errorf("expected error to be 'testing', got '%v'", response)
 		}
 	})

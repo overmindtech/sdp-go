@@ -29,12 +29,12 @@ func (e *QueryError) GetUUIDParsed() *uuid.UUID {
 func (e *QueryError) Error() string {
 	return fmt.Sprintf(
 		ErrorTemplate,
-		e.ErrorString,
-		e.ErrorType.String(),
-		e.Scope,
-		e.SourceName,
-		e.ItemType,
-		e.ResponderName,
+		e.GetErrorString(),
+		e.GetErrorType().String(),
+		e.GetScope(),
+		e.GetSourceName(),
+		e.GetItemType(),
+		e.GetResponderName(),
 	)
 }
 

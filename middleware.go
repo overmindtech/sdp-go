@@ -272,7 +272,10 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"message":"Failed to validate JWT."}`))
+		_, err = w.Write([]byte(`{"message":"Failed to validate JWT."}`))
+		if err != nil {
+			log.WithContext(r.Context()).WithError(err).Error("Failed to write response")
+		}
 	}
 
 	// Set up token extractors based on what env vars are available

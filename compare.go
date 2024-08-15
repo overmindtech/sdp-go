@@ -2,7 +2,7 @@ package sdp
 
 import "fmt"
 
-// Comparer is an object that can be compared for the ourposes of sorting.
+// Comparer is an object that can be compared for the purposes of sorting.
 // Basically anything that implements this interface is sortable
 type Comparer interface {
 	Compare(b *Item) int
@@ -12,8 +12,8 @@ type Comparer interface {
 // the string conversion of the Type, followed by the UniqueAttribute
 func (i *Item) Compare(r *Item) (int, error) {
 	// Convert to strings
-	right := fmt.Sprintf("%v: %v", r.Type, r.UniqueAttributeValue())
-	left := fmt.Sprintf("%v: %v", i.Type, i.UniqueAttributeValue())
+	right := fmt.Sprintf("%v: %v", r.GetType(), r.UniqueAttributeValue())
+	left := fmt.Sprintf("%v: %v", i.GetType(), i.UniqueAttributeValue())
 
 	// Compare the strings and return the value
 	switch {

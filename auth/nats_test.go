@@ -364,12 +364,12 @@ func ValidateNATSConnection(t *testing.T, ec sdp.EncodedConnection) {
 	done := make(chan struct{})
 
 	sub, err := ec.Subscribe("test", sdp.NewQueryResponseHandler("test", func(ctx context.Context, qr *sdp.QueryResponse) {
-		rt, ok := qr.ResponseType.(*sdp.QueryResponse_Response)
+		rt, ok := qr.GetResponseType().(*sdp.QueryResponse_Response)
 		if !ok {
 			t.Errorf("Received unexpected message: %v", qr)
 		}
 
-		if rt.Response.Responder == "test" {
+		if rt.Response.GetResponder() == "test" {
 			done <- struct{}{}
 		}
 	}))

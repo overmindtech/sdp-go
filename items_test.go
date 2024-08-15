@@ -173,7 +173,7 @@ func TestToAttributes(t *testing.T) {
 			}
 
 			// Convert the attributes to JSON
-			attributesBytes, err = json.MarshalIndent(attributes.AttrStruct.AsMap(), "", "  ")
+			attributesBytes, err = json.MarshalIndent(attributes.GetAttrStruct().AsMap(), "", "  ")
 
 			if err != nil {
 				t.Fatal(err)
@@ -461,15 +461,15 @@ func TestCopy(t *testing.T) {
 }
 
 func AssertItemsEqual(itemA *Item, itemB *Item, t *testing.T) {
-	if itemA.Scope != itemB.Scope {
+	if itemA.GetScope() != itemB.GetScope() {
 		t.Error("Scope did not match")
 	}
 
-	if itemA.Type != itemB.Type {
+	if itemA.GetType() != itemB.GetType() {
 		t.Error("Type did not match")
 	}
 
-	if itemA.UniqueAttribute != itemB.UniqueAttribute {
+	if itemA.GetUniqueAttribute() != itemB.GetUniqueAttribute() {
 		t.Error("UniqueAttribute did not match")
 	}
 
@@ -477,13 +477,13 @@ func AssertItemsEqual(itemA *Item, itemB *Item, t *testing.T) {
 	var nameB interface{}
 	var err error
 
-	nameA, err = itemA.Attributes.Get("name")
+	nameA, err = itemA.GetAttributes().Get("name")
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	nameB, err = itemB.Attributes.Get("name")
+	nameB, err = itemB.GetAttributes().Get("name")
 
 	if err != nil {
 		t.Error(err)
@@ -494,86 +494,86 @@ func AssertItemsEqual(itemA *Item, itemB *Item, t *testing.T) {
 
 	}
 
-	if len(itemA.LinkedItemQueries) != len(itemB.LinkedItemQueries) {
+	if len(itemA.GetLinkedItemQueries()) != len(itemB.GetLinkedItemQueries()) {
 		t.Error("LinkedItemQueries length did not match")
 	}
 
-	if len(itemA.LinkedItemQueries) > 0 {
-		if itemA.LinkedItemQueries[0].Query.Type != itemB.LinkedItemQueries[0].Query.Type {
+	if len(itemA.GetLinkedItemQueries()) > 0 {
+		if itemA.GetLinkedItemQueries()[0].GetQuery().GetType() != itemB.GetLinkedItemQueries()[0].GetQuery().GetType() {
 			t.Error("LinkedItemQueries[0].Type did not match")
 		}
 	}
 
-	if len(itemA.LinkedItems) != len(itemB.LinkedItems) {
+	if len(itemA.GetLinkedItems()) != len(itemB.GetLinkedItems()) {
 		t.Error("LinkedItems length did not match")
 	}
 
-	if len(itemA.LinkedItems) > 0 {
-		if itemA.LinkedItems[0].Item.Type != itemB.LinkedItems[0].Item.Type {
+	if len(itemA.GetLinkedItems()) > 0 {
+		if itemA.GetLinkedItems()[0].GetItem().GetType() != itemB.GetLinkedItems()[0].GetItem().GetType() {
 			t.Error("LinkedItemQueries[0].Type did not match")
 		}
 	}
 
-	for k, v := range itemA.Tags {
-		if itemB.Tags[k] != v {
+	for k, v := range itemA.GetTags() {
+		if itemB.GetTags()[k] != v {
 			t.Errorf("Tags[%v] did not match", k)
 		}
 	}
 
 	if itemA.Health == nil {
 		if itemB.Health != nil {
-			t.Errorf("mismatched health nil and %v", *itemB.Health)
+			t.Errorf("mismatched health nil and %v", itemB.GetHealth())
 		}
 	} else {
 		if itemB.Health == nil {
-			t.Errorf("mismatched health %v and nil", *itemA.Health)
+			t.Errorf("mismatched health %v and nil", itemA.GetHealth())
 
 		} else {
-			if *itemA.Health != *itemB.Health {
-				t.Errorf("mismatched health %v and %v", *itemA.Health, *itemB.Health)
+			if itemA.GetHealth() != itemB.GetHealth() {
+				t.Errorf("mismatched health %v and %v", itemA.GetHealth(), itemB.GetHealth())
 			}
 		}
 	}
 
-	if itemA.Metadata != nil {
-		if itemA.Metadata.SourceDuration.String() != itemB.Metadata.SourceDuration.String() {
+	if itemA.GetMetadata() != nil {
+		if itemA.GetMetadata().GetSourceDuration().String() != itemB.GetMetadata().GetSourceDuration().String() {
 			t.Error("SourceDuration did not match")
 		}
 
-		if itemA.Metadata.SourceDurationPerItem.String() != itemB.Metadata.SourceDurationPerItem.String() {
+		if itemA.GetMetadata().GetSourceDurationPerItem().String() != itemB.GetMetadata().GetSourceDurationPerItem().String() {
 			t.Error("SourceDurationPerItem did not match")
 		}
 
-		if itemA.Metadata.SourceName != itemB.Metadata.SourceName {
+		if itemA.GetMetadata().GetSourceName() != itemB.GetMetadata().GetSourceName() {
 			t.Error("SourceName did not match")
 		}
 
-		if itemA.Metadata.Timestamp.String() != itemB.Metadata.Timestamp.String() {
+		if itemA.GetMetadata().GetTimestamp().String() != itemB.GetMetadata().GetTimestamp().String() {
 			t.Error("Timestamp did not match")
 		}
 
-		if itemA.Metadata.Hidden != itemB.Metadata.Hidden {
+		if itemA.GetMetadata().GetHidden() != itemB.GetMetadata().GetHidden() {
 			t.Error("Metadata.Hidden does not match")
 		}
 
-		if itemA.Metadata.SourceQuery != nil {
-			if itemA.Metadata.SourceQuery.Scope != itemB.Metadata.SourceQuery.Scope {
+		if itemA.GetMetadata().GetSourceQuery() != nil {
+			if itemA.GetMetadata().GetSourceQuery().GetScope() != itemB.GetMetadata().GetSourceQuery().GetScope() {
 				t.Error("Metadata.SourceQuery.Scope does not match")
 			}
 
-			if itemA.Metadata.SourceQuery.Method != itemB.Metadata.SourceQuery.Method {
+			if itemA.GetMetadata().GetSourceQuery().GetMethod() != itemB.GetMetadata().GetSourceQuery().GetMethod() {
 				t.Error("Metadata.SourceQuery.Method does not match")
 			}
 
-			if itemA.Metadata.SourceQuery.Query != itemB.Metadata.SourceQuery.Query {
+			if itemA.GetMetadata().GetSourceQuery().GetQuery() != itemB.GetMetadata().GetSourceQuery().GetQuery() {
 				t.Error("Metadata.SourceQuery.Query does not match")
 			}
 
-			if itemA.Metadata.SourceQuery.Type != itemB.Metadata.SourceQuery.Type {
+			if itemA.GetMetadata().GetSourceQuery().GetType() != itemB.GetMetadata().GetSourceQuery().GetType() {
 				t.Error("Metadata.SourceQuery.Type does not match")
 			}
 
-			if !bytes.Equal(itemA.Metadata.SourceQuery.UUID, itemB.Metadata.SourceQuery.UUID) {
+			if !bytes.Equal(itemA.GetMetadata().GetSourceQuery().GetUUID(), itemB.GetMetadata().GetSourceQuery().GetUUID()) {
 				t.Error("Metadata.SourceQuery.UUID does not match")
 			}
 		}

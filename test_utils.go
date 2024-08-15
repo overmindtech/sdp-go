@@ -49,7 +49,10 @@ func (t *TestConnection) Publish(ctx context.Context, subj string, m proto.Messa
 		Subject: subj,
 		Data:    data,
 	}
-	t.runHandlers(&msg)
+	err = t.runHandlers(&msg)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -63,7 +66,10 @@ func (t *TestConnection) PublishMsg(ctx context.Context, msg *nats.Msg) error {
 	})
 	t.messagesMutex.Unlock()
 
-	t.runHandlers(msg)
+	err := t.runHandlers(msg)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -117,13 +123,14 @@ func (t *TestConnection) RequestMsg(ctx context.Context, msg *nats.Msg) (*nats.M
 	replies := make(chan interface{}, 128)
 
 	// Subscribe to the reply subject
-	t.Subscribe(replySubject, func(msg *nats.Msg) {
+	_, err := t.Subscribe(replySubject, func(msg *nats.Msg) {
 		replies <- msg
 	})
-
+	if err != nil {
+		return nil, err
+	}
 	// Run the handlers
-	err := t.runHandlers(msg)
-
+	err = t.runHandlers(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +214,7 @@ var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 func randSeq(n int) string {
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = letters[rand.Intn(len(letters))] // nolint:gosec // This is not for security
 	}
 	return string(b)
 }

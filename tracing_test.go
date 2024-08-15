@@ -20,6 +20,7 @@ func TestTraceContextPropagation(t *testing.T) {
 
 	outerCtx := context.Background()
 	outerCtx, outerSpan := tp.Tracer("outerTracer").Start(outerCtx, "outer span")
+	defer outerSpan.End()
 	// outerJson, err := outerSpan.SpanContext().MarshalJSON()
 	// if err != nil {
 	// 	t.Errorf("error marshalling outerSpan: %v", err)
@@ -52,7 +53,9 @@ func TestTraceContextPropagation(t *testing.T) {
 	}
 
 	InjectOtelTraceContext(outerCtx, m)
-	tc.PublishMsg(outerCtx, m)
-
+	err := tc.PublishMsg(outerCtx, m)
+	if err != nil {
+		t.Errorf("error publishing message: %v", err)
+	}
 	<-handlerCalled
 }

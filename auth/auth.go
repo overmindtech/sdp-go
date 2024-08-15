@@ -203,15 +203,15 @@ func (n *natsTokenClient) generateJWT(ctx context.Context) error {
 		// Use the regular API and let the client authentication determine what our org should be
 		log.WithFields(log.Fields{
 			"account":    n.Account,
-			"publicNKey": req.UserPublicNkey,
-			"UserName":   req.UserName,
+			"publicNKey": req.GetUserPublicNkey(),
+			"UserName":   req.GetUserName(),
 		}).Trace("Using regular API to get NATS token")
 		response, err = n.mgmtClient.CreateToken(ctx, connect.NewRequest(req))
 	} else {
 		log.WithFields(log.Fields{
 			"account":    n.Account,
-			"publicNKey": req.UserPublicNkey,
-			"UserName":   req.UserName,
+			"publicNKey": req.GetUserPublicNkey(),
+			"UserName":   req.GetUserName(),
 		}).Trace("Using admin API to get NATS token")
 		// Explicitly request an org
 		response, err = n.adminClient.CreateToken(ctx, connect.NewRequest(&sdp.AdminCreateTokenRequest{
@@ -223,7 +223,7 @@ func (n *natsTokenClient) generateJWT(ctx context.Context) error {
 		return fmt.Errorf("getting NATS token failed: %w", err)
 	}
 
-	n.jwt = response.Msg.Token
+	n.jwt = response.Msg.GetToken()
 
 	return nil
 }
@@ -323,12 +323,12 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("error exchanging API key: %w", err)
 	}
 
-	if res.Msg.AccessToken == "" {
+	if res.Msg.GetAccessToken() == "" {
 		return nil, errors.New("no access token returned")
 	}
 
 	// Parse the expiry out of the token
-	token, err := josejwt.ParseSigned(res.Msg.AccessToken, []jose.SignatureAlgorithm{jose.RS256})
+	token, err := josejwt.ParseSigned(res.Msg.GetAccessToken(), []jose.SignatureAlgorithm{jose.RS256})
 
 	if err != nil {
 		return nil, fmt.Errorf("error parsing JWT: %w", err)
@@ -343,7 +343,7 @@ func (ats *APIKeyTokenSource) Token() (*oauth2.Token, error) {
 	}
 
 	ats.token = &oauth2.Token{
-		AccessToken: res.Msg.AccessToken,
+		AccessToken: res.Msg.GetAccessToken(),
 		TokenType:   "Bearer",
 		Expiry:      claims.Expiry.Time(),
 	}
