@@ -49,12 +49,7 @@ func (t *TestConnection) Publish(ctx context.Context, subj string, m proto.Messa
 		Subject: subj,
 		Data:    data,
 	}
-	err = t.runHandlers(&msg)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return t.runHandlers(&msg)
 }
 
 // PublishMsg Test publish method, notes down the subject and the message

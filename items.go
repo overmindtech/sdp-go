@@ -2,7 +2,7 @@ package sdp
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base32"
 	"encoding/json"
 	"errors"
@@ -525,7 +525,7 @@ func sanitizeInterface(i interface{}, sortArrays bool, customTransforms Transfor
 		t = v.Type()
 	}
 
-	switch v.Kind() {
+	switch v.Kind() { // nolint:exhaustive // we fall through to the default case
 	case reflect.Bool:
 		return v.Bool()
 	case reflect.Int:
@@ -643,11 +643,10 @@ func sortInterfaceArray(input []interface{}) {
 }
 
 func hashSum(b []byte) string {
-	var shaSum [20]byte
 	var paddedEncoding *base32.Encoding
 	var unpaddedEncoding *base32.Encoding
 
-	shaSum = sha1.Sum(b)
+	shaSum := sha256.Sum256(b)
 
 	// We need to specify a custom encoding here since dGraph has fairly strict
 	// requirements about what name a variable can have

@@ -90,7 +90,7 @@ readLoop:
 				span := trace.SpanFromContext(ctx)
 				span.SetAttributes(attribute.String("ovm.sdp.lastQueryStatus", qs.String()))
 				log.WithContext(ctx).WithField("query", q).WithField("queryStatus", qs).Trace("received query status")
-				switch qs.GetStatus() {
+				switch qs.GetStatus() { // nolint:exhaustive // we dont care about sdp.QueryStatus_UNSPECIFIED, sdp.QueryStatus_STARTED
 				case sdp.QueryStatus_FINISHED:
 					break readLoop
 				case sdp.QueryStatus_CANCELLED:

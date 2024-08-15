@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -554,7 +555,7 @@ func TestRogueResponder(t *testing.T) {
 		for {
 			select {
 			case <-ticker.C:
-				rp.ProcessResponse(context.Background(), &Response{
+				rp.ProcessResponse(context.Background(), &Response{ // nolint: contextcheck // testing a rogue responder
 					Responder:     "test",
 					ResponderUUID: rur[:],
 					State:         ResponderState_WORKING,
@@ -664,38 +665,53 @@ func TestStart(t *testing.T) {
 	conn := TestConnection{}
 	items := make(chan *Item, 128)
 	errs := make(chan *QueryError, 128)
-
-	err := rp.Start(context.Background(), &conn, items, errs)
+	// this emulates a source
+	sourceHit := atomic.Bool{}
+	_, err := conn.Subscribe(fmt.Sprintf("request.scope.%v", query.GetScope()), func(msg *nats.Msg) {
+		sourceHit.Store(true)
+		response := QueryResponse{
+			ResponseType: &QueryResponse_NewItem{
+				NewItem: &item,
+			},
+		}
+		// Test that the handlers work
+		err := conn.Publish(context.Background(), query.Subject(), &response)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(conn.Messages) != 1 {
-		t.Errorf("expected 1 message to be sent, got %v", len(conn.Messages))
-	}
-
-	response := QueryResponse{
-		ResponseType: &QueryResponse_NewItem{
-			NewItem: &item,
-		},
-	}
-
-	// Test that the handlers work
-	err = conn.Publish(context.Background(), query.Subject(), &response)
+	err = rp.Start(context.Background(), &conn, items, errs)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	receivedItem := <-items
 
+	conn.messagesMutex.Lock()
+	if len(conn.Messages) != 2 {
+		t.Errorf("expected 2 messages to be sent, got %v", len(conn.Messages))
+	}
+	conn.messagesMutex.Unlock()
+
 	if receivedItem.Hash() != item.Hash() {
 		t.Error("item hash mismatch")
+	}
+	if !sourceHit.Load() {
+		t.Error("source was not hit")
 	}
 }
 
 func TestAsyncCancel(t *testing.T) {
 	t.Run("With no responders", func(t *testing.T) {
 		conn := TestConnection{}
+		_, err := conn.Subscribe("test", func(msg *nats.Msg) {})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		rp := NewQueryProgress(&query)
 		rp.DrainDelay = 0
@@ -703,14 +719,12 @@ func TestAsyncCancel(t *testing.T) {
 		itemChan := make(chan *Item, 128)
 		errChan := make(chan *QueryError, 128)
 
-		err := rp.Start(context.Background(), &conn, itemChan, errChan)
-
+		err = rp.Start(context.Background(), &conn, itemChan, errChan)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		err = rp.AsyncCancel(&conn)
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -748,6 +762,10 @@ func TestAsyncCancel(t *testing.T) {
 
 func TestExecute(t *testing.T) {
 	conn := TestConnection{}
+	_, err := conn.Subscribe("request.scope.global", func(msg *nats.Msg) {})
+	if err != nil {
+		t.Fatal(err)
+	}
 	u := uuid.New()
 
 	t.Run("with no responders", func(t *testing.T) {
@@ -798,7 +816,7 @@ func TestExecute(t *testing.T) {
 			delay := 100 * time.Millisecond
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+			err := conn.Publish(context.Background(), q.Subject(), &QueryResponse{
 				ResponseType: &QueryResponse_Response{
 					Response: &Response{
 						Responder:     "test",
@@ -812,26 +830,35 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			})
+			if err != nil {
+				t.Error(err)
+			}
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+			err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{
 				ResponseType: &QueryResponse_NewItem{
 					NewItem: &item,
 				},
 			})
+			if err != nil {
+				t.Error(err)
+			}
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+			err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{
 				ResponseType: &QueryResponse_NewItem{
 					NewItem: &item,
 				},
 			})
+			if err != nil {
+				t.Error(err)
+			}
 
 			time.Sleep(delay)
 
-			conn.Publish(context.Background(), q.Subject(), &QueryResponse{
+			err = conn.Publish(context.Background(), q.Subject(), &QueryResponse{
 				ResponseType: &QueryResponse_Response{
 					Response: &Response{
 						Responder:     "test",
@@ -841,10 +868,12 @@ func TestExecute(t *testing.T) {
 					},
 				},
 			})
+			if err != nil {
+				t.Error(err)
+			}
 		}()
 
 		items, errs, err := rp.Execute(context.Background(), &conn)
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -888,12 +917,12 @@ func TestRealNats(t *testing.T) {
 	ready := make(chan bool)
 
 	go func() {
-		enc.Subscribe("request.scope.global", NewQueryHandler("test", func(ctx context.Context, handledQuery *Query) {
+		_, err := enc.Subscribe("request.scope.global", NewQueryHandler("test", func(ctx context.Context, handledQuery *Query) {
 			delay := 100 * time.Millisecond
 
 			time.Sleep(delay)
 
-			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
+			err := enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 				Responder:     "test",
 				ResponderUUID: ru1[:],
 				State:         ResponderState_WORKING,
@@ -903,20 +932,35 @@ func TestRealNats(t *testing.T) {
 					Nanos:   0,
 				},
 			}}})
+			if err != nil {
+				t.Error(err)
+			}
 
 			time.Sleep(delay)
 
-			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: &item}})
+			err = enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: &item}})
+			if err != nil {
+				t.Error(err)
+			}
 
-			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: &item}})
+			err = enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_NewItem{NewItem: &item}})
+			if err != nil {
+				t.Error(err)
+			}
 
-			enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
+			err = enc.Publish(ctx, q.Subject(), &QueryResponse{ResponseType: &QueryResponse_Response{Response: &Response{
 				Responder:     "test",
 				ResponderUUID: ru1[:],
 				State:         ResponderState_COMPLETE,
 				UUID:          q.GetUUID(),
 			}}})
+			if err != nil {
+				t.Error(err)
+			}
 		}))
+		if err != nil {
+			t.Error(err)
+		}
 		ready <- true
 	}()
 
@@ -951,7 +995,7 @@ func TestFastFinisher(t *testing.T) {
 
 	// Set up the fast responder, it should respond immediately and take only
 	// 100ms to complete its work
-	conn.Subscribe("request.scope.global", func(msg *nats.Msg) {
+	_, err := conn.Subscribe("request.scope.global", func(msg *nats.Msg) {
 		// Make sure this is the request
 		var q Query
 
@@ -995,9 +1039,12 @@ func TestFastFinisher(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Set up another responder that takes 250ms to start
-	conn.Subscribe("request.scope.global", func(msg *nats.Msg) {
+	_, err = conn.Subscribe("request.scope.global", func(msg *nats.Msg) {
 		// Unmarshal the query
 		var q Query
 
@@ -1043,6 +1090,9 @@ func TestFastFinisher(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	items, errs, err := progress.Execute(context.Background(), &conn)
 

@@ -270,7 +270,7 @@ func TestNewAuthMiddleware(t *testing.T) {
 			ExpectedCode: http.StatusOK,
 		},
 		{
-			Name:         "with no token on a non-bypasssed path",
+			Name:         "with no token on a non-bypassed path",
 			Path:         "/",
 			AuthConfig:   bypassHealthConfig,
 			ExpectedCode: http.StatusUnauthorized,
@@ -416,7 +416,7 @@ func TestNewAuthMiddleware(t *testing.T) {
 			}))
 
 			rr := httptest.NewRecorder()
-			req, err := http.NewRequest("GET", test.Path, nil)
+			req, err := http.NewRequestWithContext(context.Background(), "GET", test.Path, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -458,7 +458,7 @@ func BenchmarkAuthMiddleware(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 		// pass 'nil' as the third parameter.
-		req, err := http.NewRequest("GET", "/", nil)
+		req, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 
 		if err != nil {
 			b.Fatal(err)

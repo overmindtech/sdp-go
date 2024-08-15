@@ -30,7 +30,7 @@ func TestTraceContextPropagation(t *testing.T) {
 	// 	}
 	// }
 	handlerCalled := make(chan struct{})
-	tc.Subscribe("test.subject", NewOtelExtractingHandler("inner span", func(innerCtx context.Context, msg *nats.Msg) {
+	_, err := tc.Subscribe("test.subject", NewOtelExtractingHandler("inner span", func(innerCtx context.Context, msg *nats.Msg) {
 		handlerCalled <- struct{}{}
 
 		_, innerSpan := tp.Tracer("innerTracer").Start(innerCtx, "innerSpan")
@@ -46,6 +46,9 @@ func TestTraceContextPropagation(t *testing.T) {
 			t.Error("inner span did not link up to outer span")
 		}
 	}, tp.Tracer("providedTracer")))
+	if err != nil {
+		t.Errorf("error subscribing: %v", err)
+	}
 
 	m := &nats.Msg{
 		Subject: "test.subject",
@@ -53,7 +56,7 @@ func TestTraceContextPropagation(t *testing.T) {
 	}
 
 	InjectOtelTraceContext(outerCtx, m)
-	err := tc.PublishMsg(outerCtx, m)
+	err = tc.PublishMsg(outerCtx, m)
 	if err != nil {
 		t.Errorf("error publishing message: %v", err)
 	}

@@ -40,7 +40,9 @@ func newTestServer(_ context.Context, t *testing.T) (*testServer, func()) {
 		if err != nil {
 			return
 		}
-		defer c.CloseNow()
+		defer func() {
+			_ = c.Close(websocket.StatusNormalClosure, "")
+		}()
 
 		ts.connMu.Lock()
 		ts.conn = c

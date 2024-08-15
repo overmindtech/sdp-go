@@ -1,6 +1,7 @@
 package sdp
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -41,7 +42,8 @@ func (e *QueryError) Error() string {
 // NewQueryError converts a regular error to a QueryError of type
 // OTHER. If the input error is already a QueryError then it is preserved
 func NewQueryError(err error) *QueryError {
-	if sdpErr, ok := err.(*QueryError); ok {
+	var sdpErr *QueryError
+	if errors.As(err, &sdpErr) {
 		return sdpErr
 	}
 

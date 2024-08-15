@@ -257,7 +257,7 @@ func (c *Client) receive(ctx context.Context) {
 				c.postRequestChan(u, msg)
 			}
 
-			switch qs.GetStatus() {
+			switch qs.GetStatus() { // nolint: exhaustive // ignore sdp.QueryStatus_UNSPECIFIED, sdp.QueryStatus_STARTED
 			case sdp.QueryStatus_FINISHED, sdp.QueryStatus_CANCELLED, sdp.QueryStatus_ERRORED:
 				c.finishRequestChan(u)
 			}

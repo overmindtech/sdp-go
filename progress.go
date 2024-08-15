@@ -80,11 +80,14 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	if rs.connection != nil {
 		// Send the initial response
-		rs.connection.Publish(
+		err := rs.connection.Publish(
 			ctx,
 			rs.ResponseSubject,
 			&QueryResponse{ResponseType: &QueryResponse_Response{Response: &resp}},
 		)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error publishing initial response")
+		}
 	}
 
 	rs.monitorRunning.Add(1)
@@ -148,11 +151,14 @@ func (rs *ResponseSender) killWithResponse(ctx context.Context, r *Response) {
 	if rs.connection != nil {
 		if r != nil {
 			// Send the final response
-			rs.connection.Publish(ctx, rs.ResponseSubject, &QueryResponse{
+			err := rs.connection.Publish(ctx, rs.ResponseSubject, &QueryResponse{
 				ResponseType: &QueryResponse_Response{
 					Response: r,
 				},
 			})
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error publishing final response")
+			}
 		}
 	}
 }
@@ -460,7 +466,7 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 		}
 	}
 
-	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("", func(ctx context.Context, qr *QueryResponse) {
+	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("", func(ctx context.Context, qr *QueryResponse) { //nolint:contextcheck // we pass the context in the func
 		log.WithContext(ctx).WithFields(log.Fields{
 			"response": qr,
 		}).Trace("Received response")
@@ -545,7 +551,10 @@ func (qp *QueryProgress) Drain() {
 		}
 
 		// Close the item and error subscriptions
-		unsubscribeGracefully(qp.querySub)
+		err := unsubscribeGracefully(qp.querySub)
+		if err != nil {
+			log.WithContext(qp.requestCtx).WithError(err).Error("Error unsubscribing from query subject")
+		}
 
 		qp.chanMutex.Lock()
 		defer qp.chanMutex.Unlock()
@@ -579,7 +588,10 @@ func (qp *QueryProgress) Done() <-chan struct{} {
 //
 // Returns a boolean indicating whether the cancellation needed to be forced
 func (qp *QueryProgress) Cancel(ctx context.Context, ec EncodedConnection) bool {
-	qp.AsyncCancel(ec)
+	err := qp.AsyncCancel(ec)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error cancelling request")
+	}
 
 	select {
 	case <-qp.Done():
@@ -724,10 +736,10 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 
 		monitorContext, monitorCancel := context.WithCancel(context.Background())
 
-		responder.SetMonitorContext(monitorContext, monitorCancel)
+		responder.SetMonitorContext(monitorContext, monitorCancel) // nolint: contextcheck // we expect a new response
 
 		// Create a goroutine to watch for a stalled connection
-		go stallMonitor(monitorContext, timeout, responder, qp)
+		go stallMonitor(monitorContext, timeout, responder, qp) // nolint: contextcheck // we expect a new response
 	}
 
 	// Finally check to see if this was the final request and if so drain
