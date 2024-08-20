@@ -327,7 +327,7 @@ func (c *Client) Wait(ctx context.Context, reqIDs uuid.UUIDs) error {
 			// remove all finished requests from the list of requests to wait for
 			reqIDs = slices.DeleteFunc(reqIDs, func(reqID uuid.UUID) bool {
 				_, ok := c.finishedRequestMap[reqID]
-				return !ok
+				return ok
 			})
 			if len(reqIDs) == 0 {
 				return true
