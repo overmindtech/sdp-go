@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"sync"
 
 	"github.com/coder/websocket"
@@ -52,7 +53,7 @@ type Client struct {
 
 	finishedRequestMap     map[uuid.UUID]bool
 	finishedRequestMapCond *sync.Cond
-	finishedRequestMapMu   sync.RWMutex
+	finishedRequestMapMu   sync.Mutex
 
 	err   error
 	errMu sync.Mutex
@@ -318,23 +319,27 @@ func (c *Client) Wait(ctx context.Context, reqIDs uuid.UUIDs) error {
 			return ctx.Err()
 		}
 
-		c.finishedRequestMapMu.RLock()
-		finished := true
-		for _, reqID := range reqIDs {
-			if !c.finishedRequestMap[reqID] {
-				finished = false
-				break
+		// wrap this in a function so defers can be called (otherwise the lock is held for all loop iterations)
+		finished := func() bool {
+			c.finishedRequestMapMu.Lock()
+			defer c.finishedRequestMapMu.Unlock()
+
+			// remove all finished requests from the list of requests to wait for
+			reqIDs = slices.DeleteFunc(reqIDs, func(reqID uuid.UUID) bool {
+				_, ok := c.finishedRequestMap[reqID]
+				return ok
+			})
+			if len(reqIDs) == 0 {
+				return true
 			}
-		}
-		c.finishedRequestMapMu.RUnlock()
+
+			c.finishedRequestMapCond.Wait()
+			return false
+		}()
+
 		if finished {
 			return nil
 		}
-
-		// block until any request is finished or the connection closes
-		c.finishedRequestMapMu.Lock()
-		c.finishedRequestMapCond.Wait()
-		c.finishedRequestMapMu.Unlock()
 	}
 }
 
