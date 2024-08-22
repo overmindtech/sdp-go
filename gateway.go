@@ -17,17 +17,17 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 	}
 
 	// Check the basics first
-	if len(x.ResponderStates) != len(y.ResponderStates) {
+	if len(x.GetResponderStates()) != len(y.GetResponderStates()) {
 		return false
 	}
 
-	if (x.Summary == nil || y.Summary == nil) && x.Summary != y.Summary {
+	if (x.GetSummary() == nil || y.GetSummary() == nil) && x.GetSummary() != y.GetSummary() {
 		// If one of them is nil, and they aren't both nil
 		return false
 	}
 
-	for xResponder, xState := range x.ResponderStates {
-		yState, exists := y.ResponderStates[xResponder]
+	for xResponder, xState := range x.GetResponderStates() {
+		yState, exists := y.GetResponderStates()[xResponder]
 
 		if !exists {
 			return false
@@ -38,28 +38,28 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 		}
 	}
 
-	if x.Summary != nil && y.Summary != nil {
-		if x.Summary.Working != y.Summary.Working {
+	if x.GetSummary() != nil && y.GetSummary() != nil {
+		if x.GetSummary().GetWorking() != y.GetSummary().GetWorking() {
 			return false
 		}
-		if x.Summary.Stalled != y.Summary.Stalled {
+		if x.GetSummary().GetStalled() != y.GetSummary().GetStalled() {
 			return false
 		}
-		if x.Summary.Complete != y.Summary.Complete {
+		if x.GetSummary().GetComplete() != y.GetSummary().GetComplete() {
 			return false
 		}
-		if x.Summary.Error != y.Summary.Error {
+		if x.GetSummary().GetError() != y.GetSummary().GetError() {
 			return false
 		}
-		if x.Summary.Cancelled != y.Summary.Cancelled {
+		if x.GetSummary().GetCancelled() != y.GetSummary().GetCancelled() {
 			return false
 		}
-		if x.Summary.Responders != y.Summary.Responders {
+		if x.GetSummary().GetResponders() != y.GetSummary().GetResponders() {
 			return false
 		}
 	}
 
-	if x.PostProcessingComplete != y.PostProcessingComplete {
+	if x.GetPostProcessingComplete() != y.GetPostProcessingComplete() {
 		return false
 	}
 
@@ -68,7 +68,7 @@ func (x *GatewayRequestStatus) Equal(y *GatewayRequestStatus) bool {
 
 // Whether the gateway request is complete
 func (x *GatewayRequestStatus) Done() bool {
-	return x.PostProcessingComplete && x.Summary.Working == 0
+	return x.GetPostProcessingComplete() && x.GetSummary().GetWorking() == 0
 }
 
 // GetMsgIDLogString returns the correlation ID as string for logging

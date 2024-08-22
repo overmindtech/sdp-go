@@ -2,7 +2,7 @@ package sdp
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base32"
 	"encoding/json"
 	"errors"
@@ -29,24 +29,24 @@ func (liq *BlastPropagation) Copy(dest *BlastPropagation) {
 // Copy copies all information from one item pointer to another
 func (liq *LinkedItemQuery) Copy(dest *LinkedItemQuery) {
 	dest.Query = &Query{}
-	if liq.Query != nil {
-		liq.Query.Copy(dest.Query)
+	if liq.GetQuery() != nil {
+		liq.GetQuery().Copy(dest.GetQuery())
 	}
 	dest.BlastPropagation = &BlastPropagation{}
-	if liq.BlastPropagation != nil {
-		liq.BlastPropagation.Copy(dest.BlastPropagation)
+	if liq.GetBlastPropagation() != nil {
+		liq.GetBlastPropagation().Copy(dest.GetBlastPropagation())
 	}
 }
 
 // Copy copies all information from one item pointer to another
 func (li *LinkedItem) Copy(dest *LinkedItem) {
 	dest.Item = &Reference{}
-	if li.Item != nil {
-		li.Item.Copy(dest.Item)
+	if li.GetItem() != nil {
+		li.GetItem().Copy(dest.GetItem())
 	}
 	dest.BlastPropagation = &BlastPropagation{}
-	if li.BlastPropagation != nil {
-		li.BlastPropagation.Copy(dest.BlastPropagation)
+	if li.GetBlastPropagation() != nil {
+		li.GetBlastPropagation().Copy(dest.GetBlastPropagation())
 	}
 }
 
@@ -56,7 +56,7 @@ func (i *Item) UniqueAttributeValue() string {
 	var value interface{}
 	var err error
 
-	value, err = i.GetAttributes().Get(i.UniqueAttribute)
+	value, err = i.GetAttributes().Get(i.GetUniqueAttribute())
 
 	if err == nil {
 		return fmt.Sprint(value)
@@ -68,8 +68,8 @@ func (i *Item) UniqueAttributeValue() string {
 // Reference returns an SDP reference for the item
 func (i *Item) Reference() *Reference {
 	return &Reference{
-		Scope:                i.Scope,
-		Type:                 i.Type,
+		Scope:                i.GetScope(),
+		Type:                 i.GetType(),
 		UniqueAttributeValue: i.UniqueAttributeValue(),
 	}
 }
@@ -95,28 +95,28 @@ func (i *Item) GloballyUniqueName() string {
 // Copy copies all information from one item pointer to another
 func (i *Item) Copy(dest *Item) {
 	// Values can be copied directly
-	dest.Type = i.Type
-	dest.UniqueAttribute = i.UniqueAttribute
-	dest.Scope = i.Scope
+	dest.Type = i.GetType()
+	dest.UniqueAttribute = i.GetUniqueAttribute()
+	dest.Scope = i.GetScope()
 
 	// We need to check that any pointers are actually populated with pointers
 	// to somewhere in memory. If they are nil then there is no data structure
 	// to copy the data into, therefore we need to create it first
-	if dest.Metadata == nil {
+	if dest.GetMetadata() == nil {
 		dest.Metadata = &Metadata{}
 	}
 
-	if dest.Attributes == nil {
+	if dest.GetAttributes() == nil {
 		dest.Attributes = &ItemAttributes{}
 	}
 
-	i.Metadata.Copy(dest.Metadata)
-	i.Attributes.Copy(dest.Attributes)
+	i.GetMetadata().Copy(dest.GetMetadata())
+	i.GetAttributes().Copy(dest.GetAttributes())
 
 	dest.LinkedItemQueries = make([]*LinkedItemQuery, 0)
 	dest.LinkedItems = make([]*LinkedItem, 0)
 
-	for _, r := range i.LinkedItemQueries {
+	for _, r := range i.GetLinkedItemQueries() {
 		liq := &LinkedItemQuery{}
 
 		r.Copy(liq)
@@ -124,7 +124,7 @@ func (i *Item) Copy(dest *Item) {
 		dest.LinkedItemQueries = append(dest.LinkedItemQueries, liq)
 	}
 
-	for _, r := range i.LinkedItems {
+	for _, r := range i.GetLinkedItems() {
 		newLinkedItem := &LinkedItem{}
 
 		r.Copy(newLinkedItem)
@@ -135,13 +135,13 @@ func (i *Item) Copy(dest *Item) {
 	if i.Health == nil {
 		dest.Health = nil
 	} else {
-		dest.Health = i.Health.Enum()
+		dest.Health = i.GetHealth().Enum()
 	}
 
 	if i.Tags != nil {
 		dest.Tags = make(map[string]string)
 
-		for k, v := range i.Tags {
+		for k, v := range i.GetTags() {
 			dest.Tags[k] = v
 		}
 	}
@@ -179,9 +179,9 @@ func (r *Reference) GloballyUniqueName() string {
 
 // Copy copies all information from one Reference pointer to another
 func (r *Reference) Copy(dest *Reference) {
-	dest.Type = r.Type
-	dest.UniqueAttributeValue = r.UniqueAttributeValue
-	dest.Scope = r.Scope
+	dest.Type = r.GetType()
+	dest.UniqueAttributeValue = r.GetUniqueAttributeValue()
+	dest.Scope = r.GetScope()
 }
 
 // Copy copies all information from one Metadata pointer to another
@@ -191,27 +191,27 @@ func (m *Metadata) Copy(dest *Metadata) {
 		return
 	}
 
-	dest.SourceName = m.SourceName
-	dest.Hidden = m.Hidden
+	dest.SourceName = m.GetSourceName()
+	dest.Hidden = m.GetHidden()
 
-	if m.SourceQuery != nil {
+	if m.GetSourceQuery() != nil {
 		dest.SourceQuery = &Query{}
-		m.SourceQuery.Copy(dest.SourceQuery)
+		m.GetSourceQuery().Copy(dest.GetSourceQuery())
 	}
 
 	dest.Timestamp = &timestamppb.Timestamp{
-		Seconds: m.Timestamp.GetSeconds(),
-		Nanos:   m.Timestamp.GetNanos(),
+		Seconds: m.GetTimestamp().GetSeconds(),
+		Nanos:   m.GetTimestamp().GetNanos(),
 	}
 
 	dest.SourceDuration = &durationpb.Duration{
-		Seconds: m.SourceDuration.GetSeconds(),
-		Nanos:   m.SourceDuration.GetNanos(),
+		Seconds: m.GetSourceDuration().GetSeconds(),
+		Nanos:   m.GetSourceDuration().GetNanos(),
 	}
 
 	dest.SourceDurationPerItem = &durationpb.Duration{
-		Seconds: m.SourceDurationPerItem.GetSeconds(),
-		Nanos:   m.SourceDurationPerItem.GetNanos(),
+		Seconds: m.GetSourceDurationPerItem().GetSeconds(),
+		Nanos:   m.GetSourceDurationPerItem().GetNanos(),
 	}
 }
 
@@ -221,7 +221,7 @@ func (c *CancelQuery) Copy(dest *CancelQuery) {
 		return
 	}
 
-	dest.UUID = c.UUID
+	dest.UUID = c.GetUUID()
 }
 
 // Get Returns the value of a given attribute by name. If the attribute is
@@ -288,8 +288,8 @@ func (a *ItemAttributes) Copy(dest *ItemAttributes) {
 
 // Copy copies all information from one Query pointer to another
 func (qrb *Query_RecursionBehaviour) Copy(dest *Query_RecursionBehaviour) {
-	dest.LinkDepth = qrb.LinkDepth
-	dest.FollowOnlyBlastPropagation = qrb.FollowOnlyBlastPropagation
+	dest.LinkDepth = qrb.GetLinkDepth()
+	dest.FollowOnlyBlastPropagation = qrb.GetFollowOnlyBlastPropagation()
 }
 
 // Subject returns a NATS subject for all traffic relating to this query
@@ -299,20 +299,20 @@ func (q *Query) Subject() string {
 
 // Copy copies all information from one Query pointer to another
 func (q *Query) Copy(dest *Query) {
-	dest.Type = q.Type
-	dest.Method = q.Method
-	dest.Query = q.Query
+	dest.Type = q.GetType()
+	dest.Method = q.GetMethod()
+	dest.Query = q.GetQuery()
 	dest.RecursionBehaviour = &Query_RecursionBehaviour{}
-	if q.RecursionBehaviour != nil {
-		q.RecursionBehaviour.Copy(dest.RecursionBehaviour)
+	if q.GetRecursionBehaviour() != nil {
+		q.GetRecursionBehaviour().Copy(dest.GetRecursionBehaviour())
 	}
-	dest.Scope = q.Scope
-	dest.IgnoreCache = q.IgnoreCache
-	dest.UUID = q.UUID
+	dest.Scope = q.GetScope()
+	dest.IgnoreCache = q.GetIgnoreCache()
+	dest.UUID = q.GetUUID()
 
-	if q.Deadline != nil {
+	if q.GetDeadline() != nil {
 		// allocate a new value
-		dest.Deadline = timestamppb.New(q.Deadline.AsTime())
+		dest.Deadline = timestamppb.New(q.GetDeadline().AsTime())
 	}
 }
 
@@ -320,18 +320,18 @@ func (q *Query) Copy(dest *Query) {
 // for this request
 func (q *Query) TimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	// If there is no deadline, treat that as infinite
-	if q == nil || !q.Deadline.IsValid() {
+	if q == nil || !q.GetDeadline().IsValid() {
 		return context.WithCancel(ctx)
 	}
 
-	return context.WithDeadline(ctx, q.Deadline.AsTime())
+	return context.WithDeadline(ctx, q.GetDeadline().AsTime())
 }
 
 // ParseUuid returns this request's UUID. If there's an error parsing it,
 // generates and stores a fresh one
 func (r *Query) ParseUuid() uuid.UUID {
 	// Extract and parse the UUID
-	reqUUID, uuidErr := uuid.FromBytes(r.UUID)
+	reqUUID, uuidErr := uuid.FromBytes(r.GetUUID())
 	if uuidErr != nil {
 		reqUUID = uuid.New()
 		r.UUID = reqUUID[:]
@@ -525,7 +525,7 @@ func sanitizeInterface(i interface{}, sortArrays bool, customTransforms Transfor
 		t = v.Type()
 	}
 
-	switch v.Kind() {
+	switch v.Kind() { // nolint:exhaustive // we fall through to the default case
 	case reflect.Bool:
 		return v.Bool()
 	case reflect.Int:
@@ -643,11 +643,10 @@ func sortInterfaceArray(input []interface{}) {
 }
 
 func hashSum(b []byte) string {
-	var shaSum [20]byte
 	var paddedEncoding *base32.Encoding
 	var unpaddedEncoding *base32.Encoding
 
-	shaSum = sha1.Sum(b)
+	shaSum := sha256.Sum256(b)
 
 	// We need to specify a custom encoding here since dGraph has fairly strict
 	// requirements about what name a variable can have

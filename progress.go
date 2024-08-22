@@ -80,11 +80,14 @@ func (rs *ResponseSender) Start(ctx context.Context, ec EncodedConnection, respo
 
 	if rs.connection != nil {
 		// Send the initial response
-		rs.connection.Publish(
+		err := rs.connection.Publish(
 			ctx,
 			rs.ResponseSubject,
 			&QueryResponse{ResponseType: &QueryResponse_Response{Response: &resp}},
 		)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Error publishing initial response")
+		}
 	}
 
 	rs.monitorRunning.Add(1)
@@ -148,11 +151,14 @@ func (rs *ResponseSender) killWithResponse(ctx context.Context, r *Response) {
 	if rs.connection != nil {
 		if r != nil {
 			// Send the final response
-			rs.connection.Publish(ctx, rs.ResponseSubject, &QueryResponse{
+			err := rs.connection.Publish(ctx, rs.ResponseSubject, &QueryResponse{
 				ResponseType: &QueryResponse_Response{
 					Response: r,
 				},
 			})
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Error("Error publishing final response")
+			}
 		}
 	}
 }
@@ -351,21 +357,21 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 
 	qp.requestCtx = ctx
 
-	if len(qp.Query.UUID) == 0 {
+	if len(qp.Query.GetUUID()) == 0 {
 		u := uuid.New()
 		qp.Query.UUID = u[:]
 	}
 
 	var requestSubject string
 
-	if qp.Query.Scope == "" {
+	if qp.Query.GetScope() == "" {
 		return errors.New("cannot execute request with blank scope")
 	}
 
-	if qp.Query.Scope == WILDCARD {
+	if qp.Query.GetScope() == WILDCARD {
 		requestSubject = "request.all"
 	} else {
-		requestSubject = fmt.Sprintf("request.scope.%v", qp.Query.Scope)
+		requestSubject = fmt.Sprintf("request.scope.%v", qp.Query.GetScope())
 	}
 
 	// Store the channels
@@ -399,15 +405,15 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 				var itemTime time.Time
 
 				if item.GetMetadata() != nil {
-					itemTime = item.GetMetadata().Timestamp.AsTime()
+					itemTime = item.GetMetadata().GetTimestamp().AsTime()
 				}
 
 				// This *should* never happen but I am seeing it happen
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
 				log.WithContext(ctx).WithFields(log.Fields{
-					"Type":                 item.Type,
-					"Scope":                item.Scope,
+					"Type":                 item.GetType(),
+					"Scope":                item.GetScope(),
 					"UniqueAttributeValue": item.UniqueAttributeValue(),
 					"Item Timestamp":       itemTime.String(),
 					"Current Time":         time.Now().String(),
@@ -430,12 +436,12 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 			span.SetStatus(codes.Error, err.Error())
 			span.SetAttributes(
 				attribute.Int64("ovm.sdp.errorsProcessed", *qp.errorsProcessed),
-				attribute.String("ovm.sdp.errorString", err.ErrorString),
-				attribute.String("ovm.sdp.errorType", err.ErrorType.String()),
-				attribute.String("ovm.scope", err.Scope),
-				attribute.String("ovm.type", err.ItemType),
-				attribute.String("ovm.sdp.sourceName", err.SourceName),
-				attribute.String("ovm.sdp.responderName", err.ResponderName),
+				attribute.String("ovm.sdp.errorString", err.GetErrorString()),
+				attribute.String("ovm.sdp.errorType", err.GetErrorType().String()),
+				attribute.String("ovm.scope", err.GetScope()),
+				attribute.String("ovm.type", err.GetItemType()),
+				attribute.String("ovm.sdp.sourceName", err.GetSourceName()),
+				attribute.String("ovm.sdp.responderName", err.GetResponderName()),
 			)
 
 			qp.chanMutex.RLock()
@@ -445,13 +451,13 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 				// occasionally. In order to avoid a panic I'm instead going to
 				// log it here
 				log.WithContext(ctx).WithFields(log.Fields{
-					"UUID":          err.UUID,
-					"ErrorType":     err.ErrorType,
-					"ErrorString":   err.ErrorString,
-					"Scope":         err.Scope,
-					"SourceName":    err.SourceName,
-					"ItemType":      err.ItemType,
-					"ResponderName": err.ResponderName,
+					"UUID":          err.GetUUID(),
+					"ErrorType":     err.GetErrorType(),
+					"ErrorString":   err.GetErrorString(),
+					"Scope":         err.GetScope(),
+					"SourceName":    err.GetSourceName(),
+					"ItemType":      err.GetItemType(),
+					"ResponderName": err.GetResponderName(),
 				}).Error("SDP-GO ERROR: A QueryError was processed after Drain() was called. Please add these details to: https://github.com/overmindtech/sdp-go/issues/15.")
 				return
 			}
@@ -460,11 +466,11 @@ func (qp *QueryProgress) Start(ctx context.Context, ec EncodedConnection, itemCh
 		}
 	}
 
-	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("", func(ctx context.Context, qr *QueryResponse) {
+	qp.querySub, err = ec.Subscribe(qp.Query.Subject(), NewQueryResponseHandler("", func(ctx context.Context, qr *QueryResponse) { //nolint:contextcheck // we pass the context in the func
 		log.WithContext(ctx).WithFields(log.Fields{
 			"response": qr,
 		}).Trace("Received response")
-		switch qr.ResponseType.(type) {
+		switch qr.GetResponseType().(type) {
 		case *QueryResponse_NewItem:
 			itemHandler(ctx, qr.GetNewItem())
 		case *QueryResponse_Error:
@@ -545,7 +551,10 @@ func (qp *QueryProgress) Drain() {
 		}
 
 		// Close the item and error subscriptions
-		unsubscribeGracefully(qp.querySub)
+		err := unsubscribeGracefully(qp.querySub)
+		if err != nil {
+			log.WithContext(qp.requestCtx).WithError(err).Error("Error unsubscribing from query subject")
+		}
 
 		qp.chanMutex.Lock()
 		defer qp.chanMutex.Unlock()
@@ -579,7 +588,10 @@ func (qp *QueryProgress) Done() <-chan struct{} {
 //
 // Returns a boolean indicating whether the cancellation needed to be forced
 func (qp *QueryProgress) Cancel(ctx context.Context, ec EncodedConnection) bool {
-	qp.AsyncCancel(ec)
+	err := qp.AsyncCancel(ec)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Error cancelling request")
+	}
 
 	select {
 	case <-qp.Done():
@@ -599,15 +611,15 @@ func (qp *QueryProgress) AsyncCancel(ec EncodedConnection) error {
 	}
 
 	cancelRequest := CancelQuery{
-		UUID: qp.Query.UUID,
+		UUID: qp.Query.GetUUID(),
 	}
 
 	var cancelSubject string
 
-	if qp.Query.Scope == WILDCARD {
+	if qp.Query.GetScope() == WILDCARD {
 		cancelSubject = "cancel.all"
 	} else {
-		cancelSubject = fmt.Sprintf("cancel.scope.%v", qp.Query.Scope)
+		cancelSubject = fmt.Sprintf("cancel.scope.%v", qp.Query.GetScope())
 	}
 
 	qp.cancelled = true
@@ -713,10 +725,10 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 		qp.responders[ru] = responder
 	}
 
-	responder.SetState(response.State)
+	responder.SetState(response.GetState())
 
 	// Check if we should expect another response
-	expectFollowUp := (response.GetNextUpdateIn() != nil && response.State != ResponderState_COMPLETE)
+	expectFollowUp := (response.GetNextUpdateIn() != nil && response.GetState() != ResponderState_COMPLETE)
 
 	// If we are told to expect a new response, set up context for it
 	if expectFollowUp {
@@ -724,10 +736,10 @@ func (qp *QueryProgress) ProcessResponse(ctx context.Context, response *Response
 
 		monitorContext, monitorCancel := context.WithCancel(context.Background())
 
-		responder.SetMonitorContext(monitorContext, monitorCancel)
+		responder.SetMonitorContext(monitorContext, monitorCancel) // nolint: contextcheck // we expect a new response
 
 		// Create a goroutine to watch for a stalled connection
-		go stallMonitor(monitorContext, timeout, responder, qp)
+		go stallMonitor(monitorContext, timeout, responder, qp) // nolint: contextcheck // we expect a new response
 	}
 
 	// Finally check to see if this was the final request and if so drain

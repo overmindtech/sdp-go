@@ -270,7 +270,7 @@ func TestNewAuthMiddleware(t *testing.T) {
 			ExpectedCode: http.StatusOK,
 		},
 		{
-			Name:         "with no token on a non-bypasssed path",
+			Name:         "with no token on a non-bypassed path",
 			Path:         "/",
 			AuthConfig:   bypassHealthConfig,
 			ExpectedCode: http.StatusUnauthorized,
@@ -392,7 +392,10 @@ func TestNewAuthMiddleware(t *testing.T) {
 				// the test:pass scope
 				if !HasAnyScopes(ctx, "test:pass") {
 					w.WriteHeader(http.StatusUnauthorized)
-					w.Write([]byte("missing required scope"))
+					_, err := w.Write([]byte("missing required scope"))
+					if err != nil {
+						t.Error(err)
+					}
 					return
 				}
 
@@ -403,14 +406,17 @@ func TestNewAuthMiddleware(t *testing.T) {
 				} else {
 					if claims.AccountName != "test" {
 						w.WriteHeader(http.StatusUnauthorized)
-						w.Write([]byte(fmt.Sprintf("expected account to be 'test', but was '%s'", claims.AccountName)))
+						_, err := w.Write([]byte(fmt.Sprintf("expected account to be 'test', but was '%s'", claims.AccountName)))
+						if err != nil {
+							t.Error(err)
+						}
 						return
 					}
 				}
 			}))
 
 			rr := httptest.NewRecorder()
-			req, err := http.NewRequest("GET", test.Path, nil)
+			req, err := http.NewRequestWithContext(context.Background(), "GET", test.Path, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -452,7 +458,7 @@ func BenchmarkAuthMiddleware(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 		// pass 'nil' as the third parameter.
-		req, err := http.NewRequest("GET", "/", nil)
+		req, err := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 
 		if err != nil {
 			b.Fatal(err)
@@ -561,7 +567,10 @@ func (s *TestJWTServer) Start(ctx context.Context) string {
 			// issued by our server
 			w.WriteHeader(http.StatusOK)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(fmt.Sprintf(`{"jwks_uri": "%s/.well-known/jwks.json"}`, s.server.URL)))
+			_, err := w.Write([]byte(fmt.Sprintf(`{"jwks_uri": "%s/.well-known/jwks.json"}`, s.server.URL)))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 		case "/.well-known/jwks.json":
 			// Write the public key set as JSON
 			w.Header().Set("Content-Type", "application/json")
@@ -573,7 +582,10 @@ func (s *TestJWTServer) Start(ctx context.Context) string {
 			}
 
 			w.WriteHeader(http.StatusOK)
-			w.Write(b)
+			_, err = w.Write(b)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 		}
 	}))
 

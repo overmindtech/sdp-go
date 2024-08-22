@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -217,10 +218,8 @@ func TestNATSConnect(t *testing.T) {
 			t.Errorf("Reconnecting took too long, expected <3s got: %v", time.Since(start).String())
 		}
 
-		switch err.(type) {
-		case MaxRetriesError:
-			// This is good
-		default:
+		var maxRetriesError MaxRetriesError
+		if !errors.As(err, &maxRetriesError) {
 			t.Errorf("Unknown error type %T: %v", err, err)
 		}
 	})
@@ -243,8 +242,8 @@ func TestNATSConnect(t *testing.T) {
 
 		_, err = o.Connect()
 
-		switch err.(type) {
-		case MaxRetriesError:
+		var maxRetriesError MaxRetriesError
+		if errors.As(err, &maxRetriesError) {
 			// Make sure we have only got one token, not three
 			currentToken, err := o.TokenClient.GetJWT()
 
@@ -255,7 +254,7 @@ func TestNATSConnect(t *testing.T) {
 			if currentToken != startToken {
 				t.Error("Tokens have changed")
 			}
-		default:
+		} else {
 			t.Errorf("Unknown error type %T", err)
 		}
 	})
@@ -364,12 +363,12 @@ func ValidateNATSConnection(t *testing.T, ec sdp.EncodedConnection) {
 	done := make(chan struct{})
 
 	sub, err := ec.Subscribe("test", sdp.NewQueryResponseHandler("test", func(ctx context.Context, qr *sdp.QueryResponse) {
-		rt, ok := qr.ResponseType.(*sdp.QueryResponse_Response)
+		rt, ok := qr.GetResponseType().(*sdp.QueryResponse_Response)
 		if !ok {
 			t.Errorf("Received unexpected message: %v", qr)
 		}
 
-		if rt.Response.Responder == "test" {
+		if rt.Response.GetResponder() == "test" {
 			done <- struct{}{}
 		}
 	}))

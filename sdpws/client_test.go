@@ -40,7 +40,9 @@ func newTestServer(_ context.Context, t *testing.T) (*testServer, func()) {
 		if err != nil {
 			return
 		}
-		defer c.CloseNow()
+		defer func() {
+			_ = c.Close(websocket.StatusNormalClosure, "")
+		}()
 
 		ts.connMu.Lock()
 		ts.conn = c
@@ -49,11 +51,10 @@ func newTestServer(_ context.Context, t *testing.T) (*testServer, func()) {
 		// ctx, cancel := context.WithTimeout(r.Context(), time.Second*10)
 		// defer cancel()
 
-		ctx := context.Background()
 		for {
 			msg := &sdp.GatewayRequest{}
 
-			typ, reader, err := c.Reader(ctx)
+			typ, reader, err := c.Reader(r.Context())
 			if err != nil {
 				c.Close(websocket.StatusAbnormalClosure, fmt.Sprintf("failed to initialise websocket reader: %v", err))
 				return
@@ -74,8 +75,8 @@ func newTestServer(_ context.Context, t *testing.T) (*testServer, func()) {
 
 			err = proto.Unmarshal(b.Bytes(), msg)
 			if err != nil {
-				c.Close(websocket.StatusAbnormalClosure, fmt.Sprintf("error unmarshaling message: %v", err))
-				t.Fatalf("error unmarshaling message: %v", err)
+				c.Close(websocket.StatusAbnormalClosure, fmt.Sprintf("error un marshaling message: %v", err))
+				t.Fatalf("error un marshaling message: %v", err)
 				return
 			}
 
@@ -154,8 +155,14 @@ func TestClient(t *testing.T) {
 		}()
 
 		// this will block until the above goroutine has injected the response
-		c.Query(ctx, q)
-		c.Wait(ctx, uuid.UUIDs{u})
+		_, err = c.Query(ctx, q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = c.Wait(ctx, uuid.UUIDs{u})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		ts.requestsMu.Lock()
 		defer ts.requestsMu.Unlock()
@@ -164,8 +171,8 @@ func TestClient(t *testing.T) {
 			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
 		}
 
-		recvQ, ok := ts.requests[0].RequestType.(*sdp.GatewayRequest_Query)
-		if !ok || uuid.UUID(recvQ.Query.UUID) != u {
+		recvQ, ok := ts.requests[0].GetRequestType().(*sdp.GatewayRequest_Query)
+		if !ok || uuid.UUID(recvQ.Query.GetUUID()) != u {
 			t.Fatalf("expected query, got %v", ts.requests[0])
 		}
 	})
@@ -233,8 +240,14 @@ func TestClient(t *testing.T) {
 		}()
 
 		// this will block until the above goroutine has injected the response
-		c.Query(ctx, q)
-		c.Wait(ctx, uuid.UUIDs{u})
+		_, err = c.Query(ctx, q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = c.Wait(ctx, uuid.UUIDs{u})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		ts.requestsMu.Lock()
 		defer ts.requestsMu.Unlock()
@@ -243,8 +256,8 @@ func TestClient(t *testing.T) {
 			t.Fatalf("expected 1 request, got %v: %v", len(ts.requests), ts.requests)
 		}
 
-		recvQ, ok := ts.requests[0].RequestType.(*sdp.GatewayRequest_Query)
-		if !ok || uuid.UUID(recvQ.Query.UUID) != u {
+		recvQ, ok := ts.requests[0].GetRequestType().(*sdp.GatewayRequest_Query)
+		if !ok || uuid.UUID(recvQ.Query.GetUUID()) != u {
 			t.Fatalf("expected query, got %v", ts.requests[0])
 		}
 	})
@@ -269,7 +282,7 @@ func TestClient(t *testing.T) {
 		go func() {
 			time.Sleep(100 * time.Millisecond)
 			ts.requestsMu.Lock()
-			msgid := ts.requests[0].GetStoreSnapshot().MsgID
+			msgID := ts.requests[0].GetStoreSnapshot().GetMsgID()
 			ts.requestsMu.Unlock()
 
 			ts.inject(ctx, &sdp.GatewayResponse{
@@ -277,7 +290,7 @@ func TestClient(t *testing.T) {
 					SnapshotStoreResult: &sdp.SnapshotStoreResult{
 						Success:      true,
 						ErrorMessage: "",
-						MsgID:        msgid,
+						MsgID:        msgID,
 						SnapshotID:   u[:],
 					},
 				},
@@ -321,7 +334,7 @@ func TestClient(t *testing.T) {
 		go func() {
 			time.Sleep(100 * time.Millisecond)
 			ts.requestsMu.Lock()
-			msgid := ts.requests[0].GetStoreBookmark().MsgID
+			msgID := ts.requests[0].GetStoreBookmark().GetMsgID()
 			ts.requestsMu.Unlock()
 
 			ts.inject(ctx, &sdp.GatewayResponse{
@@ -329,7 +342,7 @@ func TestClient(t *testing.T) {
 					BookmarkStoreResult: &sdp.BookmarkStoreResult{
 						Success:      true,
 						ErrorMessage: "",
-						MsgID:        msgid,
+						MsgID:        msgID,
 						BookmarkID:   u[:],
 					},
 				},

@@ -40,7 +40,7 @@ func TestBasicTokenClient(t *testing.T) {
 		t.Error(err)
 	}
 
-	if token != "tokeny_mc_tokenface" {
+	if token != "tokeny_mc_tokenface" { // nolint: gosec // This is a test
 		t.Error("token mismatch")
 	}
 
@@ -180,7 +180,7 @@ func testURL(testURL string) error {
 	url, err := url.Parse(testURL)
 
 	if err != nil {
-		return fmt.Errorf("could not parse NATS URL: %v. Error: %v", testURL, err)
+		return fmt.Errorf("could not parse NATS URL: %v. Error: %w", testURL, err)
 	}
 
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(url.Hostname(), url.Port()), time.Second)

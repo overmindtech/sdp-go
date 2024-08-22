@@ -144,14 +144,20 @@ func TestWaitForSources(t *testing.T) {
 		testFunc = i.WrapUnary(testFunc)
 
 		// Call wake sources and expect the call count to be 1
-		testFunc(ctx, nil)
+		_, err := testFunc(ctx, nil)
+		if err != nil {
+			t.Error(err)
+		}
 
 		if client.callCount != 1 {
 			t.Errorf("Expected call count to be 1 but got %d", client.callCount)
 		}
 
 		// Call wake sources again and expect the call count to be 1
-		testFunc(ctx, nil)
+		_, err = testFunc(ctx, nil)
+		if err != nil {
+			t.Error(err)
+		}
 
 		if client.callCount != 1 {
 			t.Errorf("Expected call count to be 1 but got %d", client.callCount)
