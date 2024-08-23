@@ -64,7 +64,7 @@ func extractLinksFromListValue(list *structpb.ListValue) []*LinkedItemQuery {
 
 // A regex that matches the ARN format and extracts the service, region, account
 // id and resource
-var awsARNRegex = regexp.MustCompile(`^arn:[\w\-]+:([\w\-]+):([\w\-]*):([\w\-]+):([\w\-]+)`)
+var awsARNRegex = regexp.MustCompile(`^arn:[\w-]+:([\w-]+):([\w-]*):([\w-]+):([\w-]+)`)
 
 // This function does all the heavy lifting for extracting linked item queries
 // from strings. It will be called once for every string value in the item so
@@ -87,38 +87,36 @@ func extractLinksFromStringValue(val string) []*LinkedItemQuery {
 		}
 	}
 
-	if parsed, err := url.Parse(val); err == nil {
-		// This is pretty overzealous when it comes to what it considers a URL,
-		// so we need ot do out own validation to make sure that it has actually
-		// found what we expected
-		if parsed.Scheme != "" && parsed.Host != "" {
-			// If it's a HTTP/HTTPS URL, we can use a HTTP query
-			if parsed.Scheme == "http" || parsed.Scheme == "https" {
-				return []*LinkedItemQuery{
-					{
-						Query: &Query{
-							Type:   "http",
-							Method: QueryMethod_GET,
-							Query:  val,
-							Scope:  "global",
-						},
-						BlastPropagation: &BlastPropagation{
-							// If we are referencing a HTTP URL, I think it's safe
-							// to assume that this is something that the current
-							// resource depends on and therefore that the blast
-							// radius should propagate inwards. This is a bit of a
-							// guess though...
-							In:  true,
-							Out: false,
-						},
+	// This is pretty overzealous when it comes to what it considers a URL, so
+	// we need ot do out own validation to make sure that it has actually found
+	// what we expected
+	if parsed, err := url.Parse(val); err == nil && parsed.Scheme != "" && parsed.Host != "" {
+		// If it's a HTTP/HTTPS URL, we can use a HTTP query
+		if parsed.Scheme == "http" || parsed.Scheme == "https" {
+			return []*LinkedItemQuery{
+				{
+					Query: &Query{
+						Type:   "http",
+						Method: QueryMethod_GET,
+						Query:  val,
+						Scope:  "global",
 					},
-				}
-			} else {
-				// If it's not a HTTP/HTTPS URL, it'll be an IP or DNS name, so pass
-				// back to the main function
-				return extractLinksFromStringValue(parsed.Hostname())
+					BlastPropagation: &BlastPropagation{
+						// If we are referencing a HTTP URL, I think it's safe
+						// to assume that this is something that the current
+						// resource depends on and therefore that the blast
+						// radius should propagate inwards. This is a bit of a
+						// guess though...
+						In:  true,
+						Out: false,
+					},
+				},
 			}
 		}
+
+		// If it's not a HTTP/HTTPS URL, it'll be an IP or DNS name, so pass
+		// back to the main function
+		return extractLinksFromStringValue(parsed.Hostname())
 	}
 
 	if isLikelyDNSName(val) {
@@ -145,10 +143,7 @@ func extractLinksFromStringValue(val string) []*LinkedItemQuery {
 			// and find it. We can rely on the conventions in the AWS source here
 
 			// Validate that we have enough data to construct a query
-			if len(matches) != 5 {
-				return nil
-			}
-			if matches[1] == "" || matches[3] == "" || matches[4] == "" {
+			if len(matches) != 5 || matches[1] == "" || matches[3] == "" || matches[4] == "" {
 				return nil
 			}
 
