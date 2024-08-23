@@ -23,6 +23,18 @@ func ExtractLinksFromAttributes(attributes *ItemAttributes) []*LinkedItemQuery {
 	return extractLinksFromStructValue(attributes.GetAttrStruct())
 }
 
+// The same as `ExtractLinksFromAttributes`, but takes any input format and
+// converts it to a map[string]interface{} via JSON. This then extracts the
+// linked item queries in the same way `ExtractLinksFromAttributes` does
+func ExtractLinksViaJSON(i any) ([]*LinkedItemQuery, error) {
+	attributes, err := ToAttributesViaJson(i)
+	if err != nil {
+		return nil, err
+	}
+
+	return ExtractLinksFromAttributes(attributes), nil
+}
+
 func extractLinksFromValue(value *structpb.Value) []*LinkedItemQuery {
 	switch value.GetKind().(type) {
 	case *structpb.Value_NullValue:
