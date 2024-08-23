@@ -49,6 +49,7 @@ This supports extracting the following formats:
 - IP addresses
 - HTTP/HTTPS URLs
 - DNS names
+- AWS ARNs
 
 ### `ExtractLinksFromAttributes`
 
