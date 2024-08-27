@@ -8,7 +8,7 @@ import (
 )
 
 // Create a very large set of attributes for the benchmark
-func createTestData() *ItemAttributes {
+func createTestData() (*ItemAttributes, interface{}) {
 	yamlString := `---
 creationTimestamp: 2024-07-09T11:16:31Z
 data:
@@ -410,21 +410,31 @@ version: 5
 
 	attrs, _ := ToAttributes(mapData)
 
-	return attrs
+	return attrs, mapData
 }
 
 // Current performance:
-// BenchmarkExtractLinksFromAttributes-10    	    5571	    202431 ns/op	   59075 B/op	     721 allocs/op
+// BenchmarkExtractLinksFromAttributes-10    	    5676	    193114 ns/op	   58868 B/op	     721 allocs/op
 func BenchmarkExtractLinksFromAttributes(b *testing.B) {
-	attrs := createTestData()
+	attrs, _ := createTestData()
 
 	for i := 0; i < b.N; i++ {
-		ExtractLinksFromAttributes(attrs)
+		_ = ExtractLinksFromAttributes(attrs)
+	}
+}
+
+// Current performance:
+// BenchmarkExtractLinksFrom-10    	    2671	    451209 ns/op	  231509 B/op	    4241 allocs/op
+func BenchmarkExtractLinksFrom(b *testing.B) {
+	_, data := createTestData()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = ExtractLinksFrom(data)
 	}
 }
 
 func TestExtractLinksFromAttributes(t *testing.T) {
-	attrs := createTestData()
+	attrs, _ := createTestData()
 
 	queries := ExtractLinksFromAttributes(attrs)
 
@@ -574,5 +584,30 @@ func TestExtractLinksFromAttributes(t *testing.T) {
 		if !found {
 			t.Errorf("expected query not found: %s %s", test.ExpectedType, test.ExpectedQuery)
 		}
+	}
+}
+
+func TestExtractLinksFrom(t *testing.T) {
+	example := []struct {
+		Name  string
+		Value string
+	}{
+		{
+			Name:  "example",
+			Value: "https://example.com",
+		},
+	}
+
+	queries, err := ExtractLinksFrom(example)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(queries) != 1 {
+		t.Fatalf("expected 1 query, got %d", len(queries))
+	}
+
+	if queries[0].GetQuery().GetQuery() != "https://example.com" {
+		t.Errorf("expected query to be https://example.com, got %s", queries[0].GetQuery().GetQuery())
 	}
 }
