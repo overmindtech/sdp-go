@@ -24,10 +24,13 @@ func ExtractLinksFromAttributes(attributes *ItemAttributes) []*LinkedItemQuery {
 }
 
 // The same as `ExtractLinksFromAttributes`, but takes any input format and
-// converts it to a map[string]interface{} via JSON. This then extracts the
-// linked item queries in the same way `ExtractLinksFromAttributes` does
-func ExtractLinksViaJSON(i any) ([]*LinkedItemQuery, error) {
-	attributes, err := ToAttributesViaJson(i)
+// converts it to a set of ItemAttributes via the `ToAttributes` function. This
+// uses reflection. `ExtractLinksFromAttributes` is more efficient if you have
+// the attributes already in the correct format.
+func ExtractLinksFrom(anything interface{}) ([]*LinkedItemQuery, error) {
+	attributes, err := ToAttributes(map[string]interface{}{
+		"": anything,
+	})
 	if err != nil {
 		return nil, err
 	}

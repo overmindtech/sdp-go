@@ -8,7 +8,7 @@ import (
 )
 
 // Create a very large set of attributes for the benchmark
-func createTestData() *ItemAttributes {
+func createTestData() (*ItemAttributes, interface{}) {
 	yamlString := `---
 creationTimestamp: 2024-07-09T11:16:31Z
 data:
@@ -410,21 +410,31 @@ version: 5
 
 	attrs, _ := ToAttributes(mapData)
 
-	return attrs
+	return attrs, mapData
 }
 
 // Current performance:
-// BenchmarkExtractLinksFromAttributes-10    	    5571	    202431 ns/op	   59075 B/op	     721 allocs/op
+// BenchmarkExtractLinksFromAttributes-10    	    5676	    193114 ns/op	   58868 B/op	     721 allocs/op
 func BenchmarkExtractLinksFromAttributes(b *testing.B) {
-	attrs := createTestData()
+	attrs, _ := createTestData()
 
 	for i := 0; i < b.N; i++ {
-		ExtractLinksFromAttributes(attrs)
+		_ = ExtractLinksFromAttributes(attrs)
+	}
+}
+
+// Current performance:
+// BenchmarkExtractLinksFrom-10    	    2671	    451209 ns/op	  231509 B/op	    4241 allocs/op
+func BenchmarkExtractLinksFrom(b *testing.B) {
+	_, data := createTestData()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = ExtractLinksFrom(data)
 	}
 }
 
 func TestExtractLinksFromAttributes(t *testing.T) {
-	attrs := createTestData()
+	attrs, _ := createTestData()
 
 	queries := ExtractLinksFromAttributes(attrs)
 
@@ -574,5 +584,67 @@ func TestExtractLinksFromAttributes(t *testing.T) {
 		if !found {
 			t.Errorf("expected query not found: %s %s", test.ExpectedType, test.ExpectedQuery)
 		}
+	}
+}
+
+func TestExtractLinksFrom(t *testing.T) {
+	tests := []struct {
+		Name            string
+		Object          interface{}
+		ExpectedQueries []string
+	}{
+		{
+			Name: "Env var structure array",
+			Object: []struct {
+				Name  string
+				Value string
+			}{
+				{
+					Name:  "example",
+					Value: "https://example.com",
+				},
+			},
+			ExpectedQueries: []string{"https://example.com"},
+		},
+		{
+			Name:            "Just a raw string",
+			Object:          "https://example.com",
+			ExpectedQueries: []string{"https://example.com"},
+		},
+		{
+			Name:            "Nil",
+			Object:          nil,
+			ExpectedQueries: []string{},
+		},
+		{
+			Name: "Struct",
+			Object: struct {
+				Name  string
+				Value string
+			}{
+				Name:  "example",
+				Value: "https://example.com",
+			},
+			ExpectedQueries: []string{"https://example.com"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			queries, err := ExtractLinksFrom(test.Object)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(queries) != len(test.ExpectedQueries) {
+				t.Errorf("expected %d queries, got %d", len(test.ExpectedQueries), len(queries))
+			}
+
+			for i, query := range queries {
+				if query.GetQuery().GetQuery() != test.ExpectedQueries[i] {
+					t.Errorf("expected query %s, got %s", test.ExpectedQueries[i], query.GetQuery().GetQuery())
+				}
+			}
+		})
 	}
 }
