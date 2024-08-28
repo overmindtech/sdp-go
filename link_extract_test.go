@@ -588,26 +588,63 @@ func TestExtractLinksFromAttributes(t *testing.T) {
 }
 
 func TestExtractLinksFrom(t *testing.T) {
-	example := []struct {
-		Name  string
-		Value string
+	tests := []struct {
+		Name            string
+		Object          interface{}
+		ExpectedQueries []string
 	}{
 		{
-			Name:  "example",
-			Value: "https://example.com",
+			Name: "Env var structure array",
+			Object: []struct {
+				Name  string
+				Value string
+			}{
+				{
+					Name:  "example",
+					Value: "https://example.com",
+				},
+			},
+			ExpectedQueries: []string{"https://example.com"},
+		},
+		{
+			Name:            "Just a raw string",
+			Object:          "https://example.com",
+			ExpectedQueries: []string{"https://example.com"},
+		},
+		{
+			Name:            "Nil",
+			Object:          nil,
+			ExpectedQueries: []string{},
+		},
+		{
+			Name: "Struct",
+			Object: struct {
+				Name  string
+				Value string
+			}{
+				Name:  "example",
+				Value: "https://example.com",
+			},
+			ExpectedQueries: []string{"https://example.com"},
 		},
 	}
 
-	queries, err := ExtractLinksFrom(example)
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			queries, err := ExtractLinksFrom(test.Object)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	if len(queries) != 1 {
-		t.Fatalf("expected 1 query, got %d", len(queries))
-	}
+			if len(queries) != len(test.ExpectedQueries) {
+				t.Errorf("expected %d queries, got %d", len(test.ExpectedQueries), len(queries))
+			}
 
-	if queries[0].GetQuery().GetQuery() != "https://example.com" {
-		t.Errorf("expected query to be https://example.com, got %s", queries[0].GetQuery().GetQuery())
+			for i, query := range queries {
+				if query.GetQuery().GetQuery() != test.ExpectedQueries[i] {
+					t.Errorf("expected query %s, got %s", test.ExpectedQueries[i], query.GetQuery().GetQuery())
+				}
+			}
+		})
 	}
 }
