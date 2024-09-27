@@ -3,7 +3,7 @@ module github.com/overmindtech/sdp-go
 go 1.22.5
 
 require (
-	connectrpc.com/connect v1.16.2
+	connectrpc.com/connect v1.17.0
 	github.com/akedrou/textdiff v0.0.0-20230423230343-2ebdcebdccc1
 	github.com/auth0/go-jwt-middleware/v2 v2.2.2
 	github.com/coder/websocket v1.8.12
