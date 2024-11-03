@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/overmindtech/cli/tracing"
+	"github.com/overmindtech/sdp-go/tracing"
 	"github.com/sashabaranov/go-openai"
 	"github.com/sourcegraph/conc/iter"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
