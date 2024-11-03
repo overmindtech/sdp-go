@@ -13,14 +13,20 @@ import (
 // implementation could just check to see if it's the first call and set things
 // up if it is.
 type Provider interface {
-	// TODO: The next thing we need to do is work out the commonalities between
-	// the OpenAI and Anthropic APIs so that we know what the API needs to
-	// implement. It's probably worth checking if there is already a library for
-	// this... The other thing to think about is tools
+	// Creates a new conversation with the LLM. This will return a conversation
+	// that automatically tracks messages back and forth. The user is
+	// responsible for ending the conversation with `End()` to ensure that
+	// resources are released
 	NewConversation(ctx context.Context, systemPrompt string, tools []ToolImplementation) (Conversation, error)
 }
 
-// TODO: Document this
+// A conversation with the LLM. This is used to send messages to the LLM and
+// receive responses. The conversation will automatically track the messages
+// back and forth, so the user can call the `SendMessage()` method multiple
+// times and the conversation will keep track of the state.
+//
+// The user is responsible for calling `End()` to ensure that resources are
+// released
 type Conversation interface {
 	// Sends a new message to this conversation. This will wait for the LLM to
 	// response and return the response as a string

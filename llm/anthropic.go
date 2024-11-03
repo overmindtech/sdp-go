@@ -108,8 +108,10 @@ func (c *anthropicConversation) SendMessage(ctx context.Context, userMessage str
 		}
 
 		if len(toolCalls) == 0 {
-			// If there aren't any tools being called, just return the text form the
-			// LLM
+			// If there aren't any tools being called, just return the text form
+			// the LLM, and save the messages that were generated as this was
+			// successful
+			c.messages = updatedMessages
 			return strings.TrimPrefix(assistantResponse, "\n"), nil
 		}
 
