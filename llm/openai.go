@@ -114,7 +114,10 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 	ctx, span := tracing.Tracer().Start(ctx, "SendMessage")
 	defer span.End()
 
-	span.SetAttributes(attribute.String("ovm.assistant.userMessage", userMessage))
+	span.SetAttributes(
+		attribute.String("ovm.llm.userMessage", userMessage),
+		attribute.String("ovm.llm.provider", "openai"),
+	)
 	// These tasks will be run if we hit an error at any point. If the method is
 	// successful these will be ignored
 	cleanup := make(cleanupTasks, 0)

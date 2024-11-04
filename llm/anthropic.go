@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -58,6 +59,14 @@ type anthropicConversation struct {
 }
 
 func (c *anthropicConversation) SendMessage(ctx context.Context, userMessage string) (string, error) {
+	ctx, span := tracing.Tracer().Start(ctx, "SendMessage")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("ovm.llm.userMessage", userMessage),
+		attribute.String("ovm.llm.provider", "anthropic"),
+	)
+
 	// Construct the list of tools
 	tools := make([]anthropic.ToolParam, len(c.tools))
 	for i, tool := range c.tools {
@@ -89,8 +98,16 @@ func (c *anthropicConversation) SendMessage(ctx context.Context, userMessage str
 			System:    anthropic.F(c.system),
 		})
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return "", err
 		}
+
+		// Extract tracing information from the response
+		span.SetAttributes(
+			attribute.Int64("ovm.anthropic.usage.inputTokens", response.Usage.InputTokens),
+			attribute.Int64("ovm.anthropic.usage.outputTokens", response.Usage.OutputTokens),
+			attribute.String("ovm.anthropic.model", response.Model),
+		)
 
 		// Save the response
 		updatedMessages = append(updatedMessages, response.ToParam())
