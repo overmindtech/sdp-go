@@ -103,6 +103,11 @@ func (c *anthropicConversation) SendMessage(ctx context.Context, userMessage str
 		}
 
 		// Extract tracing information from the response
+		//
+		// It is also possible to extract the rate limit details from the
+		// headers, but these aren't supported by the SDK yet:
+		// https://docs.anthropic.com/en/api/rate-limits#response-headers
+		// They should be added here once they are.
 		span.SetAttributes(
 			attribute.Int64("ovm.anthropic.usage.inputTokens", response.Usage.InputTokens),
 			attribute.Int64("ovm.anthropic.usage.outputTokens", response.Usage.OutputTokens),
