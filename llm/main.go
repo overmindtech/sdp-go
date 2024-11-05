@@ -7,16 +7,15 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// For the LLM interface, we will need to have a method or something that we can
-// call once the process is over since there is cleanup to do. There will also
-// be setup, though this potentially doesn't need to be a method. The
-// implementation could just check to see if it's the first call and set things
-// up if it is.
+// Provider is the static and re-usable parts of a LLM integration. 
+// Initialization is provider specific and needs to be done before handing an implementation of this interface to the remaining infrastructure. See `NewAnthropicProvider` and `NewOpenAIProvider`.
+// After instantiation it is ready to start new conversations using the methods below.
+// Clean-up is provider specific and needs to be set up in advance when initializing the provider (e.g. through `defer`) 
 type Provider interface {
 	// Creates a new conversation with the LLM. This will return a conversation
 	// that automatically tracks messages back and forth. The user is
 	// responsible for ending the conversation with `End()` to ensure that
-	// resources are released
+	// resources are released. This method can be safely called concurrently.
 	NewConversation(ctx context.Context, systemPrompt string, tools []ToolImplementation) (Conversation, error)
 }
 
@@ -78,12 +77,31 @@ type ToolImplementation interface {
 // example:
 //
 // ```go
-//
 //	type WeatherToolInput struct {
 //		Location string `json:"location" jsonschema_description:"The location that we should get the weather for"`
 //		Units    string `json:"units,omitempty" jsonschema:"enum=fahrenheit,enum=celsius"`
 //	}
+// ```
 //
+// For tools that have to hold some local state (like auth tokens) it is recommended to embed this type:
+// ```go
+// type WeatherTool struct {
+// 	client *http.Client
+// 	Tool[WeatherToolInput]
+// }
+//
+// func NewWeatherTool(apiKey string) WeatherTool {
+// 	httpClient := NewWeatherClient(apiKey)
+// 	return WeatherTool{
+// 		client: httpClient,
+// 		Tool: Tool[WeatherToolInput]{
+// 			Name:        "weatherTool",
+// 			Description: "Does the weather thing",
+// 			Func: func(ctx context.Context, inputData InputType) (string, error) {
+// 				return "the weather thing", nil
+// 			}},
+// 	}
+// }
 // ```
 type Tool[InputType any] struct {
 	// The name of the tool. This must contains only A-z, 0-9, dashes and
