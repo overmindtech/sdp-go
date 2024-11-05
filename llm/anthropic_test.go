@@ -12,7 +12,7 @@ import (
 func TestNewAnthropicProvider(t *testing.T) {
 	key, ok := os.LookupEnv("ANTHROPIC_API_KEY")
 	if !ok {
-		t.Fatal("ANTHROPIC_API_KEY not found")
+		t.Skip("ANTHROPIC_API_KEY not found")
 	}
 
 	provider := NewAnthropicProvider(key, anthropic.ModelClaude3_5SonnetLatest)

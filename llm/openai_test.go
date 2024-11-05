@@ -13,7 +13,7 @@ import (
 func TestNewOpenAIProvider(t *testing.T) {
 	key, exists := os.LookupEnv("OPENAI_API_KEY")
 	if !exists {
-		t.Fatal("OPENAI_API_KEY not set")
+		t.Skip("OPENAI_API_KEY not set")
 	}
 
 	openaiProvider := NewOpenAIProvider(key, openai.GPT4oMini, t.Name(), false)
