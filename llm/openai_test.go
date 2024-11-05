@@ -2,8 +2,10 @@ package llm
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/sashabaranov/go-openai"
 )
@@ -55,4 +57,44 @@ func TestNewOpenAIProvider(t *testing.T) {
 			t.Errorf("expected 'pie' as a response, got '%v'", response)
 		}
 	})
+
+	t.Run("cancelling a run", func(t *testing.T) {
+		errChan := make(chan error)
+		ctx, cancel := context.WithCancel(ctx)
+
+		go func() {
+			_, err := conversation.SendMessage(ctx, "Respond with the work 'banana' 50 times")
+			errChan <- err
+		}()
+
+		time.Sleep(1 * time.Second)
+		cancel()
+
+		err := <-errChan
+
+		// Make sure the error is a context cancelled error
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("Unexpected error %T %v", err, err.Error())
+		}
+	})
+}
+
+func TestCleanupTasks(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	cleanup := cleanupTasks{
+		func(ctx context.Context) error {
+			return ctx.Err()
+		},
+	}
+
+	// I want to cancel the context *then* run the cleanup tasks, this *should*
+	// return nothing since the context that the cleanup task runs in *hasn't*
+	// been cancelled yet as it gets another 10 seconds to do its work
+	cancel()
+	err := cleanup.Run(ctx, nil)
+
+	if err != nil {
+		t.Error(err)
+	}
 }

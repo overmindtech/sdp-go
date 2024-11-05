@@ -74,7 +74,7 @@ func (p *openAIProvider) NewConversation(ctx context.Context, systemPrompt strin
 		return nil, err
 	}
 
-	cleanup = append(cleanup, func() error {
+	cleanup = append(cleanup, func(ctx context.Context) error {
 		// Delete the assistant if something goes wrong
 		_, err := p.client.DeleteAssistant(ctx, assistant.ID)
 		return err
@@ -82,7 +82,7 @@ func (p *openAIProvider) NewConversation(ctx context.Context, systemPrompt strin
 
 	thread, err := p.client.CreateThread(ctx, openai.ThreadRequest{})
 	if err != nil {
-		err = cleanup.Run(err)
+		err = cleanup.Run(ctx, err)
 
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 	}
 
 	// Add a cleanup task to delete the message so that this can be re-run
-	cleanup = append(cleanup, func() error {
+	cleanup = append(cleanup, func(ctx context.Context) error {
 		// Delete the last message so we don't end up with duplicates
 		_, err := c.client.DeleteMessage(ctx, c.thread.ID, message.ID)
 		return err
@@ -144,7 +144,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 		AssistantID: c.assistant.ID,
 	})
 	if err != nil {
-		err = cleanup.Run(err)
+		err = cleanup.Run(ctx, err)
 		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
@@ -156,13 +156,13 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 		case <-ctx.Done():
 			// Cancel the run. Use a new context to do this since we know that
 			// the existing one has run out
-			cancelRunCtx, cancelRunCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			cancelRunCtx, cancelRunCancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 			defer cancelRunCancel()
 			_, cancelErr := c.client.CancelRun(cancelRunCtx, c.thread.ID, run.ID)
-			err = errors.Join(err, cancelErr)
+			err = errors.Join(ctx.Err(), cancelErr)
 
 			// Run the other cleanup tasks
-			err = cleanup.Run(err)
+			err = cleanup.Run(ctx, err)
 
 			span.SetStatus(codes.Error, err.Error())
 			return "", err
@@ -170,7 +170,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 			// Check to see if the run is done
 			run, err = c.client.RetrieveRun(ctx, c.thread.ID, run.ID)
 			if err != nil {
-				err = cleanup.Run(err)
+				err = cleanup.Run(ctx, err)
 				span.SetStatus(codes.Error, err.Error())
 				return "", err
 			}
@@ -205,7 +205,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 				requiredAction := run.RequiredAction
 				if requiredAction == nil {
 					err = errors.New("tool call returned with no required actions")
-					err = cleanup.Run(err)
+					err = cleanup.Run(ctx, err)
 					span.SetStatus(codes.Error, err.Error())
 					return "", err
 				}
@@ -216,7 +216,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 					submitToolOutputs := requiredAction.SubmitToolOutputs
 					if submitToolOutputs == nil {
 						err = errors.New("tools were requested but SubmitToolOutputs was nil")
-						err = cleanup.Run(err)
+						err = cleanup.Run(ctx, err)
 						span.SetStatus(codes.Error, err.Error())
 						return "", err
 					}
@@ -232,7 +232,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 						ToolOutputs: outputs,
 					})
 					if err != nil {
-						err = cleanup.Run(err)
+						err = cleanup.Run(ctx, err)
 						span.SetStatus(codes.Error, err.Error())
 						return "", err
 					}
@@ -247,7 +247,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 					// just give up
 
 					// Clean up everything
-					err = cleanup.Run(err)
+					err = cleanup.Run(ctx, err)
 					span.SetStatus(codes.Error, err.Error())
 					return "", err
 				}
@@ -267,12 +267,12 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 				return messages.Messages[0].Content[0].Text.Value, nil
 			case openai.RunStatusIncomplete:
 				err = errors.New("run was incomplete due to a token limit")
-				err = cleanup.Run(err)
+				err = cleanup.Run(ctx, err)
 				span.SetStatus(codes.Error, err.Error())
 				return "", err
 			case openai.RunStatusFailed, openai.RunStatusExpired, openai.RunStatusCancelled:
 				err = fmt.Errorf("unexpected run status: %v", run.Status)
-				err = cleanup.Run(err)
+				err = cleanup.Run(ctx, err)
 				span.SetStatus(codes.Error, err.Error())
 				return "", err
 			}
@@ -339,13 +339,20 @@ func callToolsOpenAI(ctx context.Context, tools []ToolImplementation, toolCalls 
 	return responses
 }
 
-type cleanupTasks []func() error
+type cleanupTasks []func(ctx context.Context) error
 
 // Runs all cleanup tasks and appends all errors to the error that is passed in
-func (c cleanupTasks) Run(err error) error {
+func (c cleanupTasks) Run(ctx context.Context, err error) error {
+	// There is a chance that the cleanup tasks sre being run because the
+	// context was cancelled and therefore the parent task was also cancelled.
+	// In this case we need to make sure that there is enough time to do the
+	// cleanup
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+
 	errs := []error{err}
 	for _, task := range c {
-		errs = append(errs, task())
+		errs = append(errs, task(ctx))
 	}
 
 	return errors.Join(errs...)
