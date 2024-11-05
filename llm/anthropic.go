@@ -142,9 +142,8 @@ func (c *anthropicConversation) SendMessage(ctx context.Context, userMessage str
 func callToolsAnthropic(ctx context.Context, tools []ToolImplementation, toolCalls []anthropic.ContentBlock) []anthropic.MessageParamContentUnion {
 	ctx, span := tracing.Tracer().Start(ctx, "CallTools")
 	defer span.End()
-	responses := make([]anthropic.MessageParamContentUnion, len(toolCalls))
 
-	iter.ForEachIdx(toolCalls, func(i int, block *anthropic.ContentBlock) {
+	return iter.Map[anthropic.ContentBlock, anthropic.MessageParamContentUnion](toolCalls, func(block *anthropic.ContentBlock) anthropic.MessageParamContentUnion {
 		// Find the requested tool form the set
 		var relevantTool ToolImplementation
 		for _, tool := range tools {
@@ -155,7 +154,7 @@ func callToolsAnthropic(ctx context.Context, tools []ToolImplementation, toolCal
 		}
 
 		if relevantTool == nil {
-			responses[i] = anthropic.NewToolResultBlock(
+			return anthropic.NewToolResultBlock(
 				block.ID,
 				fmt.Sprintf("Error: tool %s not found", block.Name),
 				true,
@@ -176,24 +175,20 @@ func callToolsAnthropic(ctx context.Context, tools []ToolImplementation, toolCal
 		// If there was an error, return that
 		if err != nil {
 			span.RecordError(err, trace.WithStackTrace(true))
-			responses[i] = anthropic.NewToolResultBlock(
+			return anthropic.NewToolResultBlock(
 				block.ID,
 				fmt.Sprintf("Error calling %s: %s", block.Name, err),
 				true,
 			)
-
-			return
 		}
 
 		// Return the output
-		responses[i] = anthropic.NewToolResultBlock(
+		return anthropic.NewToolResultBlock(
 			block.ID,
 			output,
 			false,
 		)
 	})
-
-	return responses
 }
 
 func (c *anthropicConversation) End(ctx context.Context) error {
