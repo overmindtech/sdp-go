@@ -373,3 +373,22 @@ func NewAPIKeyClient(overmindAPIURL string, apiKey string) (*natsTokenClient, er
 		mgmtClient:  sdpconnect.NewManagementServiceClient(&httpClient, overmindAPIURL),
 	}, nil
 }
+
+// NewStaticTokenClient Creates a new token client that uses a static token
+func NewStaticTokenClient(overmindAPIURL, token, tokenType string) (*natsTokenClient, error) {
+	transport := oauth2.Transport{
+		Source: oauth2.StaticTokenSource(&oauth2.Token{
+			AccessToken: token,
+			TokenType:   tokenType,
+		}),
+	}
+
+	httpClient := http.Client{
+		Transport: otelhttp.NewTransport(&transport),
+	}
+
+	return &natsTokenClient{
+		adminClient: sdpconnect.NewAdminServiceClient(&httpClient, overmindAPIURL),
+		mgmtClient:  sdpconnect.NewManagementServiceClient(&httpClient, overmindAPIURL),
+	}, nil
+}
