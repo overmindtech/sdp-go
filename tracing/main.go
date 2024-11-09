@@ -10,14 +10,9 @@ import (
 
 const instrumentationName = "github.com/overmindtech/sdp-go"
 
-//go:generate sh -c "echo -n $(git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD) > commit.txt"
-//go:embed commit.txt
-var ServiceVersion string
-
 var (
 	tracer = otel.GetTracerProvider().Tracer(
 		instrumentationName,
-		trace.WithInstrumentationVersion(ServiceVersion),
 		trace.WithSchemaURL(semconv.SchemaURL),
 	)
 )
