@@ -132,6 +132,9 @@ const (
 	ChangesServiceListChangingItemsSummaryProcedure = "/changes.ChangesService/ListChangingItemsSummary"
 	// ChangesServiceGetDiffProcedure is the fully-qualified name of the ChangesService's GetDiff RPC.
 	ChangesServiceGetDiffProcedure = "/changes.ChangesService/GetDiff"
+	// ChangesServicePopulateChangeFiltersProcedure is the fully-qualified name of the ChangesService's
+	// PopulateChangeFilters RPC.
+	ChangesServicePopulateChangeFiltersProcedure = "/changes.ChangesService/PopulateChangeFilters"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -171,6 +174,7 @@ var (
 	changesServiceGetAffectedAppsMethodDescriptor           = changesServiceServiceDescriptor.Methods().ByName("GetAffectedApps")
 	changesServiceListChangingItemsSummaryMethodDescriptor  = changesServiceServiceDescriptor.Methods().ByName("ListChangingItemsSummary")
 	changesServiceGetDiffMethodDescriptor                   = changesServiceServiceDescriptor.Methods().ByName("GetDiff")
+	changesServicePopulateChangeFiltersMethodDescriptor     = changesServiceServiceDescriptor.Methods().ByName("PopulateChangeFilters")
 )
 
 // ChangesServiceClient is a client for the changes.ChangesService service.
@@ -269,6 +273,8 @@ type ChangesServiceClient interface {
 	// Gets the full diff of everything that changed as part of this "change".
 	// This includes all items and also edges between them
 	GetDiff(context.Context, *connect.Request[sdp_go.GetDiffRequest]) (*connect.Response[sdp_go.GetDiffResponse], error)
+	// List all the available repos, authors and statuses that can be used to populate the dropdown filters
+	PopulateChangeFilters(context.Context, *connect.Request[sdp_go.PopulateChangeFiltersRequest]) (*connect.Response[sdp_go.PopulateChangeFiltersResponse], error)
 }
 
 // NewChangesServiceClient constructs a client for the changes.ChangesService service. By default,
@@ -485,6 +491,12 @@ func NewChangesServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(changesServiceGetDiffMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		populateChangeFilters: connect.NewClient[sdp_go.PopulateChangeFiltersRequest, sdp_go.PopulateChangeFiltersResponse](
+			httpClient,
+			baseURL+ChangesServicePopulateChangeFiltersProcedure,
+			connect.WithSchema(changesServicePopulateChangeFiltersMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -524,6 +536,7 @@ type changesServiceClient struct {
 	getAffectedApps           *connect.Client[sdp_go.GetAffectedAppsRequest, sdp_go.GetAffectedAppsResponse]
 	listChangingItemsSummary  *connect.Client[sdp_go.ListChangingItemsSummaryRequest, sdp_go.ListChangingItemsSummaryResponse]
 	getDiff                   *connect.Client[sdp_go.GetDiffRequest, sdp_go.GetDiffResponse]
+	populateChangeFilters     *connect.Client[sdp_go.PopulateChangeFiltersRequest, sdp_go.PopulateChangeFiltersResponse]
 }
 
 // ListApps calls changes.ChangesService.ListApps.
@@ -696,6 +709,11 @@ func (c *changesServiceClient) GetDiff(ctx context.Context, req *connect.Request
 	return c.getDiff.CallUnary(ctx, req)
 }
 
+// PopulateChangeFilters calls changes.ChangesService.PopulateChangeFilters.
+func (c *changesServiceClient) PopulateChangeFilters(ctx context.Context, req *connect.Request[sdp_go.PopulateChangeFiltersRequest]) (*connect.Response[sdp_go.PopulateChangeFiltersResponse], error) {
+	return c.populateChangeFilters.CallUnary(ctx, req)
+}
+
 // ChangesServiceHandler is an implementation of the changes.ChangesService service.
 type ChangesServiceHandler interface {
 	// Lists all apps
@@ -792,6 +810,8 @@ type ChangesServiceHandler interface {
 	// Gets the full diff of everything that changed as part of this "change".
 	// This includes all items and also edges between them
 	GetDiff(context.Context, *connect.Request[sdp_go.GetDiffRequest]) (*connect.Response[sdp_go.GetDiffResponse], error)
+	// List all the available repos, authors and statuses that can be used to populate the dropdown filters
+	PopulateChangeFilters(context.Context, *connect.Request[sdp_go.PopulateChangeFiltersRequest]) (*connect.Response[sdp_go.PopulateChangeFiltersResponse], error)
 }
 
 // NewChangesServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -1004,6 +1024,12 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 		connect.WithSchema(changesServiceGetDiffMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	changesServicePopulateChangeFiltersHandler := connect.NewUnaryHandler(
+		ChangesServicePopulateChangeFiltersProcedure,
+		svc.PopulateChangeFilters,
+		connect.WithSchema(changesServicePopulateChangeFiltersMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/changes.ChangesService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ChangesServiceListAppsProcedure:
@@ -1074,6 +1100,8 @@ func NewChangesServiceHandler(svc ChangesServiceHandler, opts ...connect.Handler
 			changesServiceListChangingItemsSummaryHandler.ServeHTTP(w, r)
 		case ChangesServiceGetDiffProcedure:
 			changesServiceGetDiffHandler.ServeHTTP(w, r)
+		case ChangesServicePopulateChangeFiltersProcedure:
+			changesServicePopulateChangeFiltersHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -1217,4 +1245,8 @@ func (UnimplementedChangesServiceHandler) ListChangingItemsSummary(context.Conte
 
 func (UnimplementedChangesServiceHandler) GetDiff(context.Context, *connect.Request[sdp_go.GetDiffRequest]) (*connect.Response[sdp_go.GetDiffResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.GetDiff is not implemented"))
+}
+
+func (UnimplementedChangesServiceHandler) PopulateChangeFilters(context.Context, *connect.Request[sdp_go.PopulateChangeFiltersRequest]) (*connect.Response[sdp_go.PopulateChangeFiltersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.PopulateChangeFilters is not implemented"))
 }
