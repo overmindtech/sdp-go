@@ -375,6 +375,9 @@ func NewAPIKeyClient(overmindAPIURL string, apiKey string) (*natsTokenClient, er
 }
 
 // NewStaticTokenClient Creates a new token client that uses a static token
+// The user must pass the Overmind API URL to configure the client to connect
+// to, the raw JWT OAuth access token, and the type of token. This is almost
+// always "Bearer"
 func NewStaticTokenClient(overmindAPIURL, token, tokenType string) (*natsTokenClient, error) {
 	transport := oauth2.Transport{
 		Source: oauth2.StaticTokenSource(&oauth2.Token{
