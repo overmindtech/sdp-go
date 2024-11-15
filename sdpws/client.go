@@ -345,7 +345,7 @@ func (c *Client) Wait(ctx context.Context, reqIDs uuid.UUIDs) error {
 
 // abort stores the specified error and closes the connection.
 func (c *Client) abort(ctx context.Context, err error) {
-	log.WithContext(ctx).WithError(err).Trace("aborting client")
+	log.WithContext(ctx).WithError(err).Error("aborting client")
 	c.errMu.Lock()
 	c.err = errors.Join(c.err, err)
 	c.errMu.Unlock()
