@@ -349,6 +349,8 @@ func (cp *ChangeProperties) ToMap() map[string]any {
 		"plannedChanges":            cp.GetPlannedChanges(),
 		"rawPlan":                   cp.GetRawPlan(),
 		"codeChanges":               cp.GetCodeChanges(),
+		"repo":                      cp.GetRepo(),
+		"tags":                      cp.GetTags(),
 	}
 }
 
