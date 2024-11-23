@@ -1217,7 +1217,7 @@ type ToolMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The toolID from openAI
+	// A unique ID that tracks this tool call and can be used to correlate messages
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 
