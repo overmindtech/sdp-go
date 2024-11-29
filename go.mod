@@ -14,7 +14,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/nats-io/jwt/v2 v2.7.2
 	github.com/nats-io/nats.go v1.37.0
-	github.com/nats-io/nkeys v0.4.7
+	github.com/nats-io/nkeys v0.4.8
 	github.com/sashabaranov/go-openai v1.35.7
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sourcegraph/conc v0.3.0
