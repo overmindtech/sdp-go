@@ -176,7 +176,7 @@ type AdminServiceClient interface {
 	// control the associated private key also in order to connect to NATS as
 	// the token is not enough on its own
 	CreateToken(context.Context, *connect.Request[sdp_go.AdminCreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error)
-	// Lists all the available item types that can be discovered by sources
+	// Lists all the available item types that can be discovered by sources that are running and healthy
 	ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error)
 }
 
@@ -384,7 +384,7 @@ type AdminServiceHandler interface {
 	// control the associated private key also in order to connect to NATS as
 	// the token is not enough on its own
 	CreateToken(context.Context, *connect.Request[sdp_go.AdminCreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error)
-	// Lists all the available item types that can be discovered by sources
+	// Lists all the available item types that can be discovered by sources that are running and healthy
 	ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error)
 }
 
