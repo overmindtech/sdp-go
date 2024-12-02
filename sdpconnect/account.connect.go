@@ -96,6 +96,9 @@ const (
 	// ManagementServiceListAllSourcesStatusProcedure is the fully-qualified name of the
 	// ManagementService's ListAllSourcesStatus RPC.
 	ManagementServiceListAllSourcesStatusProcedure = "/account.ManagementService/ListAllSourcesStatus"
+	// ManagementServiceListActiveSourcesStatusProcedure is the fully-qualified name of the
+	// ManagementService's ListActiveSourcesStatus RPC.
+	ManagementServiceListActiveSourcesStatusProcedure = "/account.ManagementService/ListActiveSourcesStatus"
 	// ManagementServiceSubmitSourceHeartbeatProcedure is the fully-qualified name of the
 	// ManagementService's SubmitSourceHeartbeat RPC.
 	ManagementServiceSubmitSourceHeartbeatProcedure = "/account.ManagementService/SubmitSourceHeartbeat"
@@ -115,34 +118,35 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	adminServiceServiceDescriptor                          = sdp_go.File_account_proto.Services().ByName("AdminService")
-	adminServiceListAccountsMethodDescriptor               = adminServiceServiceDescriptor.Methods().ByName("ListAccounts")
-	adminServiceCreateAccountMethodDescriptor              = adminServiceServiceDescriptor.Methods().ByName("CreateAccount")
-	adminServiceUpdateAccountMethodDescriptor              = adminServiceServiceDescriptor.Methods().ByName("UpdateAccount")
-	adminServiceGetAccountMethodDescriptor                 = adminServiceServiceDescriptor.Methods().ByName("GetAccount")
-	adminServiceDeleteAccountMethodDescriptor              = adminServiceServiceDescriptor.Methods().ByName("DeleteAccount")
-	adminServiceListSourcesMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("ListSources")
-	adminServiceCreateSourceMethodDescriptor               = adminServiceServiceDescriptor.Methods().ByName("CreateSource")
-	adminServiceGetSourceMethodDescriptor                  = adminServiceServiceDescriptor.Methods().ByName("GetSource")
-	adminServiceUpdateSourceMethodDescriptor               = adminServiceServiceDescriptor.Methods().ByName("UpdateSource")
-	adminServiceDeleteSourceMethodDescriptor               = adminServiceServiceDescriptor.Methods().ByName("DeleteSource")
-	adminServiceKeepaliveSourcesMethodDescriptor           = adminServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
-	adminServiceCreateTokenMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("CreateToken")
-	adminServiceListAvailableItemTypesMethodDescriptor     = adminServiceServiceDescriptor.Methods().ByName("ListAvailableItemTypes")
-	managementServiceServiceDescriptor                     = sdp_go.File_account_proto.Services().ByName("ManagementService")
-	managementServiceGetAccountMethodDescriptor            = managementServiceServiceDescriptor.Methods().ByName("GetAccount")
-	managementServiceDeleteAccountMethodDescriptor         = managementServiceServiceDescriptor.Methods().ByName("DeleteAccount")
-	managementServiceListSourcesMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("ListSources")
-	managementServiceCreateSourceMethodDescriptor          = managementServiceServiceDescriptor.Methods().ByName("CreateSource")
-	managementServiceGetSourceMethodDescriptor             = managementServiceServiceDescriptor.Methods().ByName("GetSource")
-	managementServiceUpdateSourceMethodDescriptor          = managementServiceServiceDescriptor.Methods().ByName("UpdateSource")
-	managementServiceDeleteSourceMethodDescriptor          = managementServiceServiceDescriptor.Methods().ByName("DeleteSource")
-	managementServiceListAllSourcesStatusMethodDescriptor  = managementServiceServiceDescriptor.Methods().ByName("ListAllSourcesStatus")
-	managementServiceSubmitSourceHeartbeatMethodDescriptor = managementServiceServiceDescriptor.Methods().ByName("SubmitSourceHeartbeat")
-	managementServiceKeepaliveSourcesMethodDescriptor      = managementServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
-	managementServiceCreateTokenMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("CreateToken")
-	managementServiceRevlinkWarmupMethodDescriptor         = managementServiceServiceDescriptor.Methods().ByName("RevlinkWarmup")
-	managementServiceGetTrialEndMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("GetTrialEnd")
+	adminServiceServiceDescriptor                            = sdp_go.File_account_proto.Services().ByName("AdminService")
+	adminServiceListAccountsMethodDescriptor                 = adminServiceServiceDescriptor.Methods().ByName("ListAccounts")
+	adminServiceCreateAccountMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("CreateAccount")
+	adminServiceUpdateAccountMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("UpdateAccount")
+	adminServiceGetAccountMethodDescriptor                   = adminServiceServiceDescriptor.Methods().ByName("GetAccount")
+	adminServiceDeleteAccountMethodDescriptor                = adminServiceServiceDescriptor.Methods().ByName("DeleteAccount")
+	adminServiceListSourcesMethodDescriptor                  = adminServiceServiceDescriptor.Methods().ByName("ListSources")
+	adminServiceCreateSourceMethodDescriptor                 = adminServiceServiceDescriptor.Methods().ByName("CreateSource")
+	adminServiceGetSourceMethodDescriptor                    = adminServiceServiceDescriptor.Methods().ByName("GetSource")
+	adminServiceUpdateSourceMethodDescriptor                 = adminServiceServiceDescriptor.Methods().ByName("UpdateSource")
+	adminServiceDeleteSourceMethodDescriptor                 = adminServiceServiceDescriptor.Methods().ByName("DeleteSource")
+	adminServiceKeepaliveSourcesMethodDescriptor             = adminServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
+	adminServiceCreateTokenMethodDescriptor                  = adminServiceServiceDescriptor.Methods().ByName("CreateToken")
+	adminServiceListAvailableItemTypesMethodDescriptor       = adminServiceServiceDescriptor.Methods().ByName("ListAvailableItemTypes")
+	managementServiceServiceDescriptor                       = sdp_go.File_account_proto.Services().ByName("ManagementService")
+	managementServiceGetAccountMethodDescriptor              = managementServiceServiceDescriptor.Methods().ByName("GetAccount")
+	managementServiceDeleteAccountMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("DeleteAccount")
+	managementServiceListSourcesMethodDescriptor             = managementServiceServiceDescriptor.Methods().ByName("ListSources")
+	managementServiceCreateSourceMethodDescriptor            = managementServiceServiceDescriptor.Methods().ByName("CreateSource")
+	managementServiceGetSourceMethodDescriptor               = managementServiceServiceDescriptor.Methods().ByName("GetSource")
+	managementServiceUpdateSourceMethodDescriptor            = managementServiceServiceDescriptor.Methods().ByName("UpdateSource")
+	managementServiceDeleteSourceMethodDescriptor            = managementServiceServiceDescriptor.Methods().ByName("DeleteSource")
+	managementServiceListAllSourcesStatusMethodDescriptor    = managementServiceServiceDescriptor.Methods().ByName("ListAllSourcesStatus")
+	managementServiceListActiveSourcesStatusMethodDescriptor = managementServiceServiceDescriptor.Methods().ByName("ListActiveSourcesStatus")
+	managementServiceSubmitSourceHeartbeatMethodDescriptor   = managementServiceServiceDescriptor.Methods().ByName("SubmitSourceHeartbeat")
+	managementServiceKeepaliveSourcesMethodDescriptor        = managementServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
+	managementServiceCreateTokenMethodDescriptor             = managementServiceServiceDescriptor.Methods().ByName("CreateToken")
+	managementServiceRevlinkWarmupMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("RevlinkWarmup")
+	managementServiceGetTrialEndMethodDescriptor             = managementServiceServiceDescriptor.Methods().ByName("GetTrialEnd")
 )
 
 // AdminServiceClient is a client for the account.AdminService service.
@@ -580,8 +584,14 @@ type ManagementServiceClient interface {
 	// Deletes a source from a user's account
 	DeleteSource(context.Context, *connect.Request[sdp_go.DeleteSourceRequest]) (*connect.Response[sdp_go.DeleteSourceResponse], error)
 	// Sources heartbeat and health
-	// List of all recently active sources and their health, includes managed and local sources
+	// List of all recently active sources and their health, includes information from srcman
+	// meaning that it can show the status of managed sources that have not started and
+	// connected yet
 	ListAllSourcesStatus(context.Context, *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error)
+	// Lists all active sources and their health. This should be used to determine
+	// what types, scopes etc are available rather than `ListAllSourcesStatus` since
+	// this endpoint only include running, available sources
+	ListActiveSourcesStatus(context.Context, *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error)
 	// Heartbeat from a source to keep it registered and healthy
 	SubmitSourceHeartbeat(context.Context, *connect.Request[sdp_go.SubmitSourceHeartbeatRequest]) (*connect.Response[sdp_go.SubmitSourceHeartbeatResponse], error)
 	// Updates sources to keep them running in the background. This can be used
@@ -655,6 +665,12 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(managementServiceListAllSourcesStatusMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		listActiveSourcesStatus: connect.NewClient[sdp_go.ListAllSourcesStatusRequest, sdp_go.ListAllSourcesStatusResponse](
+			httpClient,
+			baseURL+ManagementServiceListActiveSourcesStatusProcedure,
+			connect.WithSchema(managementServiceListActiveSourcesStatusMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		submitSourceHeartbeat: connect.NewClient[sdp_go.SubmitSourceHeartbeatRequest, sdp_go.SubmitSourceHeartbeatResponse](
 			httpClient,
 			baseURL+ManagementServiceSubmitSourceHeartbeatProcedure,
@@ -690,19 +706,20 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // managementServiceClient implements ManagementServiceClient.
 type managementServiceClient struct {
-	getAccount            *connect.Client[sdp_go.GetAccountRequest, sdp_go.GetAccountResponse]
-	deleteAccount         *connect.Client[sdp_go.DeleteAccountRequest, sdp_go.DeleteAccountResponse]
-	listSources           *connect.Client[sdp_go.ListSourcesRequest, sdp_go.ListSourcesResponse]
-	createSource          *connect.Client[sdp_go.CreateSourceRequest, sdp_go.CreateSourceResponse]
-	getSource             *connect.Client[sdp_go.GetSourceRequest, sdp_go.GetSourceResponse]
-	updateSource          *connect.Client[sdp_go.UpdateSourceRequest, sdp_go.UpdateSourceResponse]
-	deleteSource          *connect.Client[sdp_go.DeleteSourceRequest, sdp_go.DeleteSourceResponse]
-	listAllSourcesStatus  *connect.Client[sdp_go.ListAllSourcesStatusRequest, sdp_go.ListAllSourcesStatusResponse]
-	submitSourceHeartbeat *connect.Client[sdp_go.SubmitSourceHeartbeatRequest, sdp_go.SubmitSourceHeartbeatResponse]
-	keepaliveSources      *connect.Client[sdp_go.KeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse]
-	createToken           *connect.Client[sdp_go.CreateTokenRequest, sdp_go.CreateTokenResponse]
-	revlinkWarmup         *connect.Client[sdp_go.RevlinkWarmupRequest, sdp_go.RevlinkWarmupResponse]
-	getTrialEnd           *connect.Client[sdp_go.GetTrialEndRequest, sdp_go.GetTrialEndResponse]
+	getAccount              *connect.Client[sdp_go.GetAccountRequest, sdp_go.GetAccountResponse]
+	deleteAccount           *connect.Client[sdp_go.DeleteAccountRequest, sdp_go.DeleteAccountResponse]
+	listSources             *connect.Client[sdp_go.ListSourcesRequest, sdp_go.ListSourcesResponse]
+	createSource            *connect.Client[sdp_go.CreateSourceRequest, sdp_go.CreateSourceResponse]
+	getSource               *connect.Client[sdp_go.GetSourceRequest, sdp_go.GetSourceResponse]
+	updateSource            *connect.Client[sdp_go.UpdateSourceRequest, sdp_go.UpdateSourceResponse]
+	deleteSource            *connect.Client[sdp_go.DeleteSourceRequest, sdp_go.DeleteSourceResponse]
+	listAllSourcesStatus    *connect.Client[sdp_go.ListAllSourcesStatusRequest, sdp_go.ListAllSourcesStatusResponse]
+	listActiveSourcesStatus *connect.Client[sdp_go.ListAllSourcesStatusRequest, sdp_go.ListAllSourcesStatusResponse]
+	submitSourceHeartbeat   *connect.Client[sdp_go.SubmitSourceHeartbeatRequest, sdp_go.SubmitSourceHeartbeatResponse]
+	keepaliveSources        *connect.Client[sdp_go.KeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse]
+	createToken             *connect.Client[sdp_go.CreateTokenRequest, sdp_go.CreateTokenResponse]
+	revlinkWarmup           *connect.Client[sdp_go.RevlinkWarmupRequest, sdp_go.RevlinkWarmupResponse]
+	getTrialEnd             *connect.Client[sdp_go.GetTrialEndRequest, sdp_go.GetTrialEndResponse]
 }
 
 // GetAccount calls account.ManagementService.GetAccount.
@@ -743,6 +760,11 @@ func (c *managementServiceClient) DeleteSource(ctx context.Context, req *connect
 // ListAllSourcesStatus calls account.ManagementService.ListAllSourcesStatus.
 func (c *managementServiceClient) ListAllSourcesStatus(ctx context.Context, req *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error) {
 	return c.listAllSourcesStatus.CallUnary(ctx, req)
+}
+
+// ListActiveSourcesStatus calls account.ManagementService.ListActiveSourcesStatus.
+func (c *managementServiceClient) ListActiveSourcesStatus(ctx context.Context, req *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error) {
+	return c.listActiveSourcesStatus.CallUnary(ctx, req)
 }
 
 // SubmitSourceHeartbeat calls account.ManagementService.SubmitSourceHeartbeat.
@@ -789,8 +811,14 @@ type ManagementServiceHandler interface {
 	// Deletes a source from a user's account
 	DeleteSource(context.Context, *connect.Request[sdp_go.DeleteSourceRequest]) (*connect.Response[sdp_go.DeleteSourceResponse], error)
 	// Sources heartbeat and health
-	// List of all recently active sources and their health, includes managed and local sources
+	// List of all recently active sources and their health, includes information from srcman
+	// meaning that it can show the status of managed sources that have not started and
+	// connected yet
 	ListAllSourcesStatus(context.Context, *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error)
+	// Lists all active sources and their health. This should be used to determine
+	// what types, scopes etc are available rather than `ListAllSourcesStatus` since
+	// this endpoint only include running, available sources
+	ListActiveSourcesStatus(context.Context, *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error)
 	// Heartbeat from a source to keep it registered and healthy
 	SubmitSourceHeartbeat(context.Context, *connect.Request[sdp_go.SubmitSourceHeartbeatRequest]) (*connect.Response[sdp_go.SubmitSourceHeartbeatResponse], error)
 	// Updates sources to keep them running in the background. This can be used
@@ -860,6 +888,12 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 		connect.WithSchema(managementServiceListAllSourcesStatusMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	managementServiceListActiveSourcesStatusHandler := connect.NewUnaryHandler(
+		ManagementServiceListActiveSourcesStatusProcedure,
+		svc.ListActiveSourcesStatus,
+		connect.WithSchema(managementServiceListActiveSourcesStatusMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	managementServiceSubmitSourceHeartbeatHandler := connect.NewUnaryHandler(
 		ManagementServiceSubmitSourceHeartbeatProcedure,
 		svc.SubmitSourceHeartbeat,
@@ -908,6 +942,8 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 			managementServiceDeleteSourceHandler.ServeHTTP(w, r)
 		case ManagementServiceListAllSourcesStatusProcedure:
 			managementServiceListAllSourcesStatusHandler.ServeHTTP(w, r)
+		case ManagementServiceListActiveSourcesStatusProcedure:
+			managementServiceListActiveSourcesStatusHandler.ServeHTTP(w, r)
 		case ManagementServiceSubmitSourceHeartbeatProcedure:
 			managementServiceSubmitSourceHeartbeatHandler.ServeHTTP(w, r)
 		case ManagementServiceKeepaliveSourcesProcedure:
@@ -957,6 +993,10 @@ func (UnimplementedManagementServiceHandler) DeleteSource(context.Context, *conn
 
 func (UnimplementedManagementServiceHandler) ListAllSourcesStatus(context.Context, *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.ListAllSourcesStatus is not implemented"))
+}
+
+func (UnimplementedManagementServiceHandler) ListActiveSourcesStatus(context.Context, *connect.Request[sdp_go.ListAllSourcesStatusRequest]) (*connect.Response[sdp_go.ListAllSourcesStatusResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.ListActiveSourcesStatus is not implemented"))
 }
 
 func (UnimplementedManagementServiceHandler) SubmitSourceHeartbeat(context.Context, *connect.Request[sdp_go.SubmitSourceHeartbeatRequest]) (*connect.Response[sdp_go.SubmitSourceHeartbeatResponse], error) {
