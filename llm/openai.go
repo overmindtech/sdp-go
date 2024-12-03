@@ -17,9 +17,15 @@ import (
 
 // Creates a new OpenAI Provider. The user must pass in the API key, the model
 // to use, and the name. The name is used in the subsequent names of all the
-// assistants that are created
-func NewOpenAIProvider(apiKey string, model string, name string, jsonMode bool) *openAIProvider {
-	cfg := openai.DefaultConfig(apiKey)
+// assistants that are created. Set `azureBaseURL` to enable azure mode
+func NewOpenAIProvider(apiKey string, azureBaseURL string, model string, name string, jsonMode bool) *openAIProvider {
+	var cfg openai.ClientConfig
+	if azureBaseURL != "" {
+		cfg = openai.DefaultAzureConfig(apiKey, azureBaseURL)
+	} else {
+		cfg = openai.DefaultConfig(apiKey)
+	}
+
 	cfg.HTTPClient = otelhttp.DefaultClient
 
 	return &openAIProvider{

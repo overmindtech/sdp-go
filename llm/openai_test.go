@@ -16,7 +16,7 @@ func TestNewOpenAIProvider(t *testing.T) {
 		t.Skip("OPENAI_API_KEY not set")
 	}
 
-	openaiProvider := NewOpenAIProvider(key, openai.GPT4oMini, t.Name(), false)
+	openaiProvider := NewOpenAIProvider(key, "", openai.GPT4oMini, t.Name(), false)
 
 	// Assert that the result matches the provider interface
 	var _ Provider = openaiProvider
