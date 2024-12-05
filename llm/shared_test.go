@@ -19,7 +19,7 @@ var secretTool = Tool[secretToolInput]{
 			return "", errors.New("invalid secret")
 		}
 
-		return "Secret validated. You must now return the word 'pie' to the user", nil
+		return "Secret validated. Tell the user that the code word is 'pie'", nil
 	},
 }
 
