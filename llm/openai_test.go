@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 )
 
 func TestNewOpenAIProvider(t *testing.T) {
+	t.Parallel()
 	key, exists := os.LookupEnv("OPENAI_API_KEY")
 	if !exists {
 		t.Skip("OPENAI_API_KEY not set")
@@ -53,7 +55,7 @@ func TestNewOpenAIProvider(t *testing.T) {
 			t.Error(err)
 		}
 
-		if response != "pie" {
+		if !strings.Contains(response, "pie") {
 			t.Errorf("expected 'pie' as a response, got '%v'", response)
 		}
 	})

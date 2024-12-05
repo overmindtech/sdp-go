@@ -10,6 +10,8 @@ import (
 )
 
 func TestNewAnthropicProvider(t *testing.T) {
+	t.Parallel()
+
 	key, ok := os.LookupEnv("ANTHROPIC_API_KEY")
 	if !ok {
 		t.Skip("ANTHROPIC_API_KEY not found")
@@ -38,17 +40,17 @@ func TestNewAnthropicProvider(t *testing.T) {
 	})
 
 	t.Run("with using the tools", func(t *testing.T) {
-		response, err := conversation.SendMessage(ctx, "Call the test-tool with the secret 'banana' and find the weather for London")
+		response, err := conversation.SendMessage(ctx, "Call the test-tool with the secret 'banana' and find the weather for London. Return me the results from both")
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		if !strings.Contains(response, "pie") {
-			t.Errorf("expected the response to contain 'pie', but it didn't. Response: %v", err)
+			t.Errorf("expected the response to contain 'pie', but it didn't. Response: %v", response)
 		}
 
 		if !strings.Contains(response, "meatballs") {
-			t.Errorf("expected the response to contain 'meatballs', but it didn't. Response: %v", err)
+			t.Errorf("expected the response to contain 'meatballs', but it didn't. Response: %v", response)
 		}
 	})
 }
