@@ -41,9 +41,10 @@ type CurrentSubjectContextKey struct{}
 
 // AuthConfig Configuration for the auth middleware
 type AuthConfig struct {
-	Auth0Domain    string
-	Auth0Audience  string
-	AuthCookieName string // leave this empty to disable cookie auth
+	Auth0Domain   string
+	Auth0Audience string
+	// The names of the cookies that will be used to authenticate
+	AuthCookieNames []string
 
 	// Use this to specify the full issuer URL for validating the JWTs. This
 	// should only be used if we aren't using Auth0 as a source for tokens (such
@@ -233,7 +234,7 @@ func OverrideCustomClaims(ctx context.Context, scope *string, account *string) c
 // This middleware also extract custom claims form the token and stores them in
 // CustomClaimsContextKey
 func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler {
-	if config.Auth0Domain == "" && config.IssuerURL == "" && config.Auth0Audience == "" && config.AuthCookieName == "" {
+	if config.Auth0Domain == "" && config.IssuerURL == "" && config.Auth0Audience == "" {
 		log.Fatalf("Auth0 configuration is missing")
 	}
 
@@ -283,8 +284,8 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 		jwtmiddleware.AuthHeaderTokenExtractor,
 	}
 
-	if config.AuthCookieName != "" {
-		extractors = append(extractors, jwtmiddleware.CookieTokenExtractor(config.AuthCookieName))
+	for _, cookieName := range config.AuthCookieNames {
+		extractors = append(extractors, jwtmiddleware.CookieTokenExtractor(cookieName))
 	}
 
 	tokenExtractor := jwtmiddleware.MultiTokenExtractor(extractors...)
