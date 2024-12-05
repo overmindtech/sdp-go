@@ -69,9 +69,6 @@ const (
 	// AdminServiceCreateTokenProcedure is the fully-qualified name of the AdminService's CreateToken
 	// RPC.
 	AdminServiceCreateTokenProcedure = "/account.AdminService/CreateToken"
-	// AdminServiceListAvailableItemTypesProcedure is the fully-qualified name of the AdminService's
-	// ListAvailableItemTypes RPC.
-	AdminServiceListAvailableItemTypesProcedure = "/account.AdminService/ListAvailableItemTypes"
 	// ManagementServiceGetAccountProcedure is the fully-qualified name of the ManagementService's
 	// GetAccount RPC.
 	ManagementServiceGetAccountProcedure = "/account.ManagementService/GetAccount"
@@ -114,6 +111,9 @@ const (
 	// ManagementServiceGetTrialEndProcedure is the fully-qualified name of the ManagementService's
 	// GetTrialEnd RPC.
 	ManagementServiceGetTrialEndProcedure = "/account.ManagementService/GetTrialEnd"
+	// ManagementServiceListAvailableItemTypesProcedure is the fully-qualified name of the
+	// ManagementService's ListAvailableItemTypes RPC.
+	ManagementServiceListAvailableItemTypesProcedure = "/account.ManagementService/ListAvailableItemTypes"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -131,7 +131,6 @@ var (
 	adminServiceDeleteSourceMethodDescriptor                 = adminServiceServiceDescriptor.Methods().ByName("DeleteSource")
 	adminServiceKeepaliveSourcesMethodDescriptor             = adminServiceServiceDescriptor.Methods().ByName("KeepaliveSources")
 	adminServiceCreateTokenMethodDescriptor                  = adminServiceServiceDescriptor.Methods().ByName("CreateToken")
-	adminServiceListAvailableItemTypesMethodDescriptor       = adminServiceServiceDescriptor.Methods().ByName("ListAvailableItemTypes")
 	managementServiceServiceDescriptor                       = sdp_go.File_account_proto.Services().ByName("ManagementService")
 	managementServiceGetAccountMethodDescriptor              = managementServiceServiceDescriptor.Methods().ByName("GetAccount")
 	managementServiceDeleteAccountMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("DeleteAccount")
@@ -147,6 +146,7 @@ var (
 	managementServiceCreateTokenMethodDescriptor             = managementServiceServiceDescriptor.Methods().ByName("CreateToken")
 	managementServiceRevlinkWarmupMethodDescriptor           = managementServiceServiceDescriptor.Methods().ByName("RevlinkWarmup")
 	managementServiceGetTrialEndMethodDescriptor             = managementServiceServiceDescriptor.Methods().ByName("GetTrialEnd")
+	managementServiceListAvailableItemTypesMethodDescriptor  = managementServiceServiceDescriptor.Methods().ByName("ListAvailableItemTypes")
 )
 
 // AdminServiceClient is a client for the account.AdminService service.
@@ -180,8 +180,6 @@ type AdminServiceClient interface {
 	// control the associated private key also in order to connect to NATS as
 	// the token is not enough on its own
 	CreateToken(context.Context, *connect.Request[sdp_go.AdminCreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error)
-	// Lists all the available item types that can be discovered by sources that are running and healthy
-	ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the account.AdminService service. By default, it
@@ -266,30 +264,23 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceCreateTokenMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		listAvailableItemTypes: connect.NewClient[sdp_go.ListAvailableItemTypesRequest, sdp_go.ListAvailableItemTypesResponse](
-			httpClient,
-			baseURL+AdminServiceListAvailableItemTypesProcedure,
-			connect.WithSchema(adminServiceListAvailableItemTypesMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
 // adminServiceClient implements AdminServiceClient.
 type adminServiceClient struct {
-	listAccounts           *connect.Client[sdp_go.ListAccountsRequest, sdp_go.ListAccountsResponse]
-	createAccount          *connect.Client[sdp_go.CreateAccountRequest, sdp_go.CreateAccountResponse]
-	updateAccount          *connect.Client[sdp_go.AdminUpdateAccountRequest, sdp_go.UpdateAccountResponse]
-	getAccount             *connect.Client[sdp_go.AdminGetAccountRequest, sdp_go.GetAccountResponse]
-	deleteAccount          *connect.Client[sdp_go.AdminDeleteAccountRequest, sdp_go.AdminDeleteAccountResponse]
-	listSources            *connect.Client[sdp_go.AdminListSourcesRequest, sdp_go.ListSourcesResponse]
-	createSource           *connect.Client[sdp_go.AdminCreateSourceRequest, sdp_go.CreateSourceResponse]
-	getSource              *connect.Client[sdp_go.AdminGetSourceRequest, sdp_go.GetSourceResponse]
-	updateSource           *connect.Client[sdp_go.AdminUpdateSourceRequest, sdp_go.UpdateSourceResponse]
-	deleteSource           *connect.Client[sdp_go.AdminDeleteSourceRequest, sdp_go.DeleteSourceResponse]
-	keepaliveSources       *connect.Client[sdp_go.AdminKeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse]
-	createToken            *connect.Client[sdp_go.AdminCreateTokenRequest, sdp_go.CreateTokenResponse]
-	listAvailableItemTypes *connect.Client[sdp_go.ListAvailableItemTypesRequest, sdp_go.ListAvailableItemTypesResponse]
+	listAccounts     *connect.Client[sdp_go.ListAccountsRequest, sdp_go.ListAccountsResponse]
+	createAccount    *connect.Client[sdp_go.CreateAccountRequest, sdp_go.CreateAccountResponse]
+	updateAccount    *connect.Client[sdp_go.AdminUpdateAccountRequest, sdp_go.UpdateAccountResponse]
+	getAccount       *connect.Client[sdp_go.AdminGetAccountRequest, sdp_go.GetAccountResponse]
+	deleteAccount    *connect.Client[sdp_go.AdminDeleteAccountRequest, sdp_go.AdminDeleteAccountResponse]
+	listSources      *connect.Client[sdp_go.AdminListSourcesRequest, sdp_go.ListSourcesResponse]
+	createSource     *connect.Client[sdp_go.AdminCreateSourceRequest, sdp_go.CreateSourceResponse]
+	getSource        *connect.Client[sdp_go.AdminGetSourceRequest, sdp_go.GetSourceResponse]
+	updateSource     *connect.Client[sdp_go.AdminUpdateSourceRequest, sdp_go.UpdateSourceResponse]
+	deleteSource     *connect.Client[sdp_go.AdminDeleteSourceRequest, sdp_go.DeleteSourceResponse]
+	keepaliveSources *connect.Client[sdp_go.AdminKeepaliveSourcesRequest, sdp_go.KeepaliveSourcesResponse]
+	createToken      *connect.Client[sdp_go.AdminCreateTokenRequest, sdp_go.CreateTokenResponse]
 }
 
 // ListAccounts calls account.AdminService.ListAccounts.
@@ -352,11 +343,6 @@ func (c *adminServiceClient) CreateToken(ctx context.Context, req *connect.Reque
 	return c.createToken.CallUnary(ctx, req)
 }
 
-// ListAvailableItemTypes calls account.AdminService.ListAvailableItemTypes.
-func (c *adminServiceClient) ListAvailableItemTypes(ctx context.Context, req *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error) {
-	return c.listAvailableItemTypes.CallUnary(ctx, req)
-}
-
 // AdminServiceHandler is an implementation of the account.AdminService service.
 type AdminServiceHandler interface {
 	// Lists the details of all NATS Accounts
@@ -388,8 +374,6 @@ type AdminServiceHandler interface {
 	// control the associated private key also in order to connect to NATS as
 	// the token is not enough on its own
 	CreateToken(context.Context, *connect.Request[sdp_go.AdminCreateTokenRequest]) (*connect.Response[sdp_go.CreateTokenResponse], error)
-	// Lists all the available item types that can be discovered by sources that are running and healthy
-	ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -470,12 +454,6 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceCreateTokenMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	adminServiceListAvailableItemTypesHandler := connect.NewUnaryHandler(
-		AdminServiceListAvailableItemTypesProcedure,
-		svc.ListAvailableItemTypes,
-		connect.WithSchema(adminServiceListAvailableItemTypesMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/account.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminServiceListAccountsProcedure:
@@ -502,8 +480,6 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceKeepaliveSourcesHandler.ServeHTTP(w, r)
 		case AdminServiceCreateTokenProcedure:
 			adminServiceCreateTokenHandler.ServeHTTP(w, r)
-		case AdminServiceListAvailableItemTypesProcedure:
-			adminServiceListAvailableItemTypesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -561,10 +537,6 @@ func (UnimplementedAdminServiceHandler) CreateToken(context.Context, *connect.Re
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.AdminService.CreateToken is not implemented"))
 }
 
-func (UnimplementedAdminServiceHandler) ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.AdminService.ListAvailableItemTypes is not implemented"))
-}
-
 // ManagementServiceClient is a client for the account.ManagementService service.
 type ManagementServiceClient interface {
 	// Get the details of the account that this user belongs to
@@ -605,6 +577,8 @@ type ManagementServiceClient interface {
 	// so the actual logic does only run when required.
 	RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest]) (*connect.ServerStreamForClient[sdp_go.RevlinkWarmupResponse], error)
 	GetTrialEnd(context.Context, *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error)
+	// Lists all the available item types that can be discovered by sources that are running and healthy
+	ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error)
 }
 
 // NewManagementServiceClient constructs a client for the account.ManagementService service. By
@@ -701,6 +675,12 @@ func NewManagementServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(managementServiceGetTrialEndMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		listAvailableItemTypes: connect.NewClient[sdp_go.ListAvailableItemTypesRequest, sdp_go.ListAvailableItemTypesResponse](
+			httpClient,
+			baseURL+ManagementServiceListAvailableItemTypesProcedure,
+			connect.WithSchema(managementServiceListAvailableItemTypesMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -720,6 +700,7 @@ type managementServiceClient struct {
 	createToken             *connect.Client[sdp_go.CreateTokenRequest, sdp_go.CreateTokenResponse]
 	revlinkWarmup           *connect.Client[sdp_go.RevlinkWarmupRequest, sdp_go.RevlinkWarmupResponse]
 	getTrialEnd             *connect.Client[sdp_go.GetTrialEndRequest, sdp_go.GetTrialEndResponse]
+	listAvailableItemTypes  *connect.Client[sdp_go.ListAvailableItemTypesRequest, sdp_go.ListAvailableItemTypesResponse]
 }
 
 // GetAccount calls account.ManagementService.GetAccount.
@@ -792,6 +773,11 @@ func (c *managementServiceClient) GetTrialEnd(ctx context.Context, req *connect.
 	return c.getTrialEnd.CallUnary(ctx, req)
 }
 
+// ListAvailableItemTypes calls account.ManagementService.ListAvailableItemTypes.
+func (c *managementServiceClient) ListAvailableItemTypes(ctx context.Context, req *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error) {
+	return c.listAvailableItemTypes.CallUnary(ctx, req)
+}
+
 // ManagementServiceHandler is an implementation of the account.ManagementService service.
 type ManagementServiceHandler interface {
 	// Get the details of the account that this user belongs to
@@ -832,6 +818,8 @@ type ManagementServiceHandler interface {
 	// so the actual logic does only run when required.
 	RevlinkWarmup(context.Context, *connect.Request[sdp_go.RevlinkWarmupRequest], *connect.ServerStream[sdp_go.RevlinkWarmupResponse]) error
 	GetTrialEnd(context.Context, *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error)
+	// Lists all the available item types that can be discovered by sources that are running and healthy
+	ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error)
 }
 
 // NewManagementServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -924,6 +912,12 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 		connect.WithSchema(managementServiceGetTrialEndMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	managementServiceListAvailableItemTypesHandler := connect.NewUnaryHandler(
+		ManagementServiceListAvailableItemTypesProcedure,
+		svc.ListAvailableItemTypes,
+		connect.WithSchema(managementServiceListAvailableItemTypesMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/account.ManagementService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ManagementServiceGetAccountProcedure:
@@ -954,6 +948,8 @@ func NewManagementServiceHandler(svc ManagementServiceHandler, opts ...connect.H
 			managementServiceRevlinkWarmupHandler.ServeHTTP(w, r)
 		case ManagementServiceGetTrialEndProcedure:
 			managementServiceGetTrialEndHandler.ServeHTTP(w, r)
+		case ManagementServiceListAvailableItemTypesProcedure:
+			managementServiceListAvailableItemTypesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -1017,4 +1013,8 @@ func (UnimplementedManagementServiceHandler) RevlinkWarmup(context.Context, *con
 
 func (UnimplementedManagementServiceHandler) GetTrialEnd(context.Context, *connect.Request[sdp_go.GetTrialEndRequest]) (*connect.Response[sdp_go.GetTrialEndResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.GetTrialEnd is not implemented"))
+}
+
+func (UnimplementedManagementServiceHandler) ListAvailableItemTypes(context.Context, *connect.Request[sdp_go.ListAvailableItemTypesRequest]) (*connect.Response[sdp_go.ListAvailableItemTypesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("account.ManagementService.ListAvailableItemTypes is not implemented"))
 }
