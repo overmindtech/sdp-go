@@ -98,6 +98,7 @@ func (c *anthropicConversation) SendMessage(ctx context.Context, userMessage str
 			System:    anthropic.F(c.system),
 		})
 		if err != nil {
+			err = fmt.Errorf("error sending message: %w", err)
 			span.SetStatus(codes.Error, err.Error())
 			return "", err
 		}

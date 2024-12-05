@@ -77,19 +77,21 @@ func (p *openAIProvider) NewConversation(ctx context.Context, systemPrompt strin
 		ResponseFormat: responseFormat,
 	})
 	if err != nil {
+		err = fmt.Errorf("failed to create assistant: %w", err)
 		return nil, err
 	}
 
 	cleanup = append(cleanup, func(ctx context.Context) error {
 		// Delete the assistant if something goes wrong
 		_, err := p.client.DeleteAssistant(ctx, assistant.ID)
+		err = fmt.Errorf("failed to delete assistant: %w", err)
 		return err
 	})
 
 	thread, err := p.client.CreateThread(ctx, openai.ThreadRequest{})
 	if err != nil {
-		err = cleanup.Run(ctx, err)
-
+		err = fmt.Errorf("failed to create thread: %w", err)
+		err := cleanup.Run(ctx, err)
 		return nil, err
 	}
 
@@ -134,14 +136,18 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 		Content: userMessage,
 	})
 	if err != nil {
+		err = fmt.Errorf("failed to create message: %w", err)
 		span.SetStatus(codes.Error, err.Error())
 		return "", err
 	}
 
 	// Add a cleanup task to delete the message so that this can be re-run
 	cleanup = append(cleanup, func(ctx context.Context) error {
+		err := fmt.Errorf("failed to append message: %w", err)
 		// Delete the last message so we don't end up with duplicates
-		_, err := c.client.DeleteMessage(ctx, c.thread.ID, message.ID)
+		_, deleteErr := c.client.DeleteMessage(ctx, c.thread.ID, message.ID)
+		deleteErr = fmt.Errorf("failed to delete message: %w", deleteErr)
+		err = errors.Join(err, deleteErr)
 		return err
 	})
 
@@ -150,6 +156,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 		AssistantID: c.assistant.ID,
 	})
 	if err != nil {
+		err = fmt.Errorf("failed to create run: %w", err)
 		err = cleanup.Run(ctx, err)
 		span.SetStatus(codes.Error, err.Error())
 		return "", err
@@ -165,6 +172,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 			cancelRunCtx, cancelRunCancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 			defer cancelRunCancel()
 			_, cancelErr := c.client.CancelRun(cancelRunCtx, c.thread.ID, run.ID)
+			cancelErr = fmt.Errorf("failed to cancel run: %w", cancelErr)
 			err = errors.Join(ctx.Err(), cancelErr)
 
 			// Run the other cleanup tasks
@@ -176,6 +184,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 			// Check to see if the run is done
 			run, err = c.client.RetrieveRun(ctx, c.thread.ID, run.ID)
 			if err != nil {
+				err = fmt.Errorf("failed to retrieve run: %w", err)
 				err = cleanup.Run(ctx, err)
 				span.SetStatus(codes.Error, err.Error())
 				return "", err
@@ -238,6 +247,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 						ToolOutputs: outputs,
 					})
 					if err != nil {
+						err = fmt.Errorf("failed to submit tool outputs: %w", err)
 						err = cleanup.Run(ctx, err)
 						span.SetStatus(codes.Error, err.Error())
 						return "", err
@@ -253,6 +263,7 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 					// just give up
 
 					// Clean up everything
+					err = fmt.Errorf("failed to list messages: %w", err)
 					err = cleanup.Run(ctx, err)
 					span.SetStatus(codes.Error, err.Error())
 					return "", err
