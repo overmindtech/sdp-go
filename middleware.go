@@ -43,7 +43,8 @@ type CurrentSubjectContextKey struct{}
 type AuthConfig struct {
 	Auth0Domain   string
 	Auth0Audience string
-	// The names of the cookies that will be used to authenticate
+	// The names of the cookies that will be used to authenticate, these will be
+	// checked in order with the first one that is found being used
 	AuthCookieNames []string
 
 	// Use this to specify the full issuer URL for validating the JWTs. This
