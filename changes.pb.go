@@ -1501,6 +1501,9 @@ func (x *ListHomeChangesRequest) GetFilters() *ChangeFiltersRequest {
 	return nil
 }
 
+// ChangeFiltersRequest is used for filtering on the changes page.
+// Repeated entries of the same type are used to represent OR conditions. eg if repo is ["a", "b"] then the filter is (repo == "a" OR repo == "b")
+// The filters are ANDed together. eg if repo is ["a", "b"] and author is ["c"] then the filter is (repo == "a" OR repo == "b") AND author == "c"
 type ChangeFiltersRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
