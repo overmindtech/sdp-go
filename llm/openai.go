@@ -18,10 +18,13 @@ import (
 // Creates a new OpenAI Provider. The user must pass in the API key, the model
 // to use, and the name. The name is used in the subsequent names of all the
 // assistants that are created. Set `azureBaseURL` to enable azure mode
-func NewOpenAIProvider(apiKey string, azureBaseURL string, model string, name string, jsonMode bool) *openAIProvider {
+func NewOpenAIProvider(apiKey string, azureBaseURL string, model, azureModelName string, name string, jsonMode bool) *openAIProvider {
 	var cfg openai.ClientConfig
 	if azureBaseURL != "" {
 		cfg = openai.DefaultAzureConfig(apiKey, azureBaseURL)
+		cfg.AzureModelMapperFunc = func(m string) string {
+			return azureModelName
+		}
 	} else {
 		cfg = openai.DefaultConfig(apiKey)
 	}
