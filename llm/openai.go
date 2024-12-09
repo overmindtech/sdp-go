@@ -22,6 +22,7 @@ func NewOpenAIProvider(apiKey string, azureBaseURL string, model, azureModelName
 	var cfg openai.ClientConfig
 	if azureBaseURL != "" {
 		cfg = openai.DefaultAzureConfig(apiKey, azureBaseURL)
+		cfg.APIVersion = "2024-05-01-preview"
 		cfg.AzureModelMapperFunc = func(m string) string {
 			return azureModelName
 		}
