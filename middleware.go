@@ -270,7 +270,11 @@ func ensureValidTokenHandler(config AuthConfig, next http.Handler) http.Handler 
 	}
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		log.WithContext(r.Context()).WithError(err).Errorf("Encountered error while validating JWT")
+		log.WithContext(r.Context()).WithFields(log.Fields{
+			"ovm.auth.audience":       config.Auth0Audience,
+			"ovm.auth.domain":         config.Auth0Domain,
+			"ovm.auth.expectedIssuer": issuerURL.String(),
+		}).WithError(err).Errorf("Encountered error while validating JWT")
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
