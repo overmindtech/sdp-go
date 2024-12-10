@@ -21,11 +21,10 @@ import (
 func NewOpenAIProvider(apiKey string, azureBaseURL string, model, azureModelName string, name string, jsonMode bool) *openAIProvider {
 	var cfg openai.ClientConfig
 	if azureBaseURL != "" {
+		// override model choice with what we get from the configuration
+		model = azureModelName
 		cfg = openai.DefaultAzureConfig(apiKey, azureBaseURL)
 		cfg.APIVersion = "2024-05-01-preview"
-		cfg.AzureModelMapperFunc = func(m string) string {
-			return azureModelName
-		}
 	} else {
 		cfg = openai.DefaultConfig(apiKey)
 	}
@@ -150,8 +149,10 @@ func (c *openAIConversation) SendMessage(ctx context.Context, userMessage string
 		err := fmt.Errorf("failed to append message: %w", err)
 		// Delete the last message so we don't end up with duplicates
 		_, deleteErr := c.client.DeleteMessage(ctx, c.thread.ID, message.ID)
-		deleteErr = fmt.Errorf("failed to delete message: %w", deleteErr)
-		err = errors.Join(err, deleteErr)
+		if deleteErr != nil {
+			deleteErr = fmt.Errorf("failed to delete message: %w", deleteErr)
+			err = errors.Join(err, deleteErr)
+		}
 		return err
 	})
 
