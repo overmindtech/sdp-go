@@ -4,11 +4,10 @@ jobs:
   test:
     strategy:
       matrix:
-        # for now only support 1.22 because of loopvar change
-        # go-version: [1.22.x, 1.23.x]
-        go-version: [1.22.x]
+        # support the current and previous major version of Go
+        go-version: [1.22.x, 1.23.x]
         os:
-          - ubuntu-latest
+          - depot-ubuntu-24.04
           # - macos-latest
           # - windows-latest
     runs-on: ${{ matrix.os }}
