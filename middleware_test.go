@@ -442,7 +442,7 @@ func TestNewAuthMiddleware(t *testing.T) {
 
 func BenchmarkAuthMiddleware(b *testing.B) {
 	config := AuthConfig{
-		Auth0Domain:   "om-dogfood.eu.auth0.com",
+		Auth0Domain:   "auth.overmind-demo.com",
 		Auth0Audience: "https://api.overmind.tech",
 	}
 
