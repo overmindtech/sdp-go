@@ -23,6 +23,8 @@ const _ = connect.IsAtLeastVersion1_13_0
 const (
 	// ChangesServiceName is the fully-qualified name of the ChangesService service.
 	ChangesServiceName = "changes.ChangesService"
+	// AutoTaggingServiceName is the fully-qualified name of the AutoTaggingService service.
+	AutoTaggingServiceName = "changes.AutoTaggingService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -135,6 +137,27 @@ const (
 	// ChangesServicePopulateChangeFiltersProcedure is the fully-qualified name of the ChangesService's
 	// PopulateChangeFilters RPC.
 	ChangesServicePopulateChangeFiltersProcedure = "/changes.ChangesService/PopulateChangeFilters"
+	// AutoTaggingServiceListRulesProcedure is the fully-qualified name of the AutoTaggingService's
+	// ListRules RPC.
+	AutoTaggingServiceListRulesProcedure = "/changes.AutoTaggingService/ListRules"
+	// AutoTaggingServiceCreateRuleProcedure is the fully-qualified name of the AutoTaggingService's
+	// CreateRule RPC.
+	AutoTaggingServiceCreateRuleProcedure = "/changes.AutoTaggingService/CreateRule"
+	// AutoTaggingServiceGetRuleProcedure is the fully-qualified name of the AutoTaggingService's
+	// GetRule RPC.
+	AutoTaggingServiceGetRuleProcedure = "/changes.AutoTaggingService/GetRule"
+	// AutoTaggingServiceUpdateRuleProcedure is the fully-qualified name of the AutoTaggingService's
+	// UpdateRule RPC.
+	AutoTaggingServiceUpdateRuleProcedure = "/changes.AutoTaggingService/UpdateRule"
+	// AutoTaggingServiceDeleteRuleProcedure is the fully-qualified name of the AutoTaggingService's
+	// DeleteRule RPC.
+	AutoTaggingServiceDeleteRuleProcedure = "/changes.AutoTaggingService/DeleteRule"
+	// AutoTaggingServiceExportRuleProcedure is the fully-qualified name of the AutoTaggingService's
+	// ExportRule RPC.
+	AutoTaggingServiceExportRuleProcedure = "/changes.AutoTaggingService/ExportRule"
+	// AutoTaggingServiceTestRuleProcedure is the fully-qualified name of the AutoTaggingService's
+	// TestRule RPC.
+	AutoTaggingServiceTestRuleProcedure = "/changes.AutoTaggingService/TestRule"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -175,6 +198,14 @@ var (
 	changesServiceListChangingItemsSummaryMethodDescriptor  = changesServiceServiceDescriptor.Methods().ByName("ListChangingItemsSummary")
 	changesServiceGetDiffMethodDescriptor                   = changesServiceServiceDescriptor.Methods().ByName("GetDiff")
 	changesServicePopulateChangeFiltersMethodDescriptor     = changesServiceServiceDescriptor.Methods().ByName("PopulateChangeFilters")
+	autoTaggingServiceServiceDescriptor                     = sdp_go.File_changes_proto.Services().ByName("AutoTaggingService")
+	autoTaggingServiceListRulesMethodDescriptor             = autoTaggingServiceServiceDescriptor.Methods().ByName("ListRules")
+	autoTaggingServiceCreateRuleMethodDescriptor            = autoTaggingServiceServiceDescriptor.Methods().ByName("CreateRule")
+	autoTaggingServiceGetRuleMethodDescriptor               = autoTaggingServiceServiceDescriptor.Methods().ByName("GetRule")
+	autoTaggingServiceUpdateRuleMethodDescriptor            = autoTaggingServiceServiceDescriptor.Methods().ByName("UpdateRule")
+	autoTaggingServiceDeleteRuleMethodDescriptor            = autoTaggingServiceServiceDescriptor.Methods().ByName("DeleteRule")
+	autoTaggingServiceExportRuleMethodDescriptor            = autoTaggingServiceServiceDescriptor.Methods().ByName("ExportRule")
+	autoTaggingServiceTestRuleMethodDescriptor              = autoTaggingServiceServiceDescriptor.Methods().ByName("TestRule")
 )
 
 // ChangesServiceClient is a client for the changes.ChangesService service.
@@ -1249,4 +1280,256 @@ func (UnimplementedChangesServiceHandler) GetDiff(context.Context, *connect.Requ
 
 func (UnimplementedChangesServiceHandler) PopulateChangeFilters(context.Context, *connect.Request[sdp_go.PopulateChangeFiltersRequest]) (*connect.Response[sdp_go.PopulateChangeFiltersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.ChangesService.PopulateChangeFilters is not implemented"))
+}
+
+// AutoTaggingServiceClient is a client for the changes.AutoTaggingService service.
+type AutoTaggingServiceClient interface {
+	// Used on the auto-tagging page to list all rules for an account
+	// Returns a list of rules
+	ListRules(context.Context, *connect.Request[sdp_go.ListRulesRequest]) (*connect.Response[sdp_go.ListRulesResponse], error)
+	// Creates a new rule, with the provided properties. This will return a
+	// CodeAlreadyExists error if the `tagKey` is not unique
+	CreateRule(context.Context, *connect.Request[sdp_go.CreateRuleRequest]) (*connect.Response[sdp_go.CreateRuleResponse], error)
+	// Get the details of a rule
+	GetRule(context.Context, *connect.Request[sdp_go.GetRuleRequest]) (*connect.Response[sdp_go.GetRuleResponse], error)
+	// Given a rule UUID, updates the rule properties. Note the key can be
+	// updated, but it only applies to new changes. This will return a
+	// CodeAlreadyExists error if the  new `tagKey` is not unique
+	UpdateRule(context.Context, *connect.Request[sdp_go.UpdateRuleRequest]) (*connect.Response[sdp_go.UpdateRuleResponse], error)
+	// Given a rule UUID permanently delete that rule, existing changes will not
+	// be affected
+	DeleteRule(context.Context, *connect.Request[sdp_go.DeleteRuleRequest]) (*connect.Response[sdp_go.DeleteRuleResponse], error)
+	// Convert a rule's properties to a string that can be used in the rules
+	// config file
+	ExportRule(context.Context, *connect.Request[sdp_go.ExportRuleRequest]) (*connect.Response[sdp_go.ExportRuleResponse], error)
+	// Given a rule, and a list of changes uuids
+	// The response will contain the rule uuid and a list of changes and what tags they would have if the rule was applied
+	TestRule(context.Context, *connect.Request[sdp_go.TestRuleRequest]) (*connect.ServerStreamForClient[sdp_go.TestRuleResponse], error)
+}
+
+// NewAutoTaggingServiceClient constructs a client for the changes.AutoTaggingService service. By
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewAutoTaggingServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) AutoTaggingServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	return &autoTaggingServiceClient{
+		listRules: connect.NewClient[sdp_go.ListRulesRequest, sdp_go.ListRulesResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceListRulesProcedure,
+			connect.WithSchema(autoTaggingServiceListRulesMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		createRule: connect.NewClient[sdp_go.CreateRuleRequest, sdp_go.CreateRuleResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceCreateRuleProcedure,
+			connect.WithSchema(autoTaggingServiceCreateRuleMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		getRule: connect.NewClient[sdp_go.GetRuleRequest, sdp_go.GetRuleResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceGetRuleProcedure,
+			connect.WithSchema(autoTaggingServiceGetRuleMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		updateRule: connect.NewClient[sdp_go.UpdateRuleRequest, sdp_go.UpdateRuleResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceUpdateRuleProcedure,
+			connect.WithSchema(autoTaggingServiceUpdateRuleMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		deleteRule: connect.NewClient[sdp_go.DeleteRuleRequest, sdp_go.DeleteRuleResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceDeleteRuleProcedure,
+			connect.WithSchema(autoTaggingServiceDeleteRuleMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		exportRule: connect.NewClient[sdp_go.ExportRuleRequest, sdp_go.ExportRuleResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceExportRuleProcedure,
+			connect.WithSchema(autoTaggingServiceExportRuleMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+		testRule: connect.NewClient[sdp_go.TestRuleRequest, sdp_go.TestRuleResponse](
+			httpClient,
+			baseURL+AutoTaggingServiceTestRuleProcedure,
+			connect.WithSchema(autoTaggingServiceTestRuleMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// autoTaggingServiceClient implements AutoTaggingServiceClient.
+type autoTaggingServiceClient struct {
+	listRules  *connect.Client[sdp_go.ListRulesRequest, sdp_go.ListRulesResponse]
+	createRule *connect.Client[sdp_go.CreateRuleRequest, sdp_go.CreateRuleResponse]
+	getRule    *connect.Client[sdp_go.GetRuleRequest, sdp_go.GetRuleResponse]
+	updateRule *connect.Client[sdp_go.UpdateRuleRequest, sdp_go.UpdateRuleResponse]
+	deleteRule *connect.Client[sdp_go.DeleteRuleRequest, sdp_go.DeleteRuleResponse]
+	exportRule *connect.Client[sdp_go.ExportRuleRequest, sdp_go.ExportRuleResponse]
+	testRule   *connect.Client[sdp_go.TestRuleRequest, sdp_go.TestRuleResponse]
+}
+
+// ListRules calls changes.AutoTaggingService.ListRules.
+func (c *autoTaggingServiceClient) ListRules(ctx context.Context, req *connect.Request[sdp_go.ListRulesRequest]) (*connect.Response[sdp_go.ListRulesResponse], error) {
+	return c.listRules.CallUnary(ctx, req)
+}
+
+// CreateRule calls changes.AutoTaggingService.CreateRule.
+func (c *autoTaggingServiceClient) CreateRule(ctx context.Context, req *connect.Request[sdp_go.CreateRuleRequest]) (*connect.Response[sdp_go.CreateRuleResponse], error) {
+	return c.createRule.CallUnary(ctx, req)
+}
+
+// GetRule calls changes.AutoTaggingService.GetRule.
+func (c *autoTaggingServiceClient) GetRule(ctx context.Context, req *connect.Request[sdp_go.GetRuleRequest]) (*connect.Response[sdp_go.GetRuleResponse], error) {
+	return c.getRule.CallUnary(ctx, req)
+}
+
+// UpdateRule calls changes.AutoTaggingService.UpdateRule.
+func (c *autoTaggingServiceClient) UpdateRule(ctx context.Context, req *connect.Request[sdp_go.UpdateRuleRequest]) (*connect.Response[sdp_go.UpdateRuleResponse], error) {
+	return c.updateRule.CallUnary(ctx, req)
+}
+
+// DeleteRule calls changes.AutoTaggingService.DeleteRule.
+func (c *autoTaggingServiceClient) DeleteRule(ctx context.Context, req *connect.Request[sdp_go.DeleteRuleRequest]) (*connect.Response[sdp_go.DeleteRuleResponse], error) {
+	return c.deleteRule.CallUnary(ctx, req)
+}
+
+// ExportRule calls changes.AutoTaggingService.ExportRule.
+func (c *autoTaggingServiceClient) ExportRule(ctx context.Context, req *connect.Request[sdp_go.ExportRuleRequest]) (*connect.Response[sdp_go.ExportRuleResponse], error) {
+	return c.exportRule.CallUnary(ctx, req)
+}
+
+// TestRule calls changes.AutoTaggingService.TestRule.
+func (c *autoTaggingServiceClient) TestRule(ctx context.Context, req *connect.Request[sdp_go.TestRuleRequest]) (*connect.ServerStreamForClient[sdp_go.TestRuleResponse], error) {
+	return c.testRule.CallServerStream(ctx, req)
+}
+
+// AutoTaggingServiceHandler is an implementation of the changes.AutoTaggingService service.
+type AutoTaggingServiceHandler interface {
+	// Used on the auto-tagging page to list all rules for an account
+	// Returns a list of rules
+	ListRules(context.Context, *connect.Request[sdp_go.ListRulesRequest]) (*connect.Response[sdp_go.ListRulesResponse], error)
+	// Creates a new rule, with the provided properties. This will return a
+	// CodeAlreadyExists error if the `tagKey` is not unique
+	CreateRule(context.Context, *connect.Request[sdp_go.CreateRuleRequest]) (*connect.Response[sdp_go.CreateRuleResponse], error)
+	// Get the details of a rule
+	GetRule(context.Context, *connect.Request[sdp_go.GetRuleRequest]) (*connect.Response[sdp_go.GetRuleResponse], error)
+	// Given a rule UUID, updates the rule properties. Note the key can be
+	// updated, but it only applies to new changes. This will return a
+	// CodeAlreadyExists error if the  new `tagKey` is not unique
+	UpdateRule(context.Context, *connect.Request[sdp_go.UpdateRuleRequest]) (*connect.Response[sdp_go.UpdateRuleResponse], error)
+	// Given a rule UUID permanently delete that rule, existing changes will not
+	// be affected
+	DeleteRule(context.Context, *connect.Request[sdp_go.DeleteRuleRequest]) (*connect.Response[sdp_go.DeleteRuleResponse], error)
+	// Convert a rule's properties to a string that can be used in the rules
+	// config file
+	ExportRule(context.Context, *connect.Request[sdp_go.ExportRuleRequest]) (*connect.Response[sdp_go.ExportRuleResponse], error)
+	// Given a rule, and a list of changes uuids
+	// The response will contain the rule uuid and a list of changes and what tags they would have if the rule was applied
+	TestRule(context.Context, *connect.Request[sdp_go.TestRuleRequest], *connect.ServerStream[sdp_go.TestRuleResponse]) error
+}
+
+// NewAutoTaggingServiceHandler builds an HTTP handler from the service implementation. It returns
+// the path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewAutoTaggingServiceHandler(svc AutoTaggingServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	autoTaggingServiceListRulesHandler := connect.NewUnaryHandler(
+		AutoTaggingServiceListRulesProcedure,
+		svc.ListRules,
+		connect.WithSchema(autoTaggingServiceListRulesMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	autoTaggingServiceCreateRuleHandler := connect.NewUnaryHandler(
+		AutoTaggingServiceCreateRuleProcedure,
+		svc.CreateRule,
+		connect.WithSchema(autoTaggingServiceCreateRuleMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	autoTaggingServiceGetRuleHandler := connect.NewUnaryHandler(
+		AutoTaggingServiceGetRuleProcedure,
+		svc.GetRule,
+		connect.WithSchema(autoTaggingServiceGetRuleMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	autoTaggingServiceUpdateRuleHandler := connect.NewUnaryHandler(
+		AutoTaggingServiceUpdateRuleProcedure,
+		svc.UpdateRule,
+		connect.WithSchema(autoTaggingServiceUpdateRuleMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	autoTaggingServiceDeleteRuleHandler := connect.NewUnaryHandler(
+		AutoTaggingServiceDeleteRuleProcedure,
+		svc.DeleteRule,
+		connect.WithSchema(autoTaggingServiceDeleteRuleMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	autoTaggingServiceExportRuleHandler := connect.NewUnaryHandler(
+		AutoTaggingServiceExportRuleProcedure,
+		svc.ExportRule,
+		connect.WithSchema(autoTaggingServiceExportRuleMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	autoTaggingServiceTestRuleHandler := connect.NewServerStreamHandler(
+		AutoTaggingServiceTestRuleProcedure,
+		svc.TestRule,
+		connect.WithSchema(autoTaggingServiceTestRuleMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/changes.AutoTaggingService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case AutoTaggingServiceListRulesProcedure:
+			autoTaggingServiceListRulesHandler.ServeHTTP(w, r)
+		case AutoTaggingServiceCreateRuleProcedure:
+			autoTaggingServiceCreateRuleHandler.ServeHTTP(w, r)
+		case AutoTaggingServiceGetRuleProcedure:
+			autoTaggingServiceGetRuleHandler.ServeHTTP(w, r)
+		case AutoTaggingServiceUpdateRuleProcedure:
+			autoTaggingServiceUpdateRuleHandler.ServeHTTP(w, r)
+		case AutoTaggingServiceDeleteRuleProcedure:
+			autoTaggingServiceDeleteRuleHandler.ServeHTTP(w, r)
+		case AutoTaggingServiceExportRuleProcedure:
+			autoTaggingServiceExportRuleHandler.ServeHTTP(w, r)
+		case AutoTaggingServiceTestRuleProcedure:
+			autoTaggingServiceTestRuleHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedAutoTaggingServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedAutoTaggingServiceHandler struct{}
+
+func (UnimplementedAutoTaggingServiceHandler) ListRules(context.Context, *connect.Request[sdp_go.ListRulesRequest]) (*connect.Response[sdp_go.ListRulesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.ListRules is not implemented"))
+}
+
+func (UnimplementedAutoTaggingServiceHandler) CreateRule(context.Context, *connect.Request[sdp_go.CreateRuleRequest]) (*connect.Response[sdp_go.CreateRuleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.CreateRule is not implemented"))
+}
+
+func (UnimplementedAutoTaggingServiceHandler) GetRule(context.Context, *connect.Request[sdp_go.GetRuleRequest]) (*connect.Response[sdp_go.GetRuleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.GetRule is not implemented"))
+}
+
+func (UnimplementedAutoTaggingServiceHandler) UpdateRule(context.Context, *connect.Request[sdp_go.UpdateRuleRequest]) (*connect.Response[sdp_go.UpdateRuleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.UpdateRule is not implemented"))
+}
+
+func (UnimplementedAutoTaggingServiceHandler) DeleteRule(context.Context, *connect.Request[sdp_go.DeleteRuleRequest]) (*connect.Response[sdp_go.DeleteRuleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.DeleteRule is not implemented"))
+}
+
+func (UnimplementedAutoTaggingServiceHandler) ExportRule(context.Context, *connect.Request[sdp_go.ExportRuleRequest]) (*connect.Response[sdp_go.ExportRuleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.ExportRule is not implemented"))
+}
+
+func (UnimplementedAutoTaggingServiceHandler) TestRule(context.Context, *connect.Request[sdp_go.TestRuleRequest], *connect.ServerStream[sdp_go.TestRuleResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("changes.AutoTaggingService.TestRule is not implemented"))
 }
