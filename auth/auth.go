@@ -235,16 +235,16 @@ func (n *natsTokenClient) GetJWT() (string, error) {
 	// If we don't yet have a JWT, generate one
 	if n.jwt == "" {
 		err := n.generateJWT(ctx)
-
 		if err != nil {
+			err = fmt.Errorf("error generating JWT: %w", err)
 			span.SetStatus(codes.Error, err.Error())
 			return "", err
 		}
 	}
 
 	claims, err := jwt.DecodeUserClaims(n.jwt)
-
 	if err != nil {
+		err = fmt.Errorf("error decoding JWT: %w", err)
 		span.SetStatus(codes.Error, err.Error())
 		return n.jwt, err
 	}
@@ -258,8 +258,8 @@ func (n *natsTokenClient) GetJWT() (string, error) {
 	if vr.IsBlocking(true) {
 		// Regenerate the token
 		err := n.generateJWT(ctx)
-
 		if err != nil {
+			err = fmt.Errorf("error validating JWT: %w", err)
 			span.SetStatus(codes.Error, err.Error())
 			return "", err
 		}

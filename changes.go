@@ -258,11 +258,11 @@ func (r *GetChangeRisksResponse) ToMap() map[string]any {
 	}
 
 	return map[string]any{
-		"risks":                 risks,
-		"numHighRisk":           rmd.GetNumHighRisk(),
-		"numMediumRisk":         rmd.GetNumMediumRisk(),
-		"numLowRisk":            rmd.GetNumLowRisk(),
-		"riskCalculationStatus": rmd.GetRiskCalculationStatus().ToMap(),
+		"risks":                risks,
+		"numHighRisk":          rmd.GetNumHighRisk(),
+		"numMediumRisk":        rmd.GetNumMediumRisk(),
+		"numLowRisk":           rmd.GetNumLowRisk(),
+		"changeAnalysisStatus": rmd.GetChangeAnalysisStatus().ToMap(),
 	}
 }
 
@@ -354,7 +354,7 @@ func (cp *ChangeProperties) ToMap() map[string]any {
 	}
 }
 
-func (rcs *RiskCalculationStatus) ToMap() map[string]any {
+func (rcs *ChangeAnalysisStatus) ToMap() map[string]any {
 	if rcs == nil {
 		return map[string]any{}
 	}
@@ -371,7 +371,7 @@ func (rcs *RiskCalculationStatus) ToMap() map[string]any {
 	}
 }
 
-func (m *RiskCalculationStatus_ProgressMilestone) ToMap() map[string]any {
+func (m *ChangeAnalysisStatus_ProgressMilestone) ToMap() map[string]any {
 	return map[string]any{
 		"description": m.GetDescription(),
 		"status":      m.GetStatus().String(),
