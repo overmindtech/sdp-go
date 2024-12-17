@@ -676,9 +676,16 @@ type RuleProperties struct {
 	// The instructions that will be run by the llm to determine if the tag should
 	// be applied and what its value should be
 	Instructions string `protobuf:"bytes,4,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	// A list of valid tag values. If the instructions produce a value that is not
-	// in this list, the rule will be retried, however if we cannot converge on a
-	// valid value after some number of tries, the rule will not be applied
+	// A list of valid tag values.
+	//
+	// If this list is empty then the tag will have no value. Overmind will
+	// evaluate the instructions in the context of each incoming change, and if
+	// instructed, it will tag that change with the given `tagKey` and an empty
+	// value.
+	//
+	// If this list is populated, Overmind will evaluate the instructions in the
+	// context of each incoming change and decide; whether to tag the change at
+	// all, and if so, what value to use.
 	ValidValues   []string `protobuf:"bytes,5,rep,name=validValues,proto3" json:"validValues,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3916,7 +3923,7 @@ func (*TagValue_AutoTagValue) isTagValue_Value() {}
 
 type UserTagValue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The value of the tag that was set by the user
+	// The value of the tag that was set by the user.
 	Value         string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
