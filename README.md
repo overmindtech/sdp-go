@@ -36,7 +36,7 @@ Note however that using this will require the following environment variables to
 
 |Name|Description|
 |----|-----------|
-|`AUTH0_DOMAIN`| The domain to validate token against e.g. `om-dogfood.eu.auth0.com`|
+|`AUTH0_DOMAIN`| The domain to validate token against e.g. `auth.overmind-demo.com`|
 |`AUTH0_AUDIENCE`| The audience e.g. `https://api.overmind.tech`|
 |`AUTH_COOKIE_NAME`| *(Optional)* The name of the cookie to extract a token from if not present in the `Authorization` header|
 
