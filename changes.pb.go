@@ -2711,7 +2711,7 @@ type ItemDiffSummary struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A reference to the item that this diff is related to
 	Item *Reference `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	// The staus of the item
+	// The status of the item
 	Status ItemDiffStatus `protobuf:"varint,4,opt,name=status,proto3,enum=changes.ItemDiffStatus" json:"status,omitempty"`
 	// The health of the item currently (as opposed to before the change)
 	HealthAfter   Health `protobuf:"varint,5,opt,name=healthAfter,proto3,enum=Health" json:"healthAfter,omitempty"`
@@ -2774,7 +2774,7 @@ type ItemDiff struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A reference to the item that this diff is related to
 	Item *Reference `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
-	// The staus of the item
+	// The status of the item
 	Status        ItemDiffStatus `protobuf:"varint,2,opt,name=status,proto3,enum=changes.ItemDiffStatus" json:"status,omitempty"`
 	Before        *Item          `protobuf:"bytes,3,opt,name=before,proto3" json:"before,omitempty"`
 	After         *Item          `protobuf:"bytes,4,opt,name=after,proto3" json:"after,omitempty"`
@@ -3568,7 +3568,7 @@ func (x *GetAppResponse) GetApp() *App {
 	return nil
 }
 
-// update an expsting app
+// update an existing app
 type UpdateAppRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UUID          []byte                 `protobuf:"bytes,1,opt,name=UUID,proto3" json:"UUID,omitempty"`
@@ -4519,7 +4519,7 @@ type ChangeProperties struct {
 	RawPlan string `protobuf:"bytes,13,opt,name=rawPlan,proto3" json:"rawPlan,omitempty"`
 	// The code changes of this change for calculating the change's risks.
 	CodeChanges string `protobuf:"bytes,14,opt,name=codeChanges,proto3" json:"codeChanges,omitempty"`
-	// Repo information; can be an empty string. CLI attempts auto-population, but users can override. Not necessarily a URL. The UI will be responsible for any formatting/shortnening/sprucing up should it be required.
+	// Repo information; can be an empty string. CLI attempts auto-population, but users can override. Not necessarily a URL. The UI will be responsible for any formatting/shortening/sprucing up should it be required.
 	Repo string `protobuf:"bytes,15,opt,name=repo,proto3" json:"repo,omitempty"`
 	// Tags that were set bu the user when the tag was created
 	//
@@ -6301,7 +6301,7 @@ type SimulateChangeResponse struct {
 	// Whether the simulation is complete
 	Done bool `protobuf:"varint,1,opt,name=done,proto3" json:"done,omitempty"`
 	// How far through the simulation process we are. This will be pretty
-	// apprioximate as it's not expected to take very long and is more to give the
+	// approximate as it's not expected to take very long and is more to give the
 	// sense of progress than to be an accurate measure
 	PercentComplete uint32 `protobuf:"varint,2,opt,name=percentComplete,proto3" json:"percentComplete,omitempty"`
 	unknownFields   protoimpl.UnknownFields
