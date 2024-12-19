@@ -251,7 +251,15 @@ image: ghcr.io/overmindtech/api-server@sha256:462be60d478b3e86796ce628765ec3f42b
 
 func TestDiffLibrary(t *testing.T) {
 	edits := myers.ComputeEdits(testBefore, testAfter)
-	unified, _ := textdiff.ToUnified("name", "name", testBefore, edits)
+
+	unified, _ := textdiff.ToUnified("name", "name", testBefore, edits, 3)
+
+	// We want the diff to be smart i.e. not to print the whole file twice, but
+	// instead focus on the two lines that changed (the top and the bottom)
+	lines := strings.Split(unified, "\n")
+	if len(lines) > 17 {
+		t.Errorf("diff is too long: %d lines", len(lines))
+	}
 
 	fmt.Println(fmt.Sprint(unified))
 }

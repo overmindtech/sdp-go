@@ -222,8 +222,12 @@ func itemDiffToYAMLDiff(itemDiff *sdp.ItemDiff) (string, error) {
 	}
 
 	// Diff the YAML
+
+	// `myers.ComputeEdits` is deprecated, but I haven't yet found a good
+	// alternative that handles multiple diffs in a single file nicely. See the
+	// `TestDiffLibrary` for an example of what output we're expecting
 	edits := myers.ComputeEdits(beforeYAML, afterYAML)
-	unified, err := textdiff.ToUnified("current", "proposed", beforeYAML, edits)
+	unified, err := textdiff.ToUnified("current", "proposed", beforeYAML, edits, 3)
 
 	if err != nil {
 		return "", err
