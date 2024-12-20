@@ -1,7 +1,7 @@
 connectrpc.com/connect v1.17.0 h1:W0ZqMhtVzn9Zhn2yATuUokDLO5N+gIuBWMOnsQrfmZk=
 connectrpc.com/connect v1.17.0/go.mod h1:0292hj1rnx8oFrStN7cB4jjVBeqs+Yx5yDIC2prWDO8=
-github.com/akedrou/textdiff v0.0.0-20230423230343-2ebdcebdccc1 h1:XfKKiQL7irIGI7nfu4a6IKhrgUHvKwhH/AnuHgZy/+U=
-github.com/akedrou/textdiff v0.0.0-20230423230343-2ebdcebdccc1/go.mod h1:PJwvxBpzqjdeomc0r8Hgc+xJC7k6z+k371tffCGXR2M=
+github.com/akedrou/textdiff v0.1.0 h1:K7nbOVQju7/coCXnJRJ2fsltTwbSvC+M4hKBUJRBRGY=
+github.com/akedrou/textdiff v0.1.0/go.mod h1:a9CCC49AKtFTmVDNFHDlCg7V/M7C7QExDAhb2SkL6DQ=
 github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.4 h1:TdGQS+RoR4AUO6gqUL74yK1dz/Arrt/WG+dxOj6Yo6A=
 github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.4/go.mod h1:GJxtdOs9K4neo8Gg65CjJ7jNautmldGli5/OFNabOoo=
 github.com/auth0/go-jwt-middleware/v2 v2.2.2 h1:vrvkFZf72r3Qbt45KLjBG3/6Xq2r3NTixWKu2e8de9I=
