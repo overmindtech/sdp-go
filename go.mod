@@ -15,7 +15,7 @@ require (
 	github.com/nats-io/jwt/v2 v2.7.3
 	github.com/nats-io/nats.go v1.38.0
 	github.com/nats-io/nkeys v0.4.9
-	github.com/sashabaranov/go-openai v1.36.0
+	github.com/sashabaranov/go-openai v1.36.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sourcegraph/conc v0.3.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0
