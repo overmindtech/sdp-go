@@ -11,7 +11,7 @@ require (
 	github.com/getsentry/sentry-go v0.30.0
 	github.com/go-jose/go-jose/v4 v4.0.4
 	github.com/google/uuid v1.6.0
-	github.com/invopop/jsonschema v0.12.0
+	github.com/invopop/jsonschema v0.13.0
 	github.com/nats-io/jwt/v2 v2.7.3
 	github.com/nats-io/nats.go v1.38.0
 	github.com/nats-io/nkeys v0.4.9
