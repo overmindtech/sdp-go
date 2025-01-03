@@ -8,7 +8,7 @@ require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.4
 	github.com/auth0/go-jwt-middleware/v2 v2.2.2
 	github.com/coder/websocket v1.8.12
-	github.com/getsentry/sentry-go v0.30.0
+	github.com/getsentry/sentry-go v0.31.1
 	github.com/go-jose/go-jose/v4 v4.0.4
 	github.com/google/uuid v1.6.0
 	github.com/invopop/jsonschema v0.13.0
